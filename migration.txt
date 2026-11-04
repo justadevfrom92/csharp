@@ -1,0 +1,608 @@
+/* 
+====================================================================================================
+EF CORE MIGRATIONS CLI & PACKAGE MANAGER CONSOLE (PMC) COMMAND REFERENCE
+====================================================================================================
+
+1. DOTNET CLI COMMANDS (Terminal / Command Prompt / PowerShell)
+   -------------------------------------------------------------------------------------------------
+   • Add a new migration:
+     dotnet ef migrations add InitialCreate
+
+   • Add a migration targeting a specific DbContext (if multiple exist):
+     dotnet ef migrations add AddUserStatusTable --context AppDbContext
+
+   • Add a migration targeting a specific output directory:
+     dotnet ef migrations add AlterExistingTables --output-dir Migrations/Postgres
+
+   • Apply all pending migrations directly to the target database:
+     dotnet ef migrations script  (Generates raw SQL)
+     dotnet ef database update
+
+   • Update database to a specific migration target (Rollback / Forward):
+     dotnet ef database update InitialCreate
+     dotnet ef database update 0  (Reverts ALL migrations back to blank DB)
+
+   • Remove the last created migration (Only if NOT applied to DB yet):
+     dotnet ef migrations remove
+
+   • Generate SQL script from Migrations (For DBAs / Production deployment):
+     dotnet ef migrations script
+     dotnet ef migrations script FromMigrationName ToMigrationName -o script.sql
+
+
+2. PACKAGE MANAGER CONSOLE (PMC) COMMANDS (Visual Studio)
+   -------------------------------------------------------------------------------------------------
+   • Add a new migration:
+     Add-Migration InitialCreate
+
+   • Add a migration with specific DbContext:
+     Add-Migration AddUserStatusTable -Context AppDbContext
+
+   • Apply pending migrations to database:
+     Update-Database
+
+   • Rollback / Forward to specific target:
+     Update-Database -Migration InitialCreate
+     Update-Database -Migration 0
+
+   • Remove last unapplied migration:
+     Remove-Migration
+
+   • Generate SQL script:
+     Script-Migration
+
+====================================================================================================
+*/
+
+using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+namespace EFCoreMigrationsStudyGuide
+{
+    /* 
+    ====================================================================================================
+    REASON FOR SECTION 1 (DOMAIN MODELS / ENTITIES SETUP):
+    Why it is in this file: EF Core migrations are code-first reflections of your C# domain classes. 
+    Before you can write or scaffold migration code, you must define the exact relational shape—Primary Keys, 
+    Foreign Keys, Unique fields, and scalar properties—so the builder knows what database tables and columns to construct.
+    ====================================================================================================
+    */
+    public class User
+    {
+        public int Id { get; set; } // PK (Auto-Increment / Identity)
+        public string Email { get; set; } = null!; // Unique Index constraint target
+        public string Username { get; set; } = null!;
+        public string PasswordHash { get; set; } = null!;
+        public int Age { get; set; } // Standard column (Target for Check Constraint)
+        public DateTime CreatedAt { get; set; }
+
+        // Navigation Properties
+        public UserProfile? Profile { get; set; } // 1-to-1 relation
+        public ICollection<Order> Orders { get; set; } = new List<Order>(); // 1-to-Many relation
+    }
+
+    public class UserProfile
+    {
+        public int Id { get; set; }
+        public string Bio { get; set; } = string.Empty;
+        public string AvatarUrl { get; set; } = string.Empty;
+
+        // Foreign Key pointing to User (1-to-1)
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
+    }
+
+    public class Order
+    {
+        public int Id { get; set; }
+        public string OrderNumber { get; set; } = null!;
+        public decimal TotalAmount { get; set; }
+        public string Status { get; set; } = "Pending";
+        public DateTime OrderDate { get; set; }
+
+        // Foreign Key pointing to User (1-to-Many)
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
+
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    }
+
+    public class Product
+    {
+        public int Id { get; set; }
+        public string SKU { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        public decimal Price { get; set; }
+    }
+
+    // Entity representing Composite Primary Key (Junction Table)
+    public class OrderItem
+    {
+        // Composite PK Component 1 & FK 1
+        public int OrderId { get; set; }
+        public Order Order { get; set; } = null!;
+
+        // Composite PK Component 2 & FK 2
+        public int ProductId { get; set; }
+        public Product Product { get; set; } = null!;
+
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+    }
+
+    /* 
+    ====================================================================================================
+    REASON FOR SECTION 2 (DBCONTEXT FLUENT API CONFIGURATION):
+    Why it is in this file: Attributes alone cannot express complex database constraints (like composite keys, 
+    custom check constraints, or explicit delete behaviors). The Fluent API inside OnModelCreating provides 
+    the precise rule definitions that EF Core translates directly into constraint migration builder calls.
+    ====================================================================================================
+    */
+    public class AppDbContext : DbContext
+    {
+        public DbSet<User> Users => Set<User>();
+        public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<Product> Products => Set<Product>();
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // --- 1. USER ENTITY CONFIGURATION ---
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("Users");
+                entity.HasKey(u => u.Id); // Configures Primary Key
+
+                entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
+                entity.HasIndex(u => u.Email).IsUnique(); // Configures Unique Index constraint
+
+                entity.Property(u => u.Username).IsRequired().HasMaxLength(100);
+
+                // Configures a Check Constraint requiring Age >= 18 at the database level
+                entity.ToTable(t => t.HasCheckConstraint("CK_User_Age", "[Age] >= 18"));
+            });
+
+            // --- 2. USER PROFILE CONFIGURATION (1-to-1 FK) ---
+            modelBuilder.Entity<UserProfile>(entity =>
+            {
+                entity.ToTable("UserProfiles");
+                entity.HasKey(up => up.Id);
+
+                // Configures 1-to-1 Foreign Key constraint with Cascade delete
+                entity.HasOne(up => up.User)
+                      .WithOne(u => u.Profile)
+                      .HasForeignKey<UserProfile>(up => up.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // --- 3. ORDER CONFIGURATION (1-to-Many FK) ---
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.ToTable("Orders");
+                entity.HasKey(o => o.Id);
+
+                // Configures 1-to-Many Foreign Key constraint with Restrict delete
+                entity.HasOne(o => o.User)
+                      .WithMany(u => u.Orders)
+                      .HasForeignKey(o => o.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(o => o.OrderNumber).IsUnique(); // Unique Index
+            });
+
+            // --- 4. ORDERITEM CONFIGURATION (Composite PK & Multiple FKs) ---
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.ToTable("OrderItems");
+                
+                // Configures a COMPOSITE PRIMARY KEY across two columns
+                entity.HasKey(oi => new { oi.OrderId, oi.ProductId });
+
+                entity.HasOne(oi => oi.Order)
+                      .WithMany(o => o.OrderItems)
+                      .HasForeignKey(oi => oi.OrderId);
+
+                entity.HasOne(oi => oi.Product)
+                      .WithMany()
+                      .HasForeignKey(oi => oi.ProductId);
+
+                // Configures Check Constraint requiring Quantity > 0
+                entity.ToTable(t => t.HasCheckConstraint("CK_OrderItem_Quantity", "[Quantity] > 0"));
+            });
+        }
+    }
+
+    /* 
+    ====================================================================================================
+    REASON FOR SECTION 3 (MIGRATION CREATING TABLES):
+    Why it is in this file: This demonstrates how a freshly generated EF Core migration class physically 
+    invokes `CreateTable`, `PrimaryKey`, `ForeignKey`, `CheckConstraint`, and `CreateIndex`. It gives you 
+    the exact syntax generated when bootstrapping a blank database schema across MySQL, SQLite, and PostgreSQL.
+    ====================================================================================================
+    */
+    public partial class InitialCreateMigration : Migration
+    {
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            // Creates Users table along with its Primary Key and Check Constraint inline
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                              .Annotation("Sqlite:Autoincrement", true)
+                              .Annotation("SqlServer:Identity", "1, 1")
+                              .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
+                              .Annotation("MySql:ValueGenerationStrategy", MySql.EntityFrameworkCore.Metadata.MySqlValueGenerationStrategy.IdentityColumn),
+                    Email = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
+                    Username = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false),
+                    PasswordHash = table.Column<string>(type: "longtext", nullable: false),
+                    Age = table.Column<int>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.CheckConstraint("CK_User_Age", "Age >= 18");
+                });
+
+            // Creates UserProfiles table and attaches a Foreign Key referencing the Users table
+            migrationBuilder.CreateTable(
+                name: "UserProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                              .Annotation("Sqlite:Autoincrement", true),
+                    Bio = table.Column<string>(type: "TEXT", nullable: false),
+                    AvatarUrl = table.Column<string>(type: "TEXT", nullable: false),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserProfiles", x => x.Id);
+                    
+                    migrationBuilder.ForeignKey(
+                        name: "FK_UserProfiles_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // Creates Products table
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                              .Annotation("Sqlite:Autoincrement", true),
+                    SKU = table.Column<string>(type: "varchar(50)", nullable: false),
+                    Name = table.Column<string>(type: "varchar(200)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
+                });
+
+            // Creates Orders table with a Foreign Key constraint linking back to Users
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                              .Annotation("Sqlite:Autoincrement", true),
+                    OrderNumber = table.Column<string>(type: "varchar(100)", nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Status = table.Column<string>(type: "varchar(50)", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    migrationBuilder.ForeignKey(
+                        name: "FK_Orders_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            // Creates OrderItems table utilizing a Composite Primary Key and multiple Foreign Keys
+            migrationBuilder.CreateTable(
+                name: "OrderItems",
+                columns: table => new
+                {
+                    OrderId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Quantity = table.Column<int>(type: "INTEGER", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderItems", x => new { x.OrderId, x.ProductId });
+                    
+                    table.CheckConstraint("CK_OrderItem_Quantity", "Quantity > 0");
+                    
+                    migrationBuilder.ForeignKey(
+                        name: "FK_OrderItems_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    
+                    migrationBuilder.ForeignKey(
+                        name: "FK_OrderItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // --- INDEX CREATION COMMANDS ---
+            migrationBuilder.CreateIndex(name: "IX_Users_Email", table: "Users", column: "Email", unique: true);
+            migrationBuilder.CreateIndex(name: "IX_UserProfiles_UserId", table: "UserProfiles", column: "UserId", unique: true);
+            migrationBuilder.CreateIndex(name: "IX_Orders_OrderNumber", table: "Orders", column: "OrderNumber", unique: true);
+            migrationBuilder.CreateIndex(name: "IX_Orders_UserId", table: "Orders", column: "UserId");
+            migrationBuilder.CreateIndex(name: "IX_OrderItems_ProductId", table: "OrderItems", column: "ProductId");
+        }
+
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(name: "OrderItems");
+            migrationBuilder.DropTable(name: "Orders");
+            migrationBuilder.DropTable(name: "Products");
+            migrationBuilder.DropTable(name: "UserProfiles");
+            migrationBuilder.DropTable(name: "Users");
+        }
+    }
+
+    /* 
+    ====================================================================================================
+    REASON FOR SECTION 4 (MIGRATION EDITING/ALTERING EXISTING TABLES):
+    Why it is in this file: Creating tables is only half the battle. Real-world applications require modifying 
+    live database schemas. This section explicitly demonstrates how to write or handle modification operations 
+    on ALREADY EXISTING tables: adding/dropping columns, altering column types, swapping foreign keys, 
+    dropping/recreating constraints, updating indexes, and renaming tables.
+    ====================================================================================================
+    */
+    public partial class AlterExistingTablesMigration : Migration
+    {
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            // -------------------------------------------------------------------------------------
+            // A. COLUMNS: ADD, RENAME, ALTER, DROP
+            // -------------------------------------------------------------------------------------
+
+            // Adds a new column to an existing table post-initialization
+            migrationBuilder.AddColumn<string>(
+                name: "PhoneNumber",
+                table: "Users",
+                type: "varchar(20)",
+                nullable: true,
+                defaultValue: null);
+
+            // Renames an existing column on an existing table
+            migrationBuilder.RenameColumn(
+                name: "Status",
+                table: "Orders",
+                newName: "OrderStatus");
+
+            // Alters data type/length of an existing column on a live table (e.g., expanding varchar length)
+            migrationBuilder.AlterColumn<string>(
+                name: "Username",
+                table: "Users",
+                type: "varchar(150)",
+                maxLength: 150,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "varchar(100)",
+                oldMaxLength: 100);
+
+            // Drops a column from an existing table entirely
+            migrationBuilder.DropColumn(
+                name: "Bio",
+                table: "UserProfiles");
+
+
+            // -------------------------------------------------------------------------------------
+            // B. FOREIGN KEYS: DROP AND ADD (RE-LINKING RELATIONSHIPS)
+            // -------------------------------------------------------------------------------------
+
+            // Drops an existing foreign key constraint so you can re-configure its behavior
+            migrationBuilder.DropForeignKey(
+                name: "FK_Orders_Users_UserId",
+                table: "Orders");
+
+            // Re-adds the foreign key constraint with an updated delete rule (e.g., changing from Restrict to Cascade)
+            migrationBuilder.AddForeignKey(
+                name: "FK_Orders_Users_UserId",
+                table: "Orders",
+                column: "UserId",
+                principalTable: "Users",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+
+            // -------------------------------------------------------------------------------------
+            // C. INDEXES & UNIQUE CONSTRAINTS: DROP AND ADD
+            // -------------------------------------------------------------------------------------
+
+            // Drops an outdated or unnecessary single-column index on an existing table
+            migrationBuilder.DropIndex(
+                name: "IX_Users_Email",
+                table: "Users");
+
+            // Adds a new composite index across multiple columns on an existing table to optimize queries
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_LastName_FirstName",
+                table: "Users",
+                columns: new[] { "Username", "Email" });
+
+            // Adds a filtered/partial index on an existing table (supported on Postgres/SQL Server)
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_OrderStatus_Filtered",
+                table: "Orders",
+                column: "OrderStatus",
+                unique: false,
+                filter: "[OrderStatus] = 'Pending'");
+
+
+            // -------------------------------------------------------------------------------------
+            // D. CHECK CONSTRAINTS: DROP AND ADD
+            // -------------------------------------------------------------------------------------
+
+            // Drops an existing database check constraint
+            migrationBuilder.DropCheckConstraint(
+                name: "CK_User_Age",
+                table: "Users");
+
+            // Adds a modified check constraint with updated business rules (e.g., changing minimum age from 18 to 21)
+            migrationBuilder.AddCheckConstraint(
+                name: "CK_User_Age",
+                table: "Users",
+                sql: "Age >= 21");
+
+
+            // -------------------------------------------------------------------------------------
+            // E. PRIMARY KEYS: DROP AND RE-CREATE (ADVANCED ALTERATION)
+            // -------------------------------------------------------------------------------------
+
+            // Drops an existing primary key constraint on a table
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_OrderItems",
+                table: "OrderItems");
+
+            // Re-adds the primary key (or redefines it with modified column mappings)
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_OrderItems",
+                table: "OrderItems",
+                columns: new[] { "OrderId", "ProductId" });
+
+
+            // -------------------------------------------------------------------------------------
+            // F. TABLE RENAMING
+            // -------------------------------------------------------------------------------------
+
+            // Renames an existing database table safely
+            migrationBuilder.RenameTable(
+                name: "UserProfiles",
+                newName: "UserAccounts");
+        }
+
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            // Reverses all alteration operations in exact reverse chronological order
+            migrationBuilder.RenameTable(
+                name: "UserAccounts",
+                newName: "UserProfiles");
+
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_OrderItems",
+                table: "OrderItems");
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_OrderItems",
+                table: "OrderItems",
+                columns: new[] { "OrderId", "ProductId" });
+
+            migrationBuilder.DropCheckConstraint(
+                name: "CK_User_Age",
+                table: "Users");
+
+            migrationBuilder.AddCheckConstraint(
+                name: "CK_User_Age",
+                table: "Users",
+                sql: "Age >= 18");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Orders_OrderStatus_Filtered",
+                table: "Orders");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Users_LastName_FirstName",
+                table: "Users");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Orders_Users_UserId",
+                table: "Orders");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Orders_Users_UserId",
+                table: "Orders",
+                column: "UserId",
+                principalTable: "Users",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddColumn<string>(
+                name: "Bio",
+                table: "UserProfiles",
+                type: "TEXT",
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Username",
+                table: "Users",
+                type: "varchar(100)",
+                maxLength: 100,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "varchar(150)",
+                oldMaxLength: 150);
+
+            migrationBuilder.RenameColumn(
+                name: "OrderStatus",
+                table: "Orders",
+                newName: "Status");
+
+            migrationBuilder.DropColumn(
+                name: "PhoneNumber",
+                table: "Users");
+        }
+    }
+
+    /* 
+    ====================================================================================================
+    REASON FOR SECTION 5 (DATABASE PROVIDER SPECIFIC ENGINE BEHAVIORS):
+    Why it is in this file: When writing migrations that alter tables (like dropping columns or changing 
+    types), SQLite, MySQL, and PostgreSQL execute those operations completely differently under the hood. 
+    Knowing these underlying mechanics explains *why* certain migration builder operations perform 
+    table rebuilds (SQLite) or throw key-length errors (MySQL) in production.
+    ====================================================================================================
+    */
+    public static class DatabaseProviderNuancesExplanation
+    {
+        /*
+        1. SQLite Table Rebuild Mechanism:
+           - REASON FOR NOTING: SQLite lacks native support for dropping columns or altering constraints via DDL.
+           - BEHAVIOR: When `DropColumn` or `AlterColumn` executes, EF Core's SQLite provider automatically 
+             creates a temporary table, copies all rows over via `INSERT INTO ... SELECT`, drops the original table, 
+             and renames the temp table. This matters because it causes heavy locking on large tables.
+
+        2. MySQL / MariaDB Index Length Constraints:
+           - REASON FOR NOTING: InnoDB enforces strict byte limits on index keys (767 bytes / 3072 bytes).
+           - BEHAVIOR: If you run an `AlterColumn` or `CreateIndex` on a large `varchar(1000)` column using UTF8mb4, 
+             MySQL throws a key-length error during migration unless explicit character lengths (e.g., `varchar(255)`) are set.
+
+        3. PostgreSQL Native Transactional DDL:
+           - REASON FOR NOTING: Postgres natively supports robust, transactional DDL execution for all migration blocks.
+           - BEHAVIOR: If an `AlterColumn` or `AddCheckConstraint` fails midway, Postgres rolls back the entire 
+             migration script cleanly, whereas SQLite/MySQL handle multi-statement transaction rollbacks differently 
+             depending on the specific DDL operation.
+        */
+    }
+}
