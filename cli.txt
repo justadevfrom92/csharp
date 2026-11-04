@@ -1,0 +1,112 @@
+// ==========================================
+// 1. PROJECT CREATION & TEMPLATES
+// ==========================================
+// Create a new console application
+dotnet new console
+
+// Create a new Web API application
+dotnet new webapi
+
+// Create a new MVC web application
+dotnet new mvc
+
+// Create a new class library (reusable code project)
+dotnet new classlib
+
+// Create a new xUnit unit test project
+dotnet new xunit
+
+// Create a new solution (.sln) file to group multiple projects
+dotnet new sln
+
+// List all available project templates installed on your machine
+dotnet new list
+
+
+// ==========================================
+// 2. ADDING INDIVIDUAL FILES TO A PROJECT
+// ==========================================
+// Create a standard C# class file (.cs)
+dotnet new class -n MyNewClass
+
+// Create a C# interface file (.cs)
+dotnet new interface -n IMyInterface
+
+// Create a C# record type file (.cs)
+dotnet new record -n MyRecord
+
+// Create a C# enum file (.cs)
+dotnet new enum -n MyEnum
+
+// Create a configuration or settings JSON file
+dotnet new json -n appsettings.json
+
+
+// ==========================================
+// 3. BUILD & RUN WORKFLOW
+// ==========================================
+// Restore missing NuGet packages and dependencies for the project
+dotnet restore
+
+// Build (compile) the project and check for errors
+dotnet build
+
+// Build the project using the optimized Release configuration
+dotnet build -c Release
+
+// Run the application directly from source
+dotnet run
+
+// Run the application without checking for or rebuilding dependencies
+dotnet run --no-build
+
+// Clean up build outputs, binaries, and temporary compilation folders
+dotnet clean
+
+
+// ==========================================
+// 4. NUGET PACKAGE MANAGEMENT
+// ==========================================
+// Add an external NuGet package (library) to your project
+dotnet add package Newtonsoft.Json
+
+// Remove an installed NuGet package from your project
+dotnet remove package Newtonsoft.Json
+
+// List all NuGet packages currently installed in the project
+dotnet list package
+
+
+// ==========================================
+// 5. SOLUTION & PROJECT REFERENCES
+// ==========================================
+// Add an existing project into a solution file (.sln)
+dotnet sln add Path/To/Project.csproj
+
+// Remove a project from a solution file
+dotnet sln remove Path/To/Project.csproj
+
+// List all projects contained within a solution file
+dotnet sln list
+
+// Add a project-to-project reference (let Project A use Project B)
+dotnet add reference Path/To/Library.csproj
+
+// Remove a project-to-project reference
+dotnet remove reference Path/To/Library.csproj
+
+
+// ==========================================
+// 6. PUBLISHING & DIAGNOSTICS
+// ==========================================
+// Package compiled code into a deployable folder (Release mode)
+dotnet publish -c Release
+
+// Pack code into a shareable NuGet package file (.nupkg)
+dotnet pack
+
+// Display the currently active .NET SDK version
+dotnet --version
+
+// Display detailed system and runtime environment information
+dotnet --info
