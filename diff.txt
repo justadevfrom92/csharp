@@ -1,0 +1,1339 @@
+# Laravel ↔ ASP.NET Core 10: 1-to-1 Map
+
+_Last updated: November 2026_
+
+Almost every Laravel building block has an ASP.NET Core 10 counterpart, but about a third of them come from NuGet libraries rather than the framework itself. Laravel is batteries-included; ASP.NET Core ships the web pipeline, DI, config, auth and EF Core, and leaves queues, mail, events and factories to libraries.
+
+**Versions compared:** Laravel 13 (released March 17, 2026, PHP 8.3–8.5 — [release notes summary](https://benjamincrozat.com/laravel-13)) vs ASP.NET Core 10 on .NET 10 LTS (November 2025) with C# 14 and EF Core 10.
+
+**How to read it:** the quick table gives the mapping at a glance; the code sections show the same thing written both ways (PHP first, C# second); the last three sections cover what does *not* map 1-to-1.
+
+## Quick lookup: Laravel → ASP.NET Core 10
+
+"Built in" means it ships with ASP.NET Core / EF Core; otherwise the usual library is named.
+
+| Area | Laravel / PHP | ASP.NET Core 10 / C# | Built in? |
+| --- | --- | --- | --- |
+| Entry point | `bootstrap/app.php`, `public/index.php` | `Program.cs` (`WebApplication.CreateBuilder`) | Yes |
+| Package manager | Composer (`composer.json`) | NuGet (`.csproj` `<PackageReference>`) | Yes |
+| CLI | `php artisan` | `dotnet` CLI + `dotnet ef` | Yes |
+| REPL | `php artisan tinker` | C# Interactive (`csi`), LINQPad, `dotnet run app.cs` file-based apps | Partly |
+| Routing | `routes/web.php`, `routes/api.php` | Minimal APIs (`app.MapGet`) or attribute routing (`[HttpGet]`) | Yes |
+| Route groups | `Route::prefix()->middleware()->group()` | `app.MapGroup("/api").RequireAuthorization()` | Yes |
+| Named routes / `route()` | `->name('users.show')`, `route('users.show', $id)` | `.WithName("UsersShow")`, `LinkGenerator` | Yes |
+| Route model binding | `function show(User $user)` | No direct equivalent; load in handler or custom `IModelBinder` / `BindAsync` | No |
+| Controllers | `Controller` classes | `ControllerBase` + `[ApiController]`, or Minimal API handlers | Yes |
+| Middleware | `handle($request, Closure $next)` | `app.Use(...)`, `IMiddleware`, endpoint filters | Yes |
+| Service container | `app()->bind / singleton / scoped` | `builder.Services.AddTransient / AddSingleton / AddScoped` | Yes |
+| Service providers | `AppServiceProvider::register/boot` | `IServiceCollection` extension methods, called from `Program.cs` | Yes |
+| Facades | `Cache::get()`, `Log::info()` | None; inject the interface (`IMemoryCache`, `ILogger<T>`) | No (by design) |
+| Config | `config/*.php`, `config('app.name')` | `appsettings.json` + `IOptions<T>` / `IConfiguration` | Yes |
+| `.env` | `.env` + `env()` | Environment variables, `appsettings.{Env}.json`, User Secrets | Yes |
+| Migrations | `Schema::create(...)` hand-written | `dotnet ef migrations add` generated from model diff | Yes (EF Core) |
+| Models (ORM) | Eloquent (Active Record) | EF Core entities + `DbContext` (Unit of Work / Data Mapper) | Yes (EF Core) |
+| Relationships | `hasMany`, `belongsTo`, `belongsToMany` | Navigation properties + `HasMany().WithOne()` | Yes |
+| Eager loading | `->with('posts')` | `.Include(u => u.Posts)` | Yes |
+| Query builder | `DB::table()->where()` | LINQ on `DbSet<T>`, raw SQL via `FromSql` | Yes |
+| Raw SQL helper | `DB::select()` | `db.Database.SqlQuery<T>()`, Dapper | Yes / Dapper |
+| Local scopes | `scopeActive($q)` | `IQueryable<T>` extension methods | Yes (language) |
+| Global scopes / soft deletes | `SoftDeletes` trait, global scopes | `HasQueryFilter` (named filters in EF Core 10) + `SaveChanges` interceptor | Partly |
+| Casts / accessors | `$casts`, `Attribute::make()` | Value converters, C# properties | Yes |
+| Model events / observers | `creating`, `Observer` classes | `SaveChangesInterceptor`, `ChangeTracker` events | Yes |
+| Seeders | `DatabaseSeeder` | `UseSeeding` / `UseAsyncSeeding`, `HasData` | Yes |
+| Factories | `User::factory()->count(10)` | Bogus (fake data library) | No — Bogus |
+| Pagination | `->paginate(15)` | `.Skip().Take()` manually, or X.PagedList | No |
+| Collections | `collect()->map()->filter()` | LINQ (`Select`, `Where`, `GroupBy`) | Yes |
+| DTOs | Plain classes / readonly classes, spatie/laravel-data | `record` types | Yes (language) |
+| Validation | Form Requests, `$request->validate()` | DataAnnotations + .NET 10 Minimal API validation, or FluentValidation | Partly |
+| API Resources | `JsonResource` | DTO projection (`Select` into a record), `System.Text.Json` | Yes |
+| Auth (session) | Breeze / Fortify / `Auth::attempt` | ASP.NET Core Identity + cookie auth | Yes |
+| API tokens | Sanctum / Passport | JWT bearer, `MapIdentityApi`, OpenIddict / Duende | Partly |
+| Passkeys | Laravel 13 passkeys | Identity passkey support (.NET 10) | Yes |
+| Gates / policies | `Gate::define`, `Policy` classes | Authorization policies + `IAuthorizationHandler` | Yes |
+| Jobs / queues | `ShouldQueue`, `dispatch()`, Horizon | Hangfire, MassTransit, Wolverine; `BackgroundService` + `Channel<T>` | No |
+| Scheduler | `Schedule::command()->daily()` | Hangfire recurring jobs, Quartz.NET, `PeriodicTimer` | No |
+| Events / listeners | `Event::dispatch`, `Listener` | Wolverine, MediatR, or C# `event`s | No |
+| Cache | `Cache::remember()` | `HybridCache`, `IMemoryCache`, `IDistributedCache` | Yes |
+| Mail | `Mailable`, `Mail::to()` | MailKit, FluentEmail | No |
+| Notifications | `Notification` (mail, SMS, Slack) | No equivalent; compose services | No |
+| Broadcasting / WebSockets | Echo + Reverb / Pusher | SignalR (in-process) | Yes |
+| Server-Sent Events | `response()->eventStream()` | `TypedResults.ServerSentEvents` (.NET 10) | Yes |
+| File storage | `Storage::disk('s3')` | `IFileProvider` local; Azure / AWS SDKs, FluentStorage | Partly |
+| Logging | `Log::` (Monolog) | `ILogger<T>`, Serilog | Yes |
+| HTTP client | `Http::get()` | `IHttpClientFactory`, Refit | Yes |
+| Rate limiting | `RateLimiter::for()` | `AddRateLimiter` middleware | Yes |
+| Views | Blade | Razor (MVC views / Razor Pages) | Yes |
+| Reactive UI | Livewire | Blazor (Server / WebAssembly) | Yes |
+| SPA bridge | Inertia | No official equivalent | No |
+| Localization | `__('messages.welcome')` | `IStringLocalizer<T>` + `.resx` | Yes |
+| Testing | PHPUnit / Pest, `$this->get()` | xUnit / NUnit + `WebApplicationFactory<T>` | Yes |
+| API docs | Scribe / Scramble | `Microsoft.AspNetCore.OpenApi` (OpenAPI 3.1 in .NET 10) | Yes |
+| Long-running server | Octane (Swoole / FrankenPHP) | Kestrel (always long-running) | Yes |
+
+## Web layer, side by side
+
+### Project structure
+
+| Laravel | ASP.NET Core 10 (common layout) |
+| --- | --- |
+| `app/Models` | `Models/` or `Domain/Entities/` |
+| `app/Http/Controllers` | `Controllers/` or `Endpoints/` (Minimal APIs) |
+| `app/Http/Middleware` | `Middleware/` |
+| `app/Http/Requests` | `Validators/` (FluentValidation) or attributes on DTOs |
+| `app/Jobs` | `Jobs/` or `Workers/` |
+| `app/Providers` | `Extensions/ServiceCollectionExtensions.cs` |
+| `database/migrations` | `Migrations/` (generated by `dotnet ef`) |
+| `routes/*.php` | `Program.cs` or `Endpoints/*.cs` |
+| `config/*.php` + `.env` | `appsettings.json` + `appsettings.Development.json` |
+| `resources/views` | `Views/` or `Pages/` |
+| `tests/` | separate `MyApp.Tests` project |
+
+### Routing
+
+**PHP — Laravel 13**
+
+```php
+// routes/api.php
+Route::prefix('users')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::get('/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::post('/', [UserController::class, 'store']);
+});
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// Program.cs (Minimal APIs)
+var users = app.MapGroup("/users").RequireAuthorization();
+
+users.MapGet("/", (AppDbContext db) => db.Users.ToListAsync());
+users.MapGet("/{id:int}", async (int id, AppDbContext db) =>
+        await db.Users.FindAsync(id) is { } u ? Results.Ok(u) : Results.NotFound())
+     .WithName("UsersShow");
+users.MapPost("/", (CreateUserDto dto, UserService svc) => svc.CreateAsync(dto));
+```
+
+### Controllers
+
+**PHP — Laravel 13**
+
+```php
+class UserController extends Controller
+{
+    public function __construct(private UserService $users) {}
+
+    public function show(User $user)           // route model binding
+    {
+        return new UserResource($user);
+    }
+}
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+[ApiController]
+[Route("api/users")]
+public class UsersController(UserService users) : ControllerBase   // primary constructor = DI
+{
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<UserDto>> Show(int id)
+    {
+        var user = await users.FindAsync(id);       // no route model binding
+        return user is null ? NotFound() : Ok(UserDto.From(user));
+    }
+}
+```
+
+### Middleware
+
+**PHP — Laravel 13**
+
+```php
+class EnsureIsAdmin
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (! $request->user()?->is_admin) abort(403);
+        return $next($request);
+    }
+}
+// bootstrap/app.php
+->withMiddleware(fn ($m) => $m->alias(['admin' => EnsureIsAdmin::class]))
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+public class EnsureIsAdmin : IMiddleware
+{
+    public async Task InvokeAsync(HttpContext ctx, RequestDelegate next)
+    {
+        if (!ctx.User.IsInRole("Admin")) { ctx.Response.StatusCode = 403; return; }
+        await next(ctx);
+    }
+}
+// Program.cs
+builder.Services.AddTransient<EnsureIsAdmin>();
+app.UseMiddleware<EnsureIsAdmin>();
+// Per-route instead: endpoint filters → .AddEndpointFilter<AdminFilter>()
+```
+
+### Service container and service providers
+
+**PHP — Laravel 13**
+
+```php
+// AppServiceProvider::register()
+$this->app->singleton(PaymentGateway::class, StripeGateway::class);
+$this->app->bind(ReportBuilder::class, fn ($app) => new ReportBuilder(config('reports.path')));
+$this->app->scoped(CartService::class);
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// ServiceCollectionExtensions.cs — the "service provider"
+public static IServiceCollection AddBilling(this IServiceCollection s, IConfiguration cfg)
+{
+    s.AddSingleton<IPaymentGateway, StripeGateway>();
+    s.AddTransient(sp => new ReportBuilder(cfg["Reports:Path"]!));
+    s.AddScoped<CartService>();   // scoped = one per HTTP request
+    return s;
+}
+// Program.cs
+builder.Services.AddBilling(builder.Configuration);
+```
+
+### Config and .env
+
+**PHP — Laravel 13**
+
+```php
+// .env
+STRIPE_KEY=sk_test_123
+// config/services.php
+return ['stripe' => ['key' => env('STRIPE_KEY'), 'retries' => 3]];
+// usage
+config('services.stripe.key');
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// appsettings.json
+{ "Stripe": { "Key": "", "Retries": 3 } }
+// env var overrides it: Stripe__Key=sk_test_123
+
+public class StripeOptions { public required string Key { get; init; } public int Retries { get; init; } }
+
+builder.Services.AddOptions<StripeOptions>()
+    .BindConfiguration("Stripe")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();          // fails at boot, not at first use
+
+// usage: inject IOptions<StripeOptions>
+```
+
+## Data layer, side by side
+
+The core shift: in Laravel you write the migration and the model reads the table; in EF Core you write the model and the migration is generated from it.
+
+### Migrations
+
+**PHP — Laravel 13**
+
+```php
+// php artisan make:migration create_posts_table
+Schema::create('posts', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->string('title', 200);
+    $table->text('body');
+    $table->boolean('published')->default(false);
+    $table->timestamps();
+    $table->softDeletes();
+});
+// php artisan migrate   |   php artisan migrate:rollback
+```
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+// 1. Change the entity / DbContext (see Models below)
+// 2. dotnet ef migrations add CreatePosts      → generates Up()/Down() code
+// 3. dotnet ef database update                → applies it
+// Rollback: dotnet ef database update <PreviousMigrationName>
+
+// Generated migration (you rarely hand-write this)
+migrationBuilder.CreateTable(
+    name: "Posts",
+    columns: t => new {
+        Id = t.Column<int>(nullable: false).Annotation("SqlServer:Identity", "1, 1"),
+        UserId = t.Column<int>(nullable: false),
+        Title = t.Column<string>(maxLength: 200, nullable: false),
+        Body = t.Column<string>(nullable: false),
+        Published = t.Column<bool>(nullable: false, defaultValue: false),
+    },
+    constraints: t => t.PrimaryKey("PK_Posts", x => x.Id));
+```
+
+### Models
+
+**PHP — Laravel 13**
+
+```php
+class Post extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = ['title', 'body', 'published'];
+    protected $casts = ['published' => 'boolean', 'meta' => 'array'];
+
+    public function user(): BelongsTo { return $this->belongsTo(User::class); }
+    public function tags(): BelongsToMany { return $this->belongsToMany(Tag::class); }
+}
+// Laravel 13 can also configure this with attributes, e.g. #[Table('posts')]
+```
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+public class Post
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;              // belongsTo
+    public List<Tag> Tags { get; set; } = [];              // belongsToMany (join table auto-created)
+    [MaxLength(200)] public required string Title { get; set; }
+    public required string Body { get; set; }
+    public bool Published { get; set; }
+    public PostMeta Meta { get; set; } = new();            // stored as JSON (see Casts)
+    public DateTime CreatedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }               // soft delete
+}
+
+public class AppDbContext(DbContextOptions<AppDbContext> o) : DbContext(o)
+{
+    public DbSet<Post> Posts => Set<Post>();
+    public DbSet<User> Users => Set<User>();
+
+    protected override void OnModelCreating(ModelBuilder b)
+    {
+        b.Entity<Post>().HasOne(p => p.User).WithMany(u => u.Posts).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<Post>().ComplexProperty(p => p.Meta, m => m.ToJson());
+        b.Entity<Post>().HasQueryFilter(p => p.DeletedAt == null);   // SoftDeletes global scope
+    }
+}
+```
+
+No `$fillable` needed: mass-assignment protection comes from binding requests to a DTO, never to the entity.
+
+### Querying, eager loading, scopes
+
+**PHP — Laravel 13**
+
+```php
+$posts = Post::with('user')
+    ->where('published', true)
+    ->where('title', 'like', '%laravel%')
+    ->latest()
+    ->paginate(15);
+
+// local scope
+public function scopePublished($q) { return $q->where('published', true); }
+Post::published()->get();
+```
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+var posts = await db.Posts
+    .Include(p => p.User)
+    .Where(p => p.Published && p.Title.Contains("laravel"))
+    .OrderByDescending(p => p.CreatedAt)
+    .Skip((page - 1) * 15).Take(15)
+    .AsNoTracking()                 // read-only: faster, like a plain SELECT
+    .ToListAsync();
+
+// "local scope" = extension method
+public static IQueryable<Post> Published(this IQueryable<Post> q) => q.Where(p => p.Published);
+await db.Posts.Published().ToListAsync();
+```
+
+### Create, update, delete
+
+**PHP — Laravel 13**
+
+```php
+$post = Post::create(['title' => 'Hi', 'body' => '...']);
+$post->update(['published' => true]);
+$post->delete();
+```
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+var post = new Post { Title = "Hi", Body = "..." };
+db.Posts.Add(post);
+await db.SaveChangesAsync();          // nothing hits the DB until SaveChanges
+
+post.Published = true;                // change tracker notices
+await db.SaveChangesAsync();
+
+db.Posts.Remove(post);
+await db.SaveChangesAsync();
+
+// Bulk, no loading (like Post::where()->update()):
+await db.Posts.Where(p => p.UserId == 5).ExecuteUpdateAsync(s => s.SetProperty(p => p.Published, true));
+```
+
+### Casts and accessors
+
+**PHP — Laravel 13**
+
+```php
+protected function casts(): array { return ['status' => PostStatus::class]; }  // enum cast
+
+protected function title(): Attribute
+{
+    return Attribute::make(get: fn ($v) => ucfirst($v), set: fn ($v) => trim($v));
+}
+```
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+// enum stored as string
+b.Entity<Post>().Property(p => p.Status).HasConversion<string>();
+
+// accessor/mutator = plain property logic (C# 14 'field' keyword)
+public string Title
+{
+    get => field;
+    set => field = value.Trim();
+}
+```
+
+### Model events and observers
+
+**PHP — Laravel 13**
+
+```php
+class PostObserver
+{
+    public function creating(Post $post) { $post->slug = Str::slug($post->title); }
+}
+Post::observe(PostObserver::class);
+```
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+public class SlugInterceptor : SaveChangesInterceptor
+{
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData e, InterceptionResult<int> r, CancellationToken ct = default)
+    {
+        foreach (var entry in e.Context!.ChangeTracker.Entries<Post>().Where(x => x.State == EntityState.Added))
+            entry.Entity.Slug = Slugify(entry.Entity.Title);
+        return base.SavingChangesAsync(e, r, ct);
+    }
+}
+// options.AddInterceptors(new SlugInterceptor());
+```
+
+### Seeders and factories
+
+**PHP — Laravel 13**
+
+```php
+// database/factories/PostFactory.php
+public function definition(): array
+{
+    return ['title' => fake()->sentence(), 'body' => fake()->paragraph()];
+}
+// DatabaseSeeder
+User::factory()->has(Post::factory()->count(3))->count(10)->create();
+```
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+// Factory → Bogus (NuGet: Bogus)
+var postFaker = new Faker<Post>()
+    .RuleFor(p => p.Title, f => f.Lorem.Sentence())
+    .RuleFor(p => p.Body,  f => f.Lorem.Paragraph());
+
+// Seeder → EF Core seeding hook
+options.UseSqlServer(conn).UseAsyncSeeding(async (ctx, _, ct) =>
+{
+    if (!await ctx.Set<Post>().AnyAsync(ct))
+    {
+        ctx.Set<Post>().AddRange(postFaker.Generate(30));
+        await ctx.SaveChangesAsync(ct);
+    }
+});
+```
+
+## Application services, side by side
+
+### DTOs
+
+**PHP — Laravel 13**
+
+```php
+final readonly class CreatePostData
+{
+    public function __construct(
+        public string $title,
+        public string $body,
+        public ?array $tags = null,
+    ) {}
+}
+$dto = new CreatePostData(...$request->validated());
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+public record CreatePostDto(string Title, string Body, List<string>? Tags = null);
+// JSON body binds to it automatically; records give value equality and `with`:
+var copy = dto with { Title = "New title" };
+```
+
+### Validation (Form Requests)
+
+**PHP — Laravel 13**
+
+```php
+class StorePostRequest extends FormRequest
+{
+    public function authorize(): bool { return $this->user()->can('create', Post::class); }
+    public function rules(): array
+    {
+        return ['title' => 'required|string|max:200', 'body' => 'required', 'email' => 'email|unique:users'];
+    }
+}
+public function store(StorePostRequest $request) { ... }   // auto 422 on failure
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// Option A — attributes + .NET 10 built-in Minimal API validation
+public record CreatePostDto([Required, MaxLength(200)] string Title, [Required] string Body, [EmailAddress] string? Email);
+builder.Services.AddValidation();     // auto 400 ProblemDetails on failure
+
+// Option B — FluentValidation (closest to Laravel rule style, supports DB checks)
+public class CreatePostValidator : AbstractValidator<CreatePostDto>
+{
+    public CreatePostValidator(AppDbContext db)
+    {
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Email).EmailAddress()
+            .MustAsync(async (e, ct) => !await db.Users.AnyAsync(u => u.Email == e, ct));   // "unique:users"
+    }
+}
+```
+
+### API Resources
+
+**PHP — Laravel 13**
+
+```php
+class PostResource extends JsonResource
+{
+    public function toArray($request): array
+    {
+        return ['id' => $this->id, 'title' => $this->title, 'author' => $this->user->name];
+    }
+}
+return PostResource::collection($posts);
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+public record PostResponse(int Id, string Title, string Author);
+
+// Project in the query — only those columns are SELECTed
+var result = await db.Posts
+    .Select(p => new PostResponse(p.Id, p.Title, p.User.Name))
+    .ToListAsync();
+```
+
+### Auth, gates and policies
+
+**PHP — Laravel 13**
+
+```php
+// Policy
+class PostPolicy { public function update(User $u, Post $p): bool { return $u->id === $p->user_id; } }
+
+// Usage
+$this->authorize('update', $post);
+Gate::define('admin', fn (User $u) => $u->is_admin);
+Route::get('/admin', ...)->middleware('can:admin');
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// Simple gate = policy
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("Admin", p => p.RequireRole("Admin"));
+app.MapGet("/admin", ...).RequireAuthorization("Admin");
+
+// Resource policy = requirement + handler
+public class IsOwner : IAuthorizationRequirement;
+public class PostOwnerHandler : AuthorizationHandler<IsOwner, Post>
+{
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext c, IsOwner r, Post post)
+    {
+        if (c.User.FindFirstValue(ClaimTypes.NameIdentifier) == post.UserId.ToString()) c.Succeed(r);
+        return Task.CompletedTask;
+    }
+}
+// In handler: (await auth.AuthorizeAsync(User, post, new IsOwner())).Succeeded
+```
+
+### Jobs and queues
+
+**PHP — Laravel 13**
+
+```php
+class SendWelcomeEmail implements ShouldQueue
+{
+    use Queueable;
+    public $tries = 3;
+    public function __construct(public User $user) {}
+    public function handle(Mailer $mail) { $mail->to($this->user)->send(new Welcome); }
+}
+SendWelcomeEmail::dispatch($user)->delay(now()->addMinutes(5));
+// php artisan queue:work
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// Hangfire (persistent queue, retries, dashboard ≈ Horizon)
+public class WelcomeEmailJob(IEmailSender mail)
+{
+    [AutomaticRetry(Attempts = 3)]
+    public Task Handle(int userId) => mail.SendWelcomeAsync(userId);
+}
+BackgroundJob.Schedule<WelcomeEmailJob>(j => j.Handle(user.Id), TimeSpan.FromMinutes(5));
+
+// Built-in, in-memory only (lost on restart): BackgroundService + Channel<T>
+public class EmailWorker(Channel<int> queue, IServiceScopeFactory scopes) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken ct)
+    {
+        await foreach (var userId in queue.Reader.ReadAllAsync(ct))
+        {
+            using var scope = scopes.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<IEmailSender>().SendWelcomeAsync(userId);
+        }
+    }
+}
+```
+
+The worker runs inside the web process — no separate `queue:work` command needed.
+
+### Events and listeners
+
+**PHP — Laravel 13**
+
+```php
+class OrderShipped { public function __construct(public Order $order) {} }
+class NotifyCustomer { public function handle(OrderShipped $e) { ... } }
+OrderShipped::dispatch($order);
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// Wolverine (or MediatR / Mediator)
+public record OrderShipped(int OrderId);
+public static class NotifyCustomerHandler
+{
+    public static Task Handle(OrderShipped e, IEmailSender mail) => mail.SendShippedAsync(e.OrderId);
+}
+await bus.PublishAsync(new OrderShipped(order.Id));
+```
+
+### Task scheduling
+
+**PHP — Laravel 13**
+
+```php
+// routes/console.php
+Schedule::command('reports:daily')->dailyAt('02:00');
+Schedule::job(new PruneLogs)->hourly();
+// cron: * * * * * php artisan schedule:run
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// Hangfire
+RecurringJob.AddOrUpdate<DailyReportJob>("daily-report", j => j.Run(), "0 2 * * *");
+
+// Built-in, no library: BackgroundService + PeriodicTimer
+protected override async Task ExecuteAsync(CancellationToken ct)
+{
+    using var timer = new PeriodicTimer(TimeSpan.FromHours(1));
+    while (await timer.WaitForNextTickAsync(ct)) await PruneLogsAsync(ct);
+}
+// No OS cron needed: the scheduler lives in the running app.
+```
+
+### Cache
+
+**PHP — Laravel 13**
+
+```php
+$stats = Cache::remember('stats', 600, fn () => Stats::compute());
+Cache::tags(['posts'])->flush();
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// HybridCache: in-memory + distributed (Redis), stampede protection, tags
+var stats = await cache.GetOrCreateAsync("stats",
+    async ct => await statsService.ComputeAsync(ct),
+    new HybridCacheEntryOptions { Expiration = TimeSpan.FromMinutes(10) },
+    tags: ["posts"]);
+await cache.RemoveByTagAsync("posts");
+```
+
+### Mail and notifications
+
+**PHP — Laravel 13**
+
+```php
+Mail::to($user)->send(new OrderShippedMail($order));
+$user->notify(new InvoicePaid($invoice));   // mail + SMS + Slack + database
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// MailKit / FluentEmail — no built-in mailer, no Notification system
+await email.To(user.Email).Subject("Shipped")
+    .UsingTemplateFromFile("Templates/Shipped.cshtml", order).SendAsync();
+// "Notifications" = your own INotifier service calling email/SMS/Slack clients
+```
+
+### Broadcasting / real-time
+
+**PHP — Laravel 13**
+
+```php
+class MessageSent implements ShouldBroadcast
+{
+    public function broadcastOn() { return new PrivateChannel('chat.'.$this->roomId); }
+}
+// Needs a separate Reverb / Pusher server + Laravel Echo in JS
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+public class ChatHub : Hub
+{
+    public Task Join(string room) => Groups.AddToGroupAsync(Context.ConnectionId, room);
+}
+app.MapHub<ChatHub>("/chat");
+// From anywhere: inject IHubContext<ChatHub>
+await hub.Clients.Group($"chat.{roomId}").SendAsync("MessageSent", msg);
+// Runs in the same process; no extra server.
+```
+
+### File storage
+
+**PHP — Laravel 13**
+
+```php
+$path = $request->file('avatar')->store('avatars', 's3');
+$url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5));
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+// No disk abstraction built in; use the cloud SDK (or FluentStorage for Storage::disk-style swapping)
+var blob = container.GetBlobClient($"avatars/{Guid.NewGuid()}");
+await blob.UploadAsync(file.OpenReadStream());
+var url = blob.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddMinutes(5));
+```
+
+### Logging
+
+**PHP — Laravel 13**
+
+```php
+Log::info('Order placed', ['order_id' => $order->id]);
+```
+
+**C# — ASP.NET Core 10**
+
+```csharp
+logger.LogInformation("Order placed {OrderId}", order.Id);   // structured: OrderId is a field, not text
+```
+
+### Testing
+
+**PHP — Laravel 13 (Pest)**
+
+```php
+it('creates a post', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user)->postJson('/api/posts', ['title' => 'Hi', 'body' => 'x'])
+         ->assertCreated();
+    $this->assertDatabaseHas('posts', ['title' => 'Hi']);
+});
+```
+
+**C# — ASP.NET Core 10 (xUnit)**
+
+```csharp
+public class PostTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+{
+    [Fact]
+    public async Task Creates_a_post()
+    {
+        var client = factory.CreateClient();        // real app, in memory
+        var res = await client.PostAsJsonAsync("/api/posts", new { Title = "Hi", Body = "x" });
+        Assert.Equal(HttpStatusCode.Created, res.StatusCode);
+    }
+}
+// Auth: register a test AuthenticationHandler. DB: Testcontainers or SQLite in-memory.
+```
+
+### Artisan → dotnet CLI
+
+| Artisan | dotnet |
+| --- | --- |
+| `laravel new app` | `dotnet new webapi -n App` |
+| `php artisan serve` | `dotnet run` / `dotnet watch` (hot reload) |
+| `make:model`, `make:controller` | write the class (or `dotnet aspnet-codegenerator`) |
+| `make:migration` | `dotnet ef migrations add Name` |
+| `migrate` | `dotnet ef database update` |
+| `migrate:rollback` | `dotnet ef database update PreviousName` |
+| `db:seed` | runs via `UseSeeding` on `EnsureCreated` / migrate |
+| `route:list` | no built-in; OpenAPI / Swagger UI page |
+| `make:command` | a console project, or `System.CommandLine` |
+| `test` | `dotnet test` |
+
+## Not 1-to-1: what PHP / Laravel can do that C# can't
+
+PHP's edge is runtime dynamism: methods, properties and classes can be invented or resolved while the code runs. Each item shows the PHP feature, then the closest C# you'd actually write.
+
+### 1. Magic methods: methods that don't exist until called
+
+**PHP — Laravel 13**
+
+```php
+class User extends Model {}
+
+User::whereEmail('a@b.com')->first();   // no whereEmail method exists — __callStatic builds it
+$user->posts;                            // no posts property exists — __get loads the relationship
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// Every member must exist at compile time; you spell the query out.
+var user = await db.Users.FirstOrDefaultAsync(u => u.Email == "a@b.com");
+var posts = user!.Posts;   // a real navigation property, declared on the class
+```
+
+### 2. Facades: static calls to swappable instances
+
+**PHP — Laravel 13**
+
+```php
+Cache::put('k', 'v');                           // static syntax, container-resolved instance
+Cache::shouldReceive('get')->andReturn('fake'); // mock it in a test
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// Statics can't be swapped or mocked, so you inject the interface.
+public class StatsService(IMemoryCache cache)
+{
+    public void Save() => cache.Set("k", "v");
+}
+// Test: new StatsService(new FakeCache())  or a mock via Moq / NSubstitute
+```
+
+### 3. Macros: add methods to classes at runtime
+
+**PHP — Laravel 13**
+
+```php
+Collection::macro('toUpper', fn () => $this->map(fn ($v) => strtoupper($v)));
+collect(['a', 'b'])->toUpper();   // ['A', 'B']
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// Compile-time only: can't be added or removed based on runtime config.
+public static class SeqExtensions
+{
+    public static IEnumerable<string> ToUpper(this IEnumerable<string> s) => s.Select(v => v.ToUpper());
+}
+new[] { "a", "b" }.ToUpper();
+```
+
+### 4. Strings as class and method names
+
+**PHP — Laravel 13**
+
+```php
+$class = "App\\Reports\\{$type}Report";
+$report = new $class();
+$method = 'export' . ucfirst($format);
+$report->$method();   // exportPdf(), exportCsv()…
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// Reflection: verbose, slower, breaks under trimming / Native AOT
+var t = Type.GetType($"App.Reports.{type}Report")!;
+var report = Activator.CreateInstance(t)!;
+t.GetMethod("Export" + format)!.Invoke(report, null);
+
+// What C# devs actually do: a keyed DI lookup
+builder.Services.AddKeyedScoped<IReport, SalesReport>("Sales");
+var r = sp.GetRequiredKeyedService<IReport>(type);
+```
+
+### 5. Late static binding on inherited static methods
+
+**PHP — Laravel 13**
+
+```php
+abstract class Model { public static function create(array $a): static { return new static($a); } }
+class User extends Model {}
+User::create([...]);   // returns a User — `static` resolves at runtime
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// Statics aren't virtual; use a generic + static abstract interface member (C# 11+)
+public interface ICreatable<TSelf> where TSelf : ICreatable<TSelf>
+{
+    static abstract TSelf Create(Dictionary<string, object> a);
+}
+public class User : ICreatable<User> { public static User Create(Dictionary<string, object> a) => new(); }
+static T Make<T>(Dictionary<string, object> a) where T : ICreatable<T> => T.Create(a);
+```
+
+### 6. Traits with state
+
+**PHP — Laravel 13**
+
+```php
+trait HasUuid
+{
+    protected string $uuidColumn = 'uuid';   // traits can carry properties
+    public static function bootHasUuid() { static::creating(fn ($m) => $m->{$m->uuidColumn} = Str::uuid()); }
+}
+class Order extends Model { use HasUuid, SoftDeletes, Notifiable; }   // mix in many
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// Interfaces can't hold fields; state goes on a base class (only one allowed)
+public interface IHasUuid { Guid Uuid { get; set; } }
+public abstract class Entity : IHasUuid { public Guid Uuid { get; set; } = Guid.NewGuid(); }
+public class Order : Entity, ISoftDelete { public DateTime? DeletedAt { get; set; } }
+// Behaviour lives elsewhere: a SaveChanges interceptor that handles IHasUuid / ISoftDelete
+```
+
+### 7. Arrays that are list and ordered map at once
+
+**PHP — Laravel 13**
+
+```php
+$row = ['id' => 1, 'name' => 'Ana', 0 => 'x', 'tags' => ['a', 'b']];   // mixed keys + values, order kept
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// One collection type per shape, one key and value type each
+var list = new List<string> { "a", "b" };
+var map  = new OrderedDictionary<string, object> { ["id"] = 1, ["name"] = "Ana" };
+// Usually you'd define a type instead:
+public record Row(int Id, string Name, List<string> Tags);
+```
+
+### 8. Spread named arguments from an associative array
+
+**PHP — Laravel 13**
+
+```php
+function createUser(string $name, string $email, bool $admin = false) {}
+$data = ['email' => 'a@b.com', 'name' => 'Ana'];
+createUser(...$data);   // keys matched to parameter names at runtime
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// Named arguments must be written in source
+CreateUser(email: "a@b.com", name: "Ana");
+// Or pass an object
+CreateUser(new CreateUserDto(Name: "Ana", Email: "a@b.com"));
+```
+
+### 9. The pipe operator (PHP 8.5)
+
+**PHP — 8.5**
+
+```php
+$slug = $title |> trim(...) |> strtolower(...) |> (fn ($s) => str_replace(' ', '-', $s));
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// No |> operator; chain methods instead
+var slug = title.Trim().ToLowerInvariant().Replace(' ', '-');
+```
+
+### 10. Shared-nothing requests and edit-and-refresh deploys
+
+**PHP — PHP-FPM**
+
+```php
+// counter.php
+static $hits = 0;
+$hits++;
+echo $hits;   // always prints 1: every request starts from scratch
+
+// Deploy: edit counter.php on the server → next request runs the new code. No build, no restart.
+```
+
+**C# — ASP.NET Core 10 (what happens instead)**
+
+```csharp
+int hits = 0;
+app.MapGet("/counter", () => Interlocked.Increment(ref hits));   // 1, 2, 3… state survives
+
+// Deploy: dotnet publish -c Release → copy output → restart the app / container
+```
+
+PHP's model means leaks and bad statics die with each request; C# must avoid mutable static state. (Laravel Octane trades this away for C#-style speed.)
+
+### 11. Config files that are code
+
+**PHP — Laravel 13**
+
+```php
+// config/features.php
+return [
+    'beta' => env('APP_ENV') !== 'production' && now()->isWeekday(),
+];
+```
+
+**C# — ASP.NET Core 10 (closest equivalent)**
+
+```csharp
+// appsettings.json is data only; the logic moves into code
+builder.Services.PostConfigure<FeatureOptions>(o =>
+    o.Beta = !builder.Environment.IsProduction() && DateTime.Now.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
+```
+
+## Not 1-to-1: what C# / ASP.NET Core can do that PHP can't
+
+C#'s edge is the compiler and the runtime: the type system catches errors before deploy, and one long-lived, multithreaded process can hold state and do work in parallel. Each item shows the C# feature, then the closest PHP you'd actually write.
+
+### 1. Real generics
+
+**C# — ASP.NET Core 10**
+
+```csharp
+public class Repository<T> where T : class, IEntity
+{
+    public Task<T?> Find(int id) => db.Set<T>().FindAsync(id).AsTask();
+}
+List<User> users = [];
+users.Add("oops");   // compile error: string is not a User
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+/** @template T of Model */
+class Repository
+{
+    /** @return T|null */
+    public function find(int $id) { ... }
+}
+/** @var Collection<int, User> $users */
+$users->push('oops');   // runs fine; only PHPStan / Psalm complain
+```
+
+### 2. LINQ: C# lambdas become SQL
+
+**C# — ASP.NET Core 10 / EF Core 10**
+
+```csharp
+var q = db.Orders.Where(o => o.Total > 100 && o.Customer.Country == "DE")
+                 .GroupBy(o => o.Customer.Name)
+                 .Select(g => new { g.Key, Sum = g.Sum(o => o.Total) });
+// One SQL query with JOIN + GROUP BY. A typo in a property name = compile error.
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+Order::query()
+    ->join('customers', 'customers.id', '=', 'orders.customer_id')
+    ->where('orders.totl', '>', 100)          // typo found only when the query runs
+    ->where('customers.country', 'DE')
+    ->groupBy('customers.name')
+    ->selectRaw('customers.name, SUM(orders.total) as sum')
+    ->get();
+```
+
+### 3. True async I/O and parallelism in one request
+
+**C# — ASP.NET Core 10**
+
+```csharp
+var user = GetUserAsync(id); var orders = GetOrdersAsync(id); var weather = GetWeatherAsync(city);
+await Task.WhenAll(user, orders, weather);   // three calls at once, same process
+
+await Parallel.ForEachAsync(files, async (f, ct) => await ResizeAsync(f, ct));   // all CPU cores
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+// Concurrency facade forks child processes and serializes results back
+[$user, $orders, $weather] = Concurrency::run([
+    fn () => User::find($id),
+    fn () => Order::where('user_id', $id)->get(),
+    fn () => Http::get("https://api.weather/{$city}")->json(),
+]);
+// Http::pool() parallelises HTTP calls only; true async needs Swoole / ReactPHP / Amp
+```
+
+### 4. In-process state that survives requests
+
+**C# — ASP.NET Core 10**
+
+```csharp
+builder.Services.AddSingleton<RateCounter>();          // one instance for every request until restart
+builder.Services.AddHostedService<PriceFeedWorker>();  // background loop inside the web app
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+// Each request forgets everything, so state goes to Redis
+Redis::incr('rate:counter');
+// and the background loop is a separate process: php artisan queue:work, supervised by Supervisor
+```
+
+### 5. Compile-time safety across the whole app
+
+**C# — ASP.NET Core 10**
+
+```csharp
+#nullable enable
+public string? Nickname { get; set; }
+var len = user.Nickname.Length;          // warning CS8602: possible null — caught at build
+
+builder.Host.UseDefaultServiceProvider(o => o.ValidateOnBuild = true);  // bad DI wiring fails at startup
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+public ?string $nickname;
+$len = strlen($user->nickname);          // runs, fails at runtime (or PHPStan level 8+ flags it)
+// A missing binding is found only when that class is first resolved
+```
+
+### 6. Method and operator overloading
+
+**C# — ASP.NET Core 10**
+
+```csharp
+public record Money(decimal Amount, string Currency)
+{
+    public static Money operator +(Money a, Money b) => a with { Amount = a.Amount + b.Amount };
+}
+var total = price + tax;
+
+void Log(string msg) { }
+void Log(Exception ex) { }   // same name, different parameter types
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+final readonly class Money
+{
+    public function __construct(public string $amount, public string $currency) {}
+    public function plus(Money $o): Money { return new Money(bcadd($this->amount, $o->amount, 2), $this->currency); }
+}
+$total = $price->plus($tax);
+
+function log(string|Throwable $x) { if ($x instanceof Throwable) { ... } else { ... } }   // branch by hand
+```
+
+### 7. Pattern matching
+
+**C# — ASP.NET Core 10**
+
+```csharp
+string Describe(Order o) => o switch
+{
+    { Status: OrderStatus.Paid, Total: > 1000 } => "VIP order",
+    { Items: [] }                              => "Empty",
+    { Items: [var only] }                      => $"Single item: {only.Name}",
+    _                                          => "Normal"
+};
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+$label = match (true) {
+    $o->status === OrderStatus::Paid && $o->total > 1000 => 'VIP order',
+    count($o->items) === 0                              => 'Empty',
+    count($o->items) === 1                              => 'Single item: ' . $o->items[0]->name,
+    default                                             => 'Normal',
+};
+```
+
+### 8. Value types, decimal and low-level speed
+
+**C# — ASP.NET Core 10**
+
+```csharp
+decimal price = 0.1m + 0.2m;                 // exactly 0.3 — built-in money type
+Span<byte> buffer = stackalloc byte[256];    // no heap allocation
+public readonly record struct Point(int X, int Y);   // copied by value, no GC pressure
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+$price = 0.1 + 0.2;                          // 0.30000000000000004
+$price = bcadd('0.1', '0.2', 2);             // "0.30" — strings + bcmath for exact money
+// No structs, no stack allocation: every object is a heap reference
+```
+
+### 9. Source generators (code written at compile time)
+
+**C# — ASP.NET Core 10**
+
+```csharp
+[GeneratedRegex(@"^\d{5}$")]
+private static partial Regex ZipRegex();          // regex compiled to C# at build time
+
+[JsonSerializable(typeof(PostResponse))]
+partial class AppJsonContext : JsonSerializerContext;   // reflection-free JSON
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+// No compile step to hook into; generate code by running a command yourself
+// php artisan make:model Post -mfc     → writes model, migration, factory, controller once
+// php artisan ide-helper:models       → writes docblocks so the IDE knows magic properties
+```
+
+### 10. One binary, many platforms
+
+**C# — .NET 10**
+
+```csharp
+// dotnet publish -c Release -p:PublishAot=true   → one native executable, no runtime install
+
+// Shared project used by API and Blazor WebAssembly front end:
+public record CreatePostDto([Required, MaxLength(200)] string Title, [Required] string Body);
+// Same type + same validation in the server and in the browser
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+// Needs PHP + extensions on the server (or a FrankenPHP / static-php-cli build)
+// Front-end validation is rewritten in JS/TS; rules are duplicated, or sent via Inertia / Precognition
+```
+
+### 11. Real-time without a second server
+
+**C# — ASP.NET Core 10**
+
+```csharp
+app.MapHub<ChatHub>("/chat");   // WebSockets inside the same app process
+await hub.Clients.Group("room-1").SendAsync("MessageSent", msg);
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+broadcast(new MessageSent($msg))->toOthers();
+// Requires a separate WebSocket server: php artisan reverb:start (or Pusher / Ably)
+```
+
+### 12. Extension members (C# 14)
+
+**C# — ASP.NET Core 10**
+
+```csharp
+public static class UserExtensions
+{
+    extension(User u)
+    {
+        public string FullName => $"{u.First} {u.Last}";   // extension *property*, type-checked
+    }
+}
+user.FullName;
+```
+
+**PHP — Laravel 13 (closest equivalent)**
+
+```php
+// On your own model: an accessor
+protected function fullName(): Attribute { return Attribute::make(get: fn () => "{$this->first} {$this->last}"); }
+// On a class you don't own: a macro — runtime only, invisible to the IDE without helpers
+```
+
+## Gotchas when switching
+
+Most bugs in a Laravel → .NET move come from three things: the long-lived process, the change tracker, and async.
+
+| Gotcha | Laravel habit | What to do in ASP.NET Core 10 |
+| --- | --- | --- |
+| Service lifetimes | Everything is fresh per request | Never inject a scoped service (e.g. `DbContext`) into a singleton; use `IServiceScopeFactory` |
+| `DbContext` is not thread-safe | One DB connection per request, no concurrency | Don't run two queries on the same `DbContext` in `Task.WhenAll`; use `IDbContextFactory` |
+| Saving | `$model->save()` writes now | Nothing is written until `SaveChangesAsync()` |
+| Read-only queries | Eloquent returns plain models | Add `.AsNoTracking()` or project with `Select` to skip tracking overhead |
+| N+1 queries | `with('posts')` | `.Include(p => p.Posts)`; lazy loading is off by default (good) |
+| Migrations | Hand-write the schema | Change the C# model, then generate; review the generated file |
+| Mass assignment | `$fillable` / `$guarded` | Bind requests to DTOs, never to entities |
+| Async everywhere | Code is synchronous | Use `async`/`await` end to end; never `.Result` or `.Wait()` (deadlocks, thread starvation) |
+| Static state | Resets every request | Lives until the app restarts; avoid mutable statics |
+| Global helpers | `auth()`, `request()`, `config()` anywhere | Inject `IHttpContextAccessor`, `IOptions<T>`, etc. |
+| Nulls | `$user?->name` at runtime | Turn on nullable reference types and treat warnings as errors |
+| Deploys | Push files, done | `dotnet publish`, then restart the app or container |
+| Queues and schedules | `queue:work` + cron | Hangfire / hosted services inside the app, or a separate worker project |
