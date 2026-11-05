@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    Shared build settings for every project under /Projects.
+    WHY: a single place to pin the target framework and compiler strictness means every
+    roadmap project is compiled under identical rules (nullable reference types on,
+    warnings surfaced) instead of drifting per project.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+  </PropertyGroup>
+</Project>
