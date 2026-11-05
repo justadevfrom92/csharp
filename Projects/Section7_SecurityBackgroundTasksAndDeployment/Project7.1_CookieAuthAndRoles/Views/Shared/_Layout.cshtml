@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><title>Auth Demo</title></head>
+<body style="font-family: sans-serif; padding: 16px;">
+    <nav>
+        <a href="/">Home</a> |
+        <a href="/Account/Profile">Profile</a> |
+        <a href="/Admin">Admin</a> |
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <span>Logged in as <b>@User.Identity.Name</b> (@(User.IsInRole("Admin") ? "Admin" : "User"))</span>
+            <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline">
+                <button type="submit">Log out</button>
+            </form>
+        }
+        else
+        {
+            <a href="/Account/Login">Log in</a> <a href="/Account/Register">Register</a>
+        }
+    </nav>
+    @if (TempData["Message"] is string message)
+    {
+        <p style="color: green">@message</p>
+    }
+    @RenderBody()
+</body>
+</html>

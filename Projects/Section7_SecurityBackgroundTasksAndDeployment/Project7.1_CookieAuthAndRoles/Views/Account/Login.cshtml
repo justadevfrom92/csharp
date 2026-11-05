@@ -1,0 +1,11 @@
+<h1>Log in</h1>
+@if (ViewBag.Error != null)
+{
+    <p style="color: #b00020">@ViewBag.Error</p>
+}
+<form asp-action="Login" method="post">
+    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+    <input name="userName" placeholder="User name" />
+    <input name="password" type="password" placeholder="Password" />
+    <button type="submit">Log in</button>
+</form>

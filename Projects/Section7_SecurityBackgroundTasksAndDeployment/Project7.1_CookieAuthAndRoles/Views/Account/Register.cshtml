@@ -1,0 +1,10 @@
+<h1>Register</h1>
+@if (ViewBag.Error != null)
+{
+    <p style="color: #b00020">@ViewBag.Error</p>
+}
+<form asp-action="Register" method="post">
+    <input name="userName" placeholder="User name" />
+    <input name="password" type="password" placeholder="Password (8+ characters)" />
+    <button type="submit">Create account</button>
+</form>
