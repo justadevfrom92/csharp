@@ -14,7 +14,7 @@ Demo users: `admin / Admin123!` (Admin role), `alice / Alice123!` (User role). Y
 |---|---|
 | `/` | Everyone (`[AllowAnonymous]`) |
 | `/Account/Login`, `/Account/Register` | Everyone |
-| `/Account/Profile` | Any logged-in user (`[Authorize]`) |
+| `/Account/Profile` | Any logged-in user (global filter) |
 | `/Admin` | Only the Admin role (`[Authorize(Roles = "Admin")]`) |
 
 Not logged in → sent to the login page. Logged in but wrong role → "Access denied" page.

@@ -1,0 +1,114 @@
+# Copy this file to <repo root>/.github/workflows/ci.yml to switch it on.
+# GitHub only runs workflows from that folder.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["Projects/**", ".github/workflows/ci.yml"]
+  pull_request:
+    paths: ["Projects/**", ".github/workflows/ci.yml"]
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+# A newer push to the same branch cancels the older, still-running build.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # ---------- Stage 1: restore, build everything, run unit tests ----------
+  build-and-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: Projects
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore NuGet packages
+        run: dotnet restore CSharpMasteryRoadmap.slnx
+
+      - name: Build (Release)
+        run: dotnet build CSharpMasteryRoadmap.slnx -c Release --no-restore
+
+      - name: Unit tests (xUnit)
+        run: >
+          dotnet test Section4_OopDddAndTesting/Project4.2_DddBankingEngine/Banking.Tests
+          -c Release --no-build
+          --logger trx --results-directory TestResults
+          --collect:"XPlat Code Coverage"
+
+      - name: Upload unit test results
+        if: always() # upload even when tests fail, so you can see WHICH failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: Projects/TestResults
+
+  # ---------- Stage 2: browser tests (only if stage 1 passed) ----------
+  e2e-tests:
+    needs: build-and-unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: Projects/Section4_OopDddAndTesting/Project4.3_PlaywrightBrowserTests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build Playwright tests
+        run: dotnet build -c Release
+
+      - name: Install Chromium for Playwright
+        shell: pwsh
+        run: ./bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Playwright E2E tests (headless)
+        run: dotnet test -c Release --no-build --logger trx --results-directory TestResults
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: Projects/Section4_OopDddAndTesting/Project4.3_PlaywrightBrowserTests/TestResults
+
+  # ---------- Stage 2 (in parallel): pack the NuGet library and use it ----------
+  nuget-package:
+    needs: build-and-unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: Projects/Section4_OopDddAndTesting/Project4.1_CustomNuGetPackage
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack library
+        run: dotnet pack SimpleHelpers -c Release
+
+      - name: Run consumer app against the packed .nupkg
+        run: dotnet run --project ConsumerApp -c Release
+
+      - name: Upload .nupkg
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: Projects/Section4_OopDddAndTesting/Project4.1_CustomNuGetPackage/LocalNuGetFeed/*.nupkg

@@ -7,10 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CookieAuthAndRoles.Controllers;
 
-// Login/register must work for people who are NOT logged in yet.
-[AllowAnonymous]
+// Login/register/access-denied are marked [AllowAnonymous]: they must work for people who are NOT logged in yet.
+// Everything else here (Logout, Profile) needs a login because of the global filter in Program.cs.
 public class AccountController : Controller
 {
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Login(string? returnUrl)
     {
@@ -18,6 +19,7 @@ public class AccountController : Controller
         return View();
     }
 
+    [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string userName, string password, string? returnUrl)
@@ -47,12 +49,14 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Register()
     {
         return View();
     }
 
+    [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Register(string userName, string password)
@@ -80,12 +84,13 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    [AllowAnonymous]
     public IActionResult AccessDenied()
     {
         return View();
     }
 
-    [Authorize] // overrides [AllowAnonymous] above: any logged-in user
+    // No attribute needed: the global filter already requires a login.
     public IActionResult Profile()
     {
         return View();
