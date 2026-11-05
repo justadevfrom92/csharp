@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- A package reference, NOT a project reference: this uses the packed .nupkg file. -->
+    <PackageReference Include="Roadmap.SimpleHelpers" Version="1.0.0" />
+  </ItemGroup>
+</Project>

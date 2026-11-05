@@ -5,8 +5,7 @@ obj/
 *.db-shm
 *.db-wal
 TestResults/
-**/LocalNuGetFeed/*.nupkg
+logs/
+*.nupkg
 **/wwwroot/uploads/*
 !**/wwwroot/uploads/.gitkeep
-logs/
-**/LocalNuGetFeed/*.snupkg
