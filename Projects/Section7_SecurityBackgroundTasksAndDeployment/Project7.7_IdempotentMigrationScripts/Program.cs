@@ -1,0 +1,38 @@
+using IdempotentMigrationScripts.Data;
+using Microsoft.EntityFrameworkCore;
+
+// The app NEVER changes the database schema itself (no Database.Migrate()).
+// Instead, at startup it checks that the DBA/pipeline already ran the migration script,
+// and refuses to start if the database is behind.
+
+string? connectionString = Environment.GetEnvironmentVariable("ORDERS_CONNECTION_STRING");
+
+var options = new DbContextOptionsBuilder<OrdersDbContext>()
+    .UseSqlServer(connectionString ?? "Server=localhost;Database=Orders;Trusted_Connection=True;TrustServerCertificate=True")
+    .Options;
+using var database = new OrdersDbContext(options);
+
+Console.WriteLine("Migrations in this build:");
+foreach (string migration in database.Database.GetMigrations())
+{
+    Console.WriteLine($"  {migration}");
+}
+
+if (connectionString == null)
+{
+    Console.WriteLine();
+    Console.WriteLine("Set ORDERS_CONNECTION_STRING to check a real SQL Server database.");
+    return 0;
+}
+
+List<string> pendingMigrations = database.Database.GetPendingMigrations().ToList();
+if (pendingMigrations.Count > 0)
+{
+    Console.WriteLine();
+    Console.WriteLine($"STOP: the database is missing {pendingMigrations.Count} migration(s): {string.Join(", ", pendingMigrations)}");
+    Console.WriteLine("Run migrations.sql against the database first (see README).");
+    return 1; // non-zero exit = deployment fails loudly instead of running against an old schema
+}
+
+Console.WriteLine("Database schema is up to date. Starting app...");
+return 0;

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><title>Shop</title></head>
+<body style="font-family: sans-serif; padding: 16px;">
+    @if (FeatureFlags.IsEnabled(FeatureNames.HolidayBanner))
+    {
+        <div id="holiday-banner" style="background: #c62828; color: white; padding: 10px;">Holiday sale: 20% off everything!</div>
+    }
+
+    <h1>Shop</h1>
+    <ul>
+        <li><a href="/Shop/Checkout">Checkout</a></li>
+        @if (FeatureFlags.IsEnabled(FeatureNames.ProductReviews))
+        {
+            <li><a href="/Shop/Reviews">Reviews</a></li>
+        }
+        <li><a href="/flags">Current flags</a></li>
+    </ul>
+    <p>Edit <code>FeatureFlags</code> in appsettings.json and refresh — no restart needed.</p>
+</body>
+</html>
