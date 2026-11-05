@@ -1,8 +1,0 @@
-@{
-    string? alertKind = TempData["StatusAlertKind"] as string;
-    string? alertText = TempData["StatusAlertText"] as string;
-}
-@if (alertText is not null)
-{
-    <div class="alert alert-@(alertKind ?? "info")" role="alert" data-testid="status-alert">@alertText</div>
-}

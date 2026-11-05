@@ -1,9 +1,0 @@
-@model ProductEditorFormViewModel
-@{ ViewData["Title"] = "Add product"; }
-<h1>Add product</h1>
-@* The form tag helper emits the anti-forgery hidden field automatically for POST forms. *@
-<form asp-action="Create" method="post" novalidate data-testid="product-editor-form">
-    <partial name="_ProductEditorFormFieldsPartial" model="Model" />
-    <button type="submit" data-testid="save-product-button">Create product</button>
-    <a asp-action="Index">Cancel</a>
-</form>
