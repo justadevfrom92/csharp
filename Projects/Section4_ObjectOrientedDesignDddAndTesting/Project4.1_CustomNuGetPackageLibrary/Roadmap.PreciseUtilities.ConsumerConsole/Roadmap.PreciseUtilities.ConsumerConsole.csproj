@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!--
+      This project opts OUT of central package management so that it behaves exactly like an
+      external consumer: package versions are declared here, as `dotnet add package` writes them.
+      It references the library ONLY as a NuGet package (never a ProjectReference).
+    -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!-- Project-local package cache so re-packing 1.0.0 is picked up without clearing ~/.nuget. -->
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)obj/packages</RestorePackagesPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Humanizer.Core" Version="3.0.10" />
+    <PackageReference Include="Roadmap.PreciseUtilities" Version="1.0.0" />
+  </ItemGroup>
+</Project>
