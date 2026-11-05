@@ -3,6 +3,9 @@
   <Folder Name="/Section1_CoreFundamentals/Project1.1_FinancialDateProcessingUtility/">
     <Project Path="Section1_CoreFundamentals/Project1.1_FinancialDateProcessingUtility/FinancialDateProcessingUtility.csproj" />
   </Folder>
+  <Folder Name="/Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/">
+    <Project Path="Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/SimpleLoanAndDateCalculator.csproj" />
+  </Folder>
   <Folder Name="/Section2_CollectionsAndLinq/" />
   <Folder Name="/Section2_CollectionsAndLinq/Project2.1_InventoryOrderAnalyticsSystem/">
     <Project Path="Section2_CollectionsAndLinq/Project2.1_InventoryOrderAnalyticsSystem/InventoryOrderAnalyticsSystem.csproj" />
