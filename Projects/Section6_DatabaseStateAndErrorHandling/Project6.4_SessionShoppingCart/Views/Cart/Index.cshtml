@@ -1,0 +1,35 @@
+@model ShoppingCart
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><title>Cart</title></head>
+<body style="font-family: sans-serif; padding: 16px;">
+    <h1>Shop</h1>
+    @foreach (ShopItem item in ViewBag.ItemsForSale)
+    {
+        <form asp-action="Add" method="post" style="display:inline">
+            <input type="hidden" name="itemId" value="@item.Id" />
+            <button type="submit">Add @item.Name (@item.Price.ToString("0.00"))</button>
+        </form>
+    }
+
+    <h2>Your cart</h2>
+    @if (Model.Lines.Count == 0)
+    {
+        <p>Empty.</p>
+    }
+    <ul>
+        @foreach (CartLine line in Model.Lines)
+        {
+            <li>
+                @line.Quantity x @line.Name = @((line.Price * line.Quantity).ToString("0.00"))
+                <form asp-action="Remove" method="post" style="display:inline">
+                    <input type="hidden" name="itemId" value="@line.ItemId" />
+                    <button type="submit">Remove</button>
+                </form>
+            </li>
+        }
+    </ul>
+    <p><b>Total: <span id="cart-total">@Model.Total.ToString("0.00")</span></b></p>
+    <form asp-action="Clear" method="post"><button type="submit">Empty cart</button></form>
+</body>
+</html>
