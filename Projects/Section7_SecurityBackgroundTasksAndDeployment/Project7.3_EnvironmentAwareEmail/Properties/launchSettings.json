@@ -1,0 +1,19 @@
+{
+  "profiles": {
+    "Development": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5073",
+      "environmentVariables": { "ASPNETCORE_ENVIRONMENT": "Development" }
+    },
+    "UAT": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5073",
+      "environmentVariables": { "ASPNETCORE_ENVIRONMENT": "UAT" }
+    },
+    "Production": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5073",
+      "environmentVariables": { "ASPNETCORE_ENVIRONMENT": "Production" }
+    }
+  }
+}

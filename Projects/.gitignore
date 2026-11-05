@@ -9,3 +9,4 @@ logs/
 *.nupkg
 **/wwwroot/uploads/*
 !**/wwwroot/uploads/.gitkeep
+sent-emails/
