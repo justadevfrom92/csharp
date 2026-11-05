@@ -1,0 +1,9 @@
+@model AvatarUploadForm
+
+<h2>Upload avatar (.jpg/.png, max 1 MB)</h2>
+<!-- enctype="multipart/form-data" is required, or the file is not sent. -->
+<form asp-action="Avatar" method="post" enctype="multipart/form-data">
+    <input asp-for="Avatar" type="file" accept=".jpg,.jpeg,.png" />
+    <span asp-validation-for="Avatar" class="error"></span>
+    <button type="submit">Upload</button>
+</form>

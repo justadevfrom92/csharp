@@ -1,0 +1,10 @@
+@model Product
+@{
+    ViewData["Title"] = "Add product";
+}
+
+<h2>Add product</h2>
+<form asp-action="Create" method="post">
+    <partial name="_ProductFormFields" model="Model" />
+    <button type="submit" id="save-button">Save</button>
+</form>

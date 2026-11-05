@@ -1,0 +1,9 @@
+@model DocumentUploadForm
+
+<h2>Upload document (.pdf/.txt, max 5 MB)</h2>
+<form asp-action="Document" method="post" enctype="multipart/form-data">
+    <input asp-for="Document" type="file" accept=".pdf,.txt" />
+    <span asp-validation-for="Document" class="error"></span>
+    <label>Note <input asp-for="Note" /></label>
+    <button type="submit">Upload</button>
+</form>

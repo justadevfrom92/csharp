@@ -1,0 +1,7 @@
+<h2>Uploaded files</h2>
+<ul>
+    @foreach (string fileName in ViewBag.SavedFiles)
+    {
+        <li><a href="~/uploads/@fileName">@fileName</a></li>
+    }
+</ul>

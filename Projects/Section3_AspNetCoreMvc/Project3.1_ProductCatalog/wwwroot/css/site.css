@@ -1,0 +1,8 @@
+body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 0 16px; }
+label { display: block; margin-top: 10px; }
+input, select, textarea { width: 300px; }
+.field-error, .validation-summary-errors { color: #b00020; }
+.success-alert { background: #e6f4ea; border: 1px solid #34a853; padding: 8px; margin: 10px 0; }
+table { border-collapse: collapse; }
+td, th { border: 1px solid #ccc; padding: 4px 8px; }
+footer { margin-top: 40px; color: #777; }

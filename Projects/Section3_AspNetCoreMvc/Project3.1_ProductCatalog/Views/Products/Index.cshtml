@@ -1,0 +1,18 @@
+@model List<Product>
+@{
+    ViewData["Title"] = "Products";
+}
+
+<h2>Products</h2>
+<table id="product-table">
+    <tr><th>Name</th><th>Category</th><th>Price</th><th></th></tr>
+    @foreach (Product product in Model)
+    {
+        <tr>
+            <td><a asp-action="Details" asp-route-id="@product.Id">@product.Name</a></td>
+            <td>@product.Category</td>
+            <td>@product.Price.ToString("0.00")</td>
+            <td><a asp-action="Edit" asp-route-id="@product.Id">Edit</a></td>
+        </tr>
+    }
+</table>

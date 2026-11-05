@@ -1,0 +1,12 @@
+<h2>Add activity</h2>
+<form asp-action="Add" method="post">
+    <input name="text" placeholder="What happened?" />
+    <button type="submit">Add</button>
+</form>
+
+<h2>Look up a day</h2>
+<form asp-action="Day" method="get">
+    <input name="day" placeholder="yyyy-MM-dd" />
+    <button type="submit">Show</button>
+</form>
+<p>Try a bad value like <a href="/Activity/Day?day=05/11/2026">05/11/2026</a> to see the binder reject it.</p>
