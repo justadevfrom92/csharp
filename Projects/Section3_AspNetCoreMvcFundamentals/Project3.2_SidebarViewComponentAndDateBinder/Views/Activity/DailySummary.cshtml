@@ -1,0 +1,14 @@
+@model DailyActivitySummaryViewModel
+@{ ViewData["Title"] = $"Summary {Model.SummaryDate:yyyy-MM-dd}"; }
+<h1 data-testid="daily-summary-heading">Activity on @Model.SummaryDate.ToString("dddd, d MMMM yyyy")</h1>
+<p>Total events: <strong data-testid="daily-total">@Model.TotalCount</strong></p>
+<ul>
+    @foreach (var (kind, count) in Model.CountsByKind.OrderByDescending(pair => pair.Value))
+    {
+        <li>@kind: @count</li>
+    }
+</ul>
+<p>
+    <a asp-action="DailySummary" asp-route-summaryDate="@Model.SummaryDate.AddDays(-1).ToString("yyyy-MM-dd")">← Previous day</a> |
+    <a asp-action="DailySummary" asp-route-summaryDate="@Model.SummaryDate.AddDays(1).ToString("yyyy-MM-dd")">Next day →</a>
+</p>

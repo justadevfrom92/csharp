@@ -1,0 +1,23 @@
+@model IReadOnlyList<RecentActivityEntry>
+<aside class="activity-sidebar" data-testid="recent-activity-sidebar">
+    <h2>Recent activity</h2>
+    <ol>
+        @foreach (RecentActivityEntry entry in Model)
+        {
+            TimeSpan age = DateTimeOffset.UtcNow - entry.OccurredAt;
+            string relativeAge = age switch
+            {
+                { TotalMinutes: < 1 } => "just now",
+                { TotalHours: < 1 } => $"{(int)age.TotalMinutes} min ago",
+                { TotalDays: < 1 } => $"{(int)age.TotalHours} h ago",
+                _ => $"{(int)age.TotalDays} d ago"
+            };
+            <li data-testid="recent-activity-entry">
+                <div class="activity-kind">@entry.Kind</div>
+                <div><strong>@entry.ActorDisplayName</strong>: @entry.ActivityDescription</div>
+                <div class="muted">@relativeAge</div>
+            </li>
+        }
+    </ol>
+    <a asp-controller="Activity" asp-action="Index">Full report →</a>
+</aside>

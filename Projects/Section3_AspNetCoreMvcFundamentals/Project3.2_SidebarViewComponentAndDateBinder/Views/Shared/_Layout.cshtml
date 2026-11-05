@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Activity Hub</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header"><a class="site-brand" href="/">Activity Hub</a><span class="site-tagline">View component &amp; custom model binder demo</span></header>
+    <nav class="primary-navigation">
+        <a asp-controller="Home" asp-action="Index">Dashboard</a>
+        <a asp-controller="Activity" asp-action="Index">Activity report</a>
+        <a asp-controller="Activity" asp-action="DailySummary" asp-route-summaryDate="@DateTime.UtcNow.ToString("yyyy-MM-dd")">Today</a>
+        <a asp-controller="Activity" asp-action="Record">Record activity</a>
+    </nav>
+    <div class="two-column-layout">
+        <main>
+            @if (TempData["StatusAlertText"] is string statusAlertText)
+            {
+                <div class="alert alert-success" role="alert">@statusAlertText</div>
+            }
+            @RenderBody()
+        </main>
+        @* The sidebar loads its own data. No controller action supplies it. *@
+        <vc:recent-activity-sidebar maximum-entry-count="5" />
+    </div>
+</body>
+</html>

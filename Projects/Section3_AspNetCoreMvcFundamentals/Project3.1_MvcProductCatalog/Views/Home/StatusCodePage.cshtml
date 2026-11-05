@@ -1,0 +1,14 @@
+@model int
+@{
+    ViewData["Title"] = Model == 404 ? "Not found" : $"Error {Model}";
+    string friendlyMessage = Model switch
+    {
+        404 => "Page not found",
+        400 => "The request could not be processed",
+        >= 500 => "Something went wrong on our side",
+        _ => $"Request failed ({Model})"
+    };
+}
+<h1 data-testid="status-code-heading">@friendlyMessage</h1>
+<p>Status code: <span data-testid="status-code-value">@Model</span></p>
+<p><a asp-controller="Home" asp-action="Index">Return home</a></p>

@@ -1,0 +1,11 @@
+@model ProductEditorFormViewModel
+@{
+    ViewData["Title"] = "Edit product";
+    int productId = (int)ViewData["ProductId"]!;
+}
+<h1>Edit product</h1>
+<form asp-action="Edit" asp-route-productId="@productId" method="post" novalidate data-testid="product-editor-form">
+    <partial name="_ProductEditorFormFieldsPartial" model="Model" />
+    <button type="submit" data-testid="save-product-button">Save changes</button>
+    <a asp-action="Details" asp-route-productId="@productId">Cancel</a>
+</form>

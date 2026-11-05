@@ -1,0 +1,34 @@
+@model ProductEditorFormViewModel
+@* Shared by Create and Edit so both forms always have identical fields and validation output. *@
+<div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+<div class="form-field">
+    <label asp-for="ProductName"></label>
+    <input asp-for="ProductName" data-testid="product-name-input" />
+    <span asp-validation-for="ProductName" class="field-error" data-testid="product-name-error"></span>
+</div>
+<div class="form-field">
+    <label asp-for="ProductDescription"></label>
+    <textarea asp-for="ProductDescription" rows="3" data-testid="product-description-input"></textarea>
+    <span asp-validation-for="ProductDescription" class="field-error"></span>
+</div>
+<div class="form-field">
+    <label asp-for="UnitPrice"></label>
+    <input asp-for="UnitPrice" type="number" step="0.01" data-testid="product-price-input" />
+    <span asp-validation-for="UnitPrice" class="field-error" data-testid="product-price-error"></span>
+</div>
+<div class="form-field">
+    <label asp-for="Category"></label>
+    <select asp-for="Category" asp-items="@(ViewData["CategoryOptions"] as SelectList)" data-testid="product-category-select">
+        <option value="">-- choose --</option>
+    </select>
+    <span asp-validation-for="Category" class="field-error" data-testid="product-category-error"></span>
+</div>
+<div class="form-field">
+    <label asp-for="StockQuantity"></label>
+    <input asp-for="StockQuantity" data-testid="product-stock-input" />
+    <span asp-validation-for="StockQuantity" class="field-error" data-testid="product-stock-error"></span>
+</div>
+<div class="form-field checkbox-field">
+    <input asp-for="IsAvailableForSale" data-testid="product-available-checkbox" />
+    <label asp-for="IsAvailableForSale"></label>
+</div>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Upload Portal</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header"><a class="site-brand" href="/">Upload Portal</a><span class="site-tagline">Custom validation attributes demo</span></header>
+    <nav class="primary-navigation">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <a asp-controller="ProfileAvatar" asp-action="Index">Profile avatar</a>
+        <a asp-controller="SupportingDocuments" asp-action="Index">Documents</a>
+    </nav>
+    <main class="page-content">
+        @if (TempData["StatusAlertText"] is string statusAlertText)
+        {
+            <div class="alert alert-success" role="alert" data-testid="status-alert">@statusAlertText</div>
+        }
+        @RenderBody()
+    </main>
+</body>
+</html>

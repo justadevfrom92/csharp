@@ -1,0 +1,39 @@
+@model ProductListPageViewModel
+@{ ViewData["Title"] = "Products"; }
+<h1>Products</h1>
+
+<form method="get" asp-action="Index" class="filter-bar" data-testid="product-filter-form">
+    <input type="search" name="searchText" value="@Model.SearchText" placeholder="Search name or description" data-testid="search-input" />
+    <select name="category" asp-items="@(ViewData["CategoryOptions"] as SelectList)" data-testid="category-filter">
+        <option value="">All categories</option>
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+@if (Model.Products.Count == 0)
+{
+    <p data-testid="empty-result-message">No products match your filter.</p>
+}
+else
+{
+    <table class="data-table" data-testid="product-table">
+        <thead>
+            <tr><th>Name</th><th>Category</th><th class="numeric">Price</th><th class="numeric">Stock</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+        @foreach (CatalogProduct product in Model.Products)
+        {
+            <tr data-testid="product-row">
+                <td><a asp-action="Details" asp-route-productId="@product.ProductId">@product.ProductName</a></td>
+                <td>@product.Category</td>
+                <td class="numeric">@product.UnitPrice.ToString("C2")</td>
+                <td class="numeric">@product.StockQuantity</td>
+                <td>@(product.IsAvailableForSale ? "On sale" : "Unavailable")</td>
+                <td><a asp-action="Edit" asp-route-productId="@product.ProductId">Edit</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <p class="muted">Inventory value of listed products: <strong>@Model.TotalInventoryValue.ToString("C2")</strong></p>
+}
+<p><a class="button" asp-action="Create" data-testid="create-product-link">Add a product</a></p>

@@ -1,0 +1,12 @@
+@{
+    // The only "logic": highlight the active section, computed from route values already on the request.
+    string currentControllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    string ActiveClassFor(string controllerName) =>
+        string.Equals(currentControllerName, controllerName, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+}
+<nav class="primary-navigation" data-testid="primary-navigation">
+    <a class="@ActiveClassFor("Home")" asp-controller="Home" asp-action="Index">Home</a>
+    <a class="@ActiveClassFor("Products")" asp-controller="Products" asp-action="Index" data-testid="nav-products">Products</a>
+    <a asp-controller="Products" asp-action="Create" data-testid="nav-add-product">Add product</a>
+    <a class="@ActiveClassFor("Home")" asp-controller="Home" asp-action="About">About</a>
+</nav>

@@ -7,4 +7,14 @@
   <Folder Name="/Section2_CollectionsAndLinq/Project2.1_InventoryOrderAnalyticsSystem/">
     <Project Path="Section2_CollectionsAndLinq/Project2.1_InventoryOrderAnalyticsSystem/InventoryOrderAnalyticsSystem.csproj" />
   </Folder>
+  <Folder Name="/Section3_AspNetCoreMvcFundamentals/" />
+  <Folder Name="/Section3_AspNetCoreMvcFundamentals/Project3.1_MvcProductCatalog/">
+    <Project Path="Section3_AspNetCoreMvcFundamentals/Project3.1_MvcProductCatalog/MvcProductCatalog.csproj" />
+  </Folder>
+  <Folder Name="/Section3_AspNetCoreMvcFundamentals/Project3.2_SidebarViewComponentAndDateBinder/">
+    <Project Path="Section3_AspNetCoreMvcFundamentals/Project3.2_SidebarViewComponentAndDateBinder/MvcSidebarViewComponentAndDateBinder.csproj" />
+  </Folder>
+  <Folder Name="/Section3_AspNetCoreMvcFundamentals/Project3.3_FileUploadPortal/">
+    <Project Path="Section3_AspNetCoreMvcFundamentals/Project3.3_FileUploadPortal/MvcFileUploadPortal.csproj" />
+  </Folder>
 </Solution>

@@ -1,0 +1,46 @@
+@model SupportingDocumentListPageViewModel
+@{ ViewData["Title"] = "Documents"; }
+<h1>Supporting documents</h1>
+<form asp-action="Index" method="post" enctype="multipart/form-data" novalidate>
+    <div class="form-field">
+        <label asp-for="UploadForm.DocumentFiles">Documents</label>
+        <input name="DocumentFiles" type="file" multiple accept=".pdf,.docx,.xlsx,.txt,.csv" data-testid="document-file-input" />
+        <span asp-validation-for="UploadForm.DocumentFiles" class="field-error"></span>
+        @foreach (string errorMessage in ViewData.ModelState["DocumentFiles"]?.Errors.Select(error => error.ErrorMessage) ?? [])
+        {
+            <span class="field-error" data-testid="document-file-error">@errorMessage</span>
+        }
+    </div>
+    <div class="form-field">
+        <label for="UploadNotes">Notes (optional)</label>
+        <input id="UploadNotes" name="UploadNotes" value="@Model.UploadForm.UploadNotes" maxlength="200" />
+    </div>
+    <button type="submit">Upload</button>
+</form>
+
+<h2>Stored documents</h2>
+@if (Model.StoredDocuments.Count == 0)
+{
+    <p class="muted">No documents uploaded yet.</p>
+}
+else
+{
+    <table class="data-table">
+        <thead><tr><th>Original name</th><th class="numeric">Size</th><th>Uploaded (UTC)</th><th></th></tr></thead>
+        <tbody>
+        @foreach (StoredUploadedFileDescriptor document in Model.StoredDocuments)
+        {
+            <tr data-testid="stored-document-row">
+                <td><a href="@document.PublicRelativeUrl">@document.OriginalFileName</a></td>
+                <td class="numeric">@($"{document.FileSizeInBytes / 1024d:0.#} KB")</td>
+                <td>@document.UploadedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>
+                    <form asp-action="Delete" asp-route-storedFileName="@document.StoredFileName" method="post" class="inline-form">
+                        <button type="submit" class="danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

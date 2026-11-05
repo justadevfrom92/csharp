@@ -1,0 +1,22 @@
+@model CatalogProduct
+@{ ViewData["Title"] = Model.ProductName; }
+<h1 data-testid="product-detail-name">@Model.ProductName</h1>
+<dl class="detail-list">
+    <dt>Description</dt><dd>@(Model.ProductDescription ?? "—")</dd>
+    <dt>Category</dt><dd data-testid="product-detail-category">@Model.Category</dd>
+    <dt>Price</dt><dd data-testid="product-detail-price">@Model.UnitPrice.ToString("C2")</dd>
+    <dt>Stock</dt><dd data-testid="product-detail-stock">@Model.StockQuantity</dd>
+    <dt>Status</dt><dd>@(Model.IsAvailableForSale ? "On sale" : "Unavailable")</dd>
+    <dt>Created</dt><dd>@Model.CreatedAt.ToString("u")</dd>
+    @if (Model.LastModifiedAt is DateTimeOffset modifiedAt)
+    {
+        <dt>Last modified</dt><dd>@modifiedAt.ToString("u")</dd>
+    }
+</dl>
+<div class="action-row">
+    <a class="button" asp-action="Edit" asp-route-productId="@Model.ProductId" data-testid="edit-product-link">Edit</a>
+    <form asp-action="Delete" asp-route-productId="@Model.ProductId" method="post" class="inline-form">
+        <button type="submit" class="danger" data-testid="delete-product-button">Delete</button>
+    </form>
+    <a asp-action="Index">Back to list</a>
+</div>
