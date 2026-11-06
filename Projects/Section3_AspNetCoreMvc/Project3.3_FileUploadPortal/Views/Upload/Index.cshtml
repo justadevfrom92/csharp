@@ -1,21 +1,14 @@
 @*
     New to .cshtml? See Projects/RAZOR_BASICS.md.
 
-    @model says what TYPE of data this page receives from the controller.
-    UploadController.Index() ends with "return View(savedFileNames);" - that List<string> arrives here as "Model".
+    ViewBag.SavedFiles is the list of file names that UploadController.Index() put in the ViewBag.
+    ViewBag is a "bag" of values the controller fills and the view reads, for this request only.
 *@
-@model List<string>
-
 <h2>Uploaded files</h2>
-@if (Model.Count == 0)
-{
-    <p>No files yet.</p>
-}
 @* "~/" = site root (wwwroot). "~/uploads/abc.png" becomes "/uploads/abc.png", served by UseStaticFiles. *@
 <ul>
-    @* @foreach is a normal C# loop. Every line of HTML inside it is written once per file name.
-       @fileName prints the C# value into the HTML (HTML-encoded, so it's safe). *@
-    @foreach (string fileName in Model)
+    @* @foreach is a normal C# loop: the <li> is written once per file name. *@
+    @foreach (string fileName in ViewBag.SavedFiles)
     {
         <li><a href="~/uploads/@fileName">@fileName</a></li>
     }

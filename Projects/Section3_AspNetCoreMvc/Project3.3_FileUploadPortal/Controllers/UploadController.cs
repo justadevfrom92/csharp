@@ -16,14 +16,15 @@ public class UploadController : Controller
     // GET /  (or /Upload/Index)
     public IActionResult Index()
     {
-        List<string> savedFileNames = Directory.GetFiles(uploadFolder)
-            .Select(fullPath => Path.GetFileName(fullPath))
-            .Where(fileName => fileName != ".gitkeep")
+        // ViewBag = a "bag" you can put any value into in the controller, and read in the view
+        // (Views/Upload/Index.cshtml reads ViewBag.SavedFiles). It only lives for this one request.
+        // It is "dynamic": the compiler does NOT check the name, so a typo like ViewBag.SavedFile
+        // only shows up as an error when the page runs.
+        ViewBag.SavedFiles = Directory.GetFiles(uploadFolder)
+            .Select(Path.GetFileName)
+            .Where(name => name != ".gitkeep")
             .ToList();
-
-        // View(savedFileNames) renders Views/Upload/Index.cshtml and hands it this list.
-        // Inside that file, "@model List<string>" says what type it receives, and "Model" is the list.
-        return View(savedFileNames);
+        return View();
     }
 
     // GET /Upload/Avatar - show the empty form.
