@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using SidebarAndDateBinder.Data;
-using SidebarAndDateBinder.ModelBinders;
 using SidebarAndDateBinder.Models;
 
 namespace SidebarAndDateBinder.Controllers;
@@ -26,18 +24,13 @@ public class ActivityController : Controller
     // GET /Activity/Day?day=2026-11-05
     public IActionResult Day([ModelBinder(typeof(CustomIsoDateFormatModelBinder))] DateOnly? day)
     {
-        DateOnly chosenDay = day ?? DateOnly.FromDateTime(DateTime.Today);
-
-        var page = new DailyActivityViewModel
-        {
-            Day = chosenDay,
-            Entries = ActivityLog.GetForDay(chosenDay),
-        };
         if (!ModelState.IsValid)
         {
-            // The binder rejected the date; show its message on the page.
-            page.DateErrorMessage = ModelState["day"]?.Errors.FirstOrDefault()?.ErrorMessage;
+            ViewBag.Error = ModelState["day"]?.Errors.FirstOrDefault()?.ErrorMessage;
         }
-        return View(page);
+
+        DateOnly chosenDay = day ?? DateOnly.FromDateTime(DateTime.Today);
+        ViewBag.Day = chosenDay;
+        return View(ActivityLog.GetForDay(chosenDay));
     }
 }

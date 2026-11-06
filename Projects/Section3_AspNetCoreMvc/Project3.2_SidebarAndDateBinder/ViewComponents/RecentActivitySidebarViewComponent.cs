@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SidebarAndDateBinder.Data;
-using SidebarAndDateBinder.Data.Entities;
+using SidebarAndDateBinder.Models;
 
 namespace SidebarAndDateBinder.ViewComponents;
 

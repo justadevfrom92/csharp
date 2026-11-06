@@ -1,4 +1,4 @@
-@model ProductFormViewModel
+@model Product
 @{
     ViewData["Title"] = "Add product";
 }
@@ -17,7 +17,7 @@
     A plain <form action="/Products/Create"> would have NO token, and the POST would be rejected (400).
 *@
 <form asp-action="Create" method="post">
-    @* model="Model" passes this page's ProductFormViewModel to the partial, which uses it for its asp-for fields. *@
+    @* model="Model" passes this page's Product to the partial, which uses it for its asp-for fields. *@
     <partial name="_ProductFormFields" model="Model" />
     <button type="submit" id="save-button">Save</button>
 </form>

@@ -27,23 +27,23 @@ public class UploadController : Controller
     }
 
     // GET /Upload/Avatar - show the empty form.
-    // AvatarUploadViewModel is defined in Models/AvatarUploadViewModel.cs.
-    // View(...) renders Views/Upload/Avatar.cshtml, whose first line "@model AvatarUploadViewModel"
+    // AvatarUploadForm is defined in Models/AvatarUploadForm.cs.
+    // View(...) renders Views/Upload/Avatar.cshtml, whose first line "@model AvatarUploadForm"
     // says it expects this type. The asp-for="Avatar" input in that file is tied to its Avatar property.
     [HttpGet]
     public IActionResult Avatar()
     {
-        return View(new AvatarUploadViewModel());
+        return View(new AvatarUploadForm());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     // POST /Upload/Avatar - the form was submitted.
-    // We never write "new AvatarUploadViewModel()" here: MODEL BINDING does it. MVC sees the parameter type,
-    // creates an AvatarUploadViewModel, and fills its Avatar property from the uploaded file named "Avatar"
+    // We never write "new AvatarUploadForm()" here: MODEL BINDING does it. MVC sees the parameter type,
+    // creates an AvatarUploadForm, and fills its Avatar property from the uploaded file named "Avatar"
     // (that name comes from asp-for="Avatar" in the view). It also runs the validation attributes on the
     // class and stores the result in ModelState.
-    public async Task<IActionResult> Avatar(AvatarUploadViewModel form)
+    public async Task<IActionResult> Avatar(AvatarUploadForm form)
     {
         if (!ModelState.IsValid)
         {
@@ -57,17 +57,17 @@ public class UploadController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // GET /Upload/Document - same pattern as Avatar. DocumentUploadViewModel is in Models/DocumentUploadViewModel.cs.
+    // GET /Upload/Document - same pattern as Avatar. DocumentUploadForm is in Models/DocumentUploadForm.cs.
     [HttpGet]
     public IActionResult Document()
     {
-        return View(new DocumentUploadViewModel());
+        return View(new DocumentUploadForm());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    // POST /Upload/Document - model binding creates DocumentUploadViewModel and fills Document + Note.
-    public async Task<IActionResult> Document(DocumentUploadViewModel form)
+    // POST /Upload/Document - model binding creates DocumentUploadForm and fills Document + Note.
+    public async Task<IActionResult> Document(DocumentUploadForm form)
     {
         if (!ModelState.IsValid)
         {

@@ -1,7 +1,4 @@
-using Banking.Domain.Events;
-using Banking.Domain.Services;
-using Banking.Domain.ValueObjects;
-using Banking.Tests.Fakes;
+using Banking.Domain;
 
 namespace Banking.Tests;
 
@@ -20,9 +17,9 @@ public class BankAccountServiceTests
 
         Assert.Equal(new Money(15, "USD"), service.GetBalance(accountId));
         Assert.Collection(dispatcher.SentEvents,
-            first => Assert.IsType<AccountOpenedEvent>(first),
-            second => Assert.IsType<MoneyDepositedEvent>(second),
-            third => Assert.IsType<MoneyWithdrawnEvent>(third));
+            first => Assert.IsType<AccountOpened>(first),
+            second => Assert.IsType<MoneyDeposited>(second),
+            third => Assert.IsType<MoneyWithdrawn>(third));
         Assert.Empty(repository.SavedAccounts[accountId].PendingEvents);
     }
 

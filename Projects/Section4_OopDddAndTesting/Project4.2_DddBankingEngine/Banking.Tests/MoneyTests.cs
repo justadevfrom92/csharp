@@ -1,4 +1,4 @@
-using Banking.Domain.ValueObjects;
+using Banking.Domain;
 
 namespace Banking.Tests;
 

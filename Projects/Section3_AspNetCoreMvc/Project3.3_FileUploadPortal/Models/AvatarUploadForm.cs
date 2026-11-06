@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using FileUploadPortal.Models.ValidationAttributes;
 
 namespace FileUploadPortal.Models;
 
-// What the "Upload avatar" form posts. Model binding fills it; the attributes check the file.
-public class AvatarUploadViewModel
+public class AvatarUploadForm
 {
     [Required(ErrorMessage = "Choose an image.")]
     [MaximumFileSizeValidation(1)]

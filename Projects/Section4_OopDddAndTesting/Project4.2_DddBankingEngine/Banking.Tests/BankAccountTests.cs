@@ -1,7 +1,4 @@
-using Banking.Domain.Aggregates;
-using Banking.Domain.Events;
-using Banking.Domain.Exceptions;
-using Banking.Domain.ValueObjects;
+using Banking.Domain;
 
 namespace Banking.Tests;
 
@@ -18,7 +15,7 @@ public class BankAccountTests
         BankAccount account = BankAccount.Open("Alice", "USD");
 
         Assert.Equal(Dollars(0), account.Balance);
-        Assert.IsType<AccountOpenedEvent>(Assert.Single(account.PendingEvents));
+        Assert.IsType<AccountOpened>(Assert.Single(account.PendingEvents));
     }
 
     [Fact]
@@ -29,7 +26,7 @@ public class BankAccountTests
         account.Deposit(Dollars(100));
 
         Assert.Equal(Dollars(100), account.Balance);
-        MoneyDepositedEvent depositEvent = Assert.IsType<MoneyDepositedEvent>(account.PendingEvents.Last());
+        MoneyDeposited depositEvent = Assert.IsType<MoneyDeposited>(account.PendingEvents.Last());
         Assert.Equal(Dollars(100), depositEvent.NewBalance);
     }
 

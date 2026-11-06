@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace FileUploadPortal.Models.ValidationAttributes;
+namespace FileUploadPortal.Models;
 
 // Usage: [ValidatePermittedFileExtension(".jpg", ".png")]
 public class ValidatePermittedFileExtensionAttribute : ValidationAttribute

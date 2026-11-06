@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Playwright;
 
-namespace PlaywrightBrowserTests.Fixtures;
+namespace PlaywrightBrowserTests;
 
 // Starts the Product Catalog site on a real port + one headless browser.
 // xUnit creates ONE of these for the test class (IClassFixture) and disposes it at the end.

@@ -1,6 +1,6 @@
-using Banking.Domain.Events;
+using Banking.Domain;
 
-namespace Banking.Tests.Fakes;
+namespace Banking.Tests;
 
 public class FakeEventDispatcher : IDomainEventDispatcher
 {

@@ -1,22 +1,22 @@
 @*
     New to .cshtml? See Projects/RAZOR_BASICS.md.
 
-    @model AvatarUploadViewModel = "this page receives an AvatarUploadViewModel object" (class in Models/AvatarUploadViewModel.cs).
-    The controller passes it with "return View(new AvatarUploadViewModel());" (empty form)
+    @model AvatarUploadForm = "this page receives an AvatarUploadForm object" (class in Models/AvatarUploadForm.cs).
+    The controller passes it with "return View(new AvatarUploadForm());" (empty form)
     or "return View(form);" (the submitted form, with its errors).
     Because of this line, asp-for="Avatar" below is checked against that class when you build.
 *@
-@model AvatarUploadViewModel
+@model AvatarUploadForm
 
 <h2>Upload avatar (.jpg/.png, max 1 MB)</h2>
 @*
     asp-action="Avatar" + method="post" -> action="/Upload/Avatar" + a hidden anti-forgery token.
     enctype="multipart/form-data" is plain HTML (not a tag helper): without it the browser sends only
-    the file NAME, not its bytes, and AvatarUploadViewModel.Avatar would be null.
+    the file NAME, not its bytes, and AvatarUploadForm.Avatar would be null.
 *@
 <form asp-action="Avatar" method="post" enctype="multipart/form-data">
     @*
-        asp-for="Avatar" -> id="Avatar" name="Avatar", so the uploaded file binds to AvatarUploadViewModel.Avatar (IFormFile).
+        asp-for="Avatar" -> id="Avatar" name="Avatar", so the uploaded file binds to AvatarUploadForm.Avatar (IFormFile).
         We write type="file" ourselves: an explicit type always wins over the one asp-for would pick.
         accept="..." only filters the browser's file picker; the REAL check is our server-side attribute.
     *@

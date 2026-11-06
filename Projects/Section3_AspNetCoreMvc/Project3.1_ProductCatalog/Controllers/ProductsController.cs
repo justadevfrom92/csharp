@@ -1,13 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using ProductCatalog.Data;
-using ProductCatalog.Data.Entities;
 using ProductCatalog.Models;
 
 namespace ProductCatalog.Controllers;
 
 public class ProductsController : Controller
 {
-    // GET /Products - display only, so the view gets the stored entities directly.
+    // GET /Products
     public IActionResult Index()
     {
         return View(ProductStore.GetAll());
@@ -25,33 +23,23 @@ public class ProductsController : Controller
         return View(product);
     }
 
-    // GET /Products/Create - an empty form.
     [HttpGet]
     public IActionResult Create()
     {
-        var form = new ProductFormViewModel { CategoryChoices = ProductStore.Categories };
-        return View(form);
+        ViewBag.Categories = ProductStore.Categories;
+        return View(new Product());
     }
 
-    // POST /Products/Create - model binding creates the ProductFormViewModel from the posted fields.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Create(ProductFormViewModel form)
+    public IActionResult Create(Product product)
     {
         if (!ModelState.IsValid)
         {
-            form.CategoryChoices = ProductStore.Categories; // the dropdown options are not posted, so refill them
-            return View(form); // show the form again with the error messages
+            ViewBag.Categories = ProductStore.Categories;
+            return View(product); // show the form again with the error messages
         }
 
-        // Copy the checked form values into a new entity and store it.
-        var product = new Product
-        {
-            Name = form.Name,
-            Category = form.Category,
-            Price = form.Price,
-            Description = form.Description,
-        };
         ProductStore.Add(product);
 
         // TempData survives ONE redirect. We redirect to Index next, so ViewBag would be lost here.
@@ -60,7 +48,6 @@ public class ProductsController : Controller
         return RedirectToAction(nameof(Index)); // redirect so refreshing the page doesn't post twice
     }
 
-    // GET /Products/Edit/5 - the form, filled with the stored product's values.
     [HttpGet]
     public IActionResult Edit(int id)
     {
@@ -69,45 +56,26 @@ public class ProductsController : Controller
         {
             return NotFound();
         }
-
-        var form = new ProductFormViewModel
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Category = product.Category,
-            Price = product.Price,
-            Description = product.Description,
-            CategoryChoices = ProductStore.Categories,
-        };
-        return View(form);
+        ViewBag.Categories = ProductStore.Categories;
+        return View(product);
     }
 
-    // POST /Products/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(ProductFormViewModel form)
+    public IActionResult Edit(Product product)
     {
         if (!ModelState.IsValid)
         {
-            form.CategoryChoices = ProductStore.Categories;
-            return View(form);
+            ViewBag.Categories = ProductStore.Categories;
+            return View(product);
         }
-
-        var changedProduct = new Product
-        {
-            Id = form.Id,
-            Name = form.Name,
-            Category = form.Category,
-            Price = form.Price,
-            Description = form.Description,
-        };
-        if (!ProductStore.Update(changedProduct))
+        if (!ProductStore.Update(product))
         {
             return NotFound();
         }
 
         // Read in Views/Shared/_Layout.cshtml after the redirect (see Create above).
-        TempData["SuccessMessage"] = $"Product '{form.Name}' was updated.";
+        TempData["SuccessMessage"] = $"Product '{product.Name}' was updated.";
         return RedirectToAction(nameof(Index));
     }
 }

@@ -12,7 +12,7 @@ Files are saved to `wwwroot/uploads/` with a random name and listed on the home 
 - Two custom validation attributes:
   - `MaximumFileSizeValidationAttribute(megabytes)`
   - `ValidatePermittedFileExtensionAttribute(".jpg", ".png", ...)`
-- Two forms (`AvatarUploadViewModel`, `DocumentUploadViewModel`) that reuse them with different limits.
+- Two forms (`AvatarUploadForm`, `DocumentUploadForm`) that reuse them with different limits.
 - `IFormFile` + `CopyToAsync` to save the stream, `UseStaticFiles` to serve the result.
 
 ## Why these choices
