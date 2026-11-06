@@ -1,5 +1,5 @@
-using Serilog;
 using Serilog.Formatting.Compact;
+using Serilog;
 
 // Logger is created FIRST, so even a crash during startup gets logged.
 Log.Logger = new LoggerConfiguration()

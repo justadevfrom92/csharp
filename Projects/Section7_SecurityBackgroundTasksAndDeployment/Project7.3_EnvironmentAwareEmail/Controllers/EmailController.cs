@@ -1,4 +1,6 @@
-using EnvironmentAwareEmail.Email;
+using EnvironmentAwareEmail.Messages;
+using EnvironmentAwareEmail.Queues;
+using EnvironmentAwareEmail.Senders;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EnvironmentAwareEmail.Controllers;

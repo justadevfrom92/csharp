@@ -45,9 +45,9 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `class GuestbookEntry` (form model) | Model binding sets each field; validation attributes on the properties. | See 3.1. |
+| `class GuestbookEntryModel` (form model) | Model binding sets each field; validation attributes on the properties. | See 3.1. |
 | `string? Website` | Optional field. | — |
 | `DateTime PostedAtUtc` | Sort newest first; always UTC. | — |
-| `static List<GuestbookEntry>` + `lock` | Shared in-memory store across requests. | Same pattern and trade-offs as 3.1. |
+| `static List<GuestbookEntryModel>` + `lock` | Shared in-memory store across requests. | Same pattern and trade-offs as 3.1. |
 | `static bool IsSafeWebLink` | Pure check using only its input. | — |
 | `Uri.TryCreate(..., out Uri? uri)` | Parses properly instead of string tricks like `StartsWith("http")`, which `httpjavascript:...` could fool. | — |

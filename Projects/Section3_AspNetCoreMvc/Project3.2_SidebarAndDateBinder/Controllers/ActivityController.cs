@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using SidebarAndDateBinder.Models;
+using SidebarAndDateBinder.ModelBinders;
+using SidebarAndDateBinder.Stores;
 
 namespace SidebarAndDateBinder.Controllers;
 
@@ -16,7 +17,7 @@ public class ActivityController : Controller
     {
         if (!string.IsNullOrWhiteSpace(text))
         {
-            ActivityLog.Add(text.Trim());
+            ActivityLogStore.Add(text.Trim());
         }
         return RedirectToAction(nameof(Index));
     }
@@ -31,6 +32,6 @@ public class ActivityController : Controller
 
         DateOnly chosenDay = day ?? DateOnly.FromDateTime(DateTime.Today);
         ViewBag.Day = chosenDay;
-        return View(ActivityLog.GetForDay(chosenDay));
+        return View(ActivityLogStore.GetForDay(chosenDay));
     }
 }

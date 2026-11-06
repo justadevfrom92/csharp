@@ -14,7 +14,7 @@ Open `https://localhost:7064`, add items, refresh, open a second browser — eac
 ## What it covers
 
 - `AddSession` / `UseSession`, `HttpContext.Session`
-- Storing a whole object (`ShoppingCart`) as JSON with `SetObjectAsJson` / `GetObjectFromJson`
+- Storing a whole object (`ShoppingCartModel`) as JSON with `SetObjectAsJson` / `GetObjectFromJson`
 - Cookie flags: `HttpOnly`, `Secure`, `SameSite`, plus HTTPS redirect and HSTS
 
 ## Where the data is, and why it's safe
@@ -48,11 +48,11 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `record ShopItem` | Catalog items are fixed data. | — |
-| `class CartLine` with setters | `Quantity` changes, and `System.Text.Json` must set properties when reading the cart back from session. | A record's constructor-only properties work with JSON too, but `Quantity++` wouldn't. |
-| `class ShoppingCart`, `List<CartLine> Lines { get; set; }` | Lines are added and removed; the JSON reader needs a settable list. | `IReadOnlyList` can't be filled by the deserializer or changed by `AddItem`. |
+| `record ShopItemModel` | Catalog items are fixed data. | — |
+| `class CartLineModel` with setters | `Quantity` changes, and `System.Text.Json` must set properties when reading the cart back from session. | A record's constructor-only properties work with JSON too, but `Quantity++` wouldn't. |
+| `class ShoppingCartModel`, `List<CartLineModel> Lines { get; set; }` | Lines are added and removed; the JSON reader needs a settable list. | `IReadOnlyList` can't be filled by the deserializer or changed by `AddItem`. |
 | `decimal Total { get { ... } }` (computed) | Always worked out from the lines, never stored. | A stored total can go out of sync with the lines. |
 | `static class SessionJsonExtensions` with generic `<T>` | Extension methods must be in a static class; `<T>` makes them work for any type, not just carts. | A cart-only helper would be copied for the next object. |
-| `T?` return / `default` | No value in session → `null`, and the caller uses `?? new ShoppingCart()`. | — |
-| `static readonly List<ShopItem> itemsForSale` | Fixed demo catalog. | Could be an `IReadOnlyList` or array to make "never changes" explicit — fair improvement. |
+| `T?` return / `default` | No value in session → `null`, and the caller uses `?? new ShoppingCartModel()`. | — |
+| `static readonly List<ShopItemModel> itemsForSale` | Fixed demo catalog. | Could be an `IReadOnlyList` or array to make "never changes" explicit — fair improvement. |
 | `const string CartSessionKey` | One key name used everywhere. | — |

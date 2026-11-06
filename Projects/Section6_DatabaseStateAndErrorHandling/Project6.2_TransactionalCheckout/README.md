@@ -55,9 +55,9 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 |---|---|---|
 | Entities are `class` | EF needs mutable objects to track `Stock` and `WalletBalance` changes. | See 6.1. |
 | `decimal` + `HasConversion<string>()` | Money stays exact. SQLite has no decimal column, so it's stored as text. | Storing as `REAL` (double) would bring back rounding errors. |
-| `decimal UnitPrice` copied onto `OrderLine` | The price at the moment of sale. | Reading `Product.Price` later would show today's price on old orders. |
+| `decimal UnitPrice` copied onto `OrderLineModel` | The price at the moment of sale. | Reading `ProductModel.Price` later would show today's price on old orders. |
 | `bool IsDeleted` + `DateTime? DeletedAtUtc` | `null` = not deleted. The date says when. | Just the date would work, but the `bool` keeps the query filter obvious. |
 | `DateTime` in UTC (not `DateTimeOffset`) | EF Core's SQLite provider can sort/compare `DateTime` in SQL but not `DateTimeOffset`. Always UTC, and the name says so. | `DateTimeOffset` in SQLite falls back to client-side work for some queries. |
 | `ShopDbContext` with `OnConfiguring` | Console app with no DI: the context sets up its own connection. | Web apps (6.1) pass options in through DI instead. |
 | New `ShopDbContext` per operation (`using var`) | A context is meant to be short-lived: one unit of work. | One long-lived context keeps tracking everything and goes stale. |
-| Override `SaveChanges` | Every delete of a `Product` is turned into a soft delete, in one place. | Remembering `IsDeleted = true` at every call site would eventually be forgotten. |
+| Override `SaveChanges` | Every delete of a `ProductModel` is turned into a soft delete, in one place. | Remembering `IsDeleted = true` at every call site would eventually be forgotten. |

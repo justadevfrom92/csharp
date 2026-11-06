@@ -22,7 +22,7 @@ project. This page is the general rule behind them.
 | Type | Promise it makes | Use it for |
 |---|---|---|
 | `IEnumerable<T>` | "You can loop over me once." May be **lazy**: a LINQ query that hasn't run yet. | A **parameter** when your method only loops (accepts arrays, lists, queries, anything). Also LINQ pipelines. |
-| `IReadOnlyList<T>` | "Finished list, has `Count` and `[index]`, you can't change it." | **Returning** your internal list so callers can read but not add/remove (e.g. `BankAccount.PendingEvents`). |
+| `IReadOnlyList<T>` | "Finished list, has `Count` and `[index]`, you can't change it." | **Returning** your internal list so callers can read but not add/remove (e.g. `BankAccountAggregate.PendingEvents`). |
 | `List<T>` | "Finished list, it's yours, change it if you like." | **Returning a fresh copy** (`.ToList()`) that nobody else holds — e.g. the in-memory stores, which copy *inside* a lock. |
 | `IQueryable<T>` | "A query that will be **turned into SQL**." | Only EF Core (`database.Books.Where(...)`). Call `ToListAsync()` before handing data to a view. |
 | `IAsyncEnumerable<T>` | "Items arrive one by one over time, `await foreach` me." | Reading from a `Channel` or a stream. |
@@ -41,15 +41,15 @@ view), the `DbContext` may already be gone. `ToListAsync()` runs the SQL right t
 
 | Kind | Pick it when | Example in these projects |
 |---|---|---|
-| `record` | Plain data that **never changes after it's created**, and two values with the same data should count as **equal**. One-line syntax. | `Order`, `Sale` (2.1), `Money` and the domain events (4.2), `EmailMessage` (7.3), `CatalogProduct` (7.4) |
-| `class` | The thing **changes over time**, has an **identity** (two accounts with the same balance are still two accounts), or a framework needs settable properties. | `Product` stock (2.1), `BankAccount` (4.2), EF entities (6.x), form models (3.x), controllers, services |
+| `record` | Plain data that **never changes after it's created**, and two values with the same data should count as **equal**. One-line syntax. | `Order`, `Sale` (2.1), `MoneyValueObject` and the domain events (4.2), `EmailMessage` (7.3), `CatalogProductModel` (7.4) |
+| `class` | The thing **changes over time**, has an **identity** (two accounts with the same balance are still two accounts), or a framework needs settable properties. | `Product` stock (2.1), `BankAccountAggregate` (4.2), EF model classes (6.x), forms (3.3), controllers, services |
 | `struct` | Tiny value (a few numbers) created in huge amounts, where avoiding heap allocations matters. | **Not used.** See note below. |
 | `interface` | You need **several interchangeable implementations**, or a fake for tests. Only describes *what*, no code. | `IEmailSender` (3 senders, 7.3), `IBankAccountRepository` (fake + in-memory, 4.2) |
 | `abstract class` | Several classes share **real code** and only fill in a few parts. | Not written by us, but we *inherit* framework ones: `BackgroundService`, `ValidationAttribute`, `DbCommandInterceptor`, `ActionFilterAttribute` |
-| `static class` | Just functions or app-wide constants, **no state per object**. | `UrlSlugMaker` (4.1), `LogLineParser` (5.2), `FeatureNames` (7.5) |
+| `static class` | Just functions or app-wide constants, **no state per object**. | `UrlSlugGenerator` (4.1), `LogLineParser` (5.2), `FeatureNameConstants` (7.5) |
 
 **Why no `struct`?** A struct always has a hidden "all zeros" value (`default`) that skips your
-constructor. For `Money` that would be an amount with a `null` currency — exactly what the
+constructor. For `MoneyValueObject` that would be an amount with a `null` currency — exactly what the
 constructor exists to forbid. A `record` (class) can't be created without going through the
 constructor. The memory saving of a struct doesn't matter at this scale.
 
@@ -107,10 +107,10 @@ Full explanation in Project 1.1's README.
 
 | Keyword | Why |
 |---|---|
-| `const` | A value fixed at **compile time** (`const string CartSessionKey = "ShoppingCart"`). Required where C# needs a constant, e.g. inside attributes: `[RequireFeatureFlag(FeatureNames.NewCheckout)]`. |
+| `const` | A value fixed at **compile time** (`const string CartSessionKey = "ShoppingCart"`). Required where C# needs a constant, e.g. inside attributes: `[RequireFeatureFlag(FeatureNameConstants.NewCheckout)]`. |
 | `static readonly` | A value created once at startup that can't be a `const` (lists, objects). `readonly` stops the *field* being replaced. |
 | `readonly` field | Set once in the constructor (injected services), can never be swapped by accident later. |
-| `T?` (nullable) | "This can be missing." `Product? FindById` returns `null` for "not found". The compiler then forces callers to check. |
+| `T?` (nullable) | "This can be missing." `ProductModel? FindById` (3.1) returns `null` for "not found". The compiler then forces callers to check. |
 | `= null!` | "The framework fills this in later, trust me" (EF navigation properties, xUnit setup). Used sparingly. |
 | `var` | Only when the type is obvious from the right-hand side (`var list = new List<string>()`) or **impossible to write** (anonymous types from LINQ `Select(x => new { ... })`). Otherwise the type is written out so you can read it. |
 | `lock (privateObject)` | The lock object is a private `object` used for nothing else, so no outside code can lock on it and cause a deadlock. |

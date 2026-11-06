@@ -1,6 +1,6 @@
-@model GuestbookEntry
+@model GuestbookEntryModel
 @{
-    var allEntries = (List<GuestbookEntry>)ViewBag.Entries;
+    var allEntries = (List<GuestbookEntryModel>)ViewBag.Entries;
 }
 <!DOCTYPE html>
 <html>
@@ -25,7 +25,7 @@
         <button type="submit">Post</button>
     </form>
 
-    @foreach (GuestbookEntry entry in allEntries)
+    @foreach (GuestbookEntryModel entry in allEntries)
     {
         <div class="entry" style="border-top: 1px solid #ccc; margin-top: 10px;">
             @* SAFE: @entry.Message is HTML-encoded, so "<script>" is shown as text, not run. *@

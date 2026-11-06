@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProductCatalog.Models;
+using ProductCatalog.Stores;
 
 namespace ProductCatalog.Controllers;
 
@@ -15,7 +16,7 @@ public class ProductsController : Controller
     [HttpGet("/product/{id:int}")]
     public IActionResult Details(int id)
     {
-        Product? product = ProductStore.FindById(id);
+        ProductModel? product = ProductStore.FindById(id);
         if (product == null)
         {
             return NotFound();
@@ -27,12 +28,12 @@ public class ProductsController : Controller
     public IActionResult Create()
     {
         ViewBag.Categories = ProductStore.Categories;
-        return View(new Product());
+        return View(new ProductModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Create(Product product)
+    public IActionResult Create(ProductModel product)
     {
         if (!ModelState.IsValid)
         {
@@ -51,7 +52,7 @@ public class ProductsController : Controller
     [HttpGet]
     public IActionResult Edit(int id)
     {
-        Product? product = ProductStore.FindById(id);
+        ProductModel? product = ProductStore.FindById(id);
         if (product == null)
         {
             return NotFound();
@@ -62,7 +63,7 @@ public class ProductsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(Product product)
+    public IActionResult Edit(ProductModel product)
     {
         if (!ModelState.IsValid)
         {

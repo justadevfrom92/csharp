@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using TransactionalCheckout.DbContexts;
+using TransactionalCheckout.Models;
 
 // Fresh database every run so the demo always shows the same thing.
 using (var database = new ShopDbContext())
@@ -20,7 +22,7 @@ PrintState("After failed mouse order (rolled back)");
 // 3. Soft delete.
 using (var database = new ShopDbContext())
 {
-    Product webcam = database.Products.Single(product => product.Name == "Old Webcam");
+    ProductModel webcam = database.Products.Single(product => product.Name == "Old Webcam");
     database.Products.Remove(webcam); // our SaveChanges turns this into IsDeleted = true
     database.SaveChanges();
 }
@@ -29,7 +31,7 @@ PrintState("After deleting Old Webcam");
 using (var database = new ShopDbContext())
 {
     Console.WriteLine("Still in the database (IgnoreQueryFilters):");
-    foreach (Product product in database.Products.IgnoreQueryFilters().Where(product => product.IsDeleted))
+    foreach (ProductModel product in database.Products.IgnoreQueryFilters().Where(product => product.IsDeleted))
     {
         Console.WriteLine($"  {product.Name} deleted at {product.DeletedAtUtc:u}");
     }
@@ -46,13 +48,13 @@ void Checkout(int customerId, int productId, int quantity)
     using var transaction = database.Database.BeginTransaction();
     try
     {
-        Customer customer = database.Customers.Single(existing => existing.Id == customerId);
-        Product product = database.Products.Single(existing => existing.Id == productId);
+        CustomerModel customer = database.Customers.Single(existing => existing.Id == customerId);
+        ProductModel product = database.Products.Single(existing => existing.Id == productId);
         decimal total = product.Price * quantity;
 
         // Step 1: create the order and save it (gets an Id).
-        var order = new Order { CustomerId = customer.Id, CreatedAtUtc = DateTime.UtcNow, Total = total };
-        order.Lines.Add(new OrderLine { ProductId = product.Id, Quantity = quantity, UnitPrice = product.Price });
+        var order = new OrderModel { CustomerId = customer.Id, CreatedAtUtc = DateTime.UtcNow, Total = total };
+        order.Lines.Add(new OrderLineModel { ProductId = product.Id, Quantity = quantity, UnitPrice = product.Price });
         database.Orders.Add(order);
         database.SaveChanges();
 
@@ -86,11 +88,11 @@ void PrintState(string title)
 {
     using var database = new ShopDbContext();
     Console.WriteLine($"--- {title} ---");
-    foreach (Product product in database.Products.OrderBy(product => product.Id))
+    foreach (ProductModel product in database.Products.OrderBy(product => product.Id))
     {
         Console.WriteLine($"  {product.Name,-11} stock {product.Stock}");
     }
-    Customer alice = database.Customers.Single();
+    CustomerModel alice = database.Customers.Single();
     Console.WriteLine($"  Alice wallet: {alice.WalletBalance:0.00}, orders: {database.Orders.Count()}");
     Console.WriteLine();
 }

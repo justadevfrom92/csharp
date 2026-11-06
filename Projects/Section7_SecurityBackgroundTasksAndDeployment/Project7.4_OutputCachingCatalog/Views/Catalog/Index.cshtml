@@ -1,4 +1,4 @@
-@model List<CatalogProduct>
+@model List<CatalogProductModel>
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><title>Catalog</title></head>
@@ -16,7 +16,7 @@
     </form>
 
     <ul>
-        @foreach (CatalogProduct product in Model)
+        @foreach (CatalogProductModel product in Model)
         {
             <li>@product.Name - @product.Price.ToString("0.00")</li>
         }

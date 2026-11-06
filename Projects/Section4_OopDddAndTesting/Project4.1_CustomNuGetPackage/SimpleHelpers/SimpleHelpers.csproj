@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- These settings become the package's info when you run "dotnet pack". -->
     <PackageId>Roadmap.SimpleHelpers</PackageId>
-    <Version>1.0.0</Version>
+    <Version>2.0.0</Version>
     <Authors>CSharpRoadmap</Authors>
     <Description>Small text and validation helpers.</Description>
     <RootNamespace>Roadmap.SimpleHelpers</RootNamespace>

@@ -17,7 +17,7 @@ Edit the `FeatureFlags` section in `appsettings.json` while the app runs, then r
 |---|---|---|
 | Razor view | `@inject FeatureFlagService` (in `_ViewImports`) + `@if (FeatureFlags.IsEnabled(...))` | Holiday banner, Reviews link |
 | Inside an action | `if (featureFlags.IsEnabled(...))` picks old or new code | `/Shop/Checkout` |
-| Whole action | `[RequireFeatureFlag(FeatureNames.ProductReviews)]` returns 404 when off | `/Shop/Reviews` |
+| Whole action | `[RequireFeatureFlag(FeatureNameConstants.ProductReviews)]` returns 404 when off | `/Shop/Reviews` |
 
 Override per environment without touching the file:
 
@@ -47,8 +47,8 @@ With flags they are separate steps:
 
 - **Missing flag = off.** A typo in config or a forgotten key hides a feature instead of exposing an
   unfinished one.
-- **`FeatureNames` constants.** `IsEnabled("NewChekout")` would compile and silently be off forever;
-  `FeatureNames.NewChekout` doesn't compile.
+- **`FeatureNameConstants` constants.** `IsEnabled("NewChekout")` would compile and silently be off forever;
+  `FeatureNameConstants.NewChekout` doesn't compile.
 - **404 instead of 403 for disabled pages.** The feature should look like it doesn't exist yet.
 - **`IOptionsMonitor` instead of `IOptions`.** `IOptions` reads config once at startup; the monitor
   sees changes live, which is the whole point of a flag.
@@ -63,7 +63,7 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `static class FeatureNames` with `const string` | Attributes only accept compile-time constants: `[RequireFeatureFlag(FeatureNames.NewCheckout)]`. Typos become compile errors. | `static readonly` can't be used inside an attribute. |
+| `static class FeatureNameConstants` with `const string` | Attributes only accept compile-time constants: `[RequireFeatureFlag(FeatureNameConstants.NewCheckout)]`. Typos become compile errors. | `static readonly` can't be used inside an attribute. |
 | `FeatureFlagSettings : Dictionary<string, bool>` | Config binds any number of flag names into it. Its own type name makes it easy to register in DI. | A class with one property per flag needs a code change for every new flag. |
 | `IOptionsMonitor<T>` | Always gives the latest config, so flags change without a restart. | `IOptions<T>` reads once at startup. |
 | `FeatureFlagService` singleton class | One place for the "missing = off" rule. | Reading the dictionary directly everywhere repeats that rule. |

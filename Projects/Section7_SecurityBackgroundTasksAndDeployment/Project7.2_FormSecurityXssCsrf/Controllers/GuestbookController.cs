@@ -5,7 +5,7 @@ namespace FormSecurityXssCsrf.Controllers;
 
 public class GuestbookController : Controller
 {
-    private static readonly List<GuestbookEntry> entries = new();
+    private static readonly List<GuestbookEntryModel> entries = new();
     private static readonly object listLock = new();
 
     public IActionResult Index()
@@ -14,12 +14,12 @@ public class GuestbookController : Controller
         {
             ViewBag.Entries = entries.OrderByDescending(entry => entry.PostedAtUtc).ToList();
         }
-        return View(new GuestbookEntry());
+        return View(new GuestbookEntryModel());
     }
 
     // No [ValidateAntiForgeryToken] needed here: it's added to ALL POST actions globally in Program.cs.
     [HttpPost]
-    public IActionResult Index(GuestbookEntry entry)
+    public IActionResult Index(GuestbookEntryModel entry)
     {
         if (!string.IsNullOrEmpty(entry.Website) && !IsSafeWebLink(entry.Website))
         {

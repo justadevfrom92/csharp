@@ -58,9 +58,9 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `class AppUser` | `PasswordHash` is set *after* the object exists, because `PasswordHasher.HashPassword(user, ...)` needs the user. | A record created all at once can't do that order. |
-| `static class UserStore` + `static readonly PasswordHasher<AppUser>` | One shared user list and one hasher (it holds no per-user state). | A real app uses ASP.NET Core Identity with a database. |
-| `AppUser? CheckPassword` | Wrong password is a normal outcome → `null`. | An exception for a normal failed login is slow and noisy. |
+| `class AppUserModel` | `PasswordHash` is set *after* the object exists, because `PasswordHasher.HashPassword(user, ...)` needs the user. | A record created all at once can't do that order. |
+| `static class UserStore` + `static readonly PasswordHasher<AppUserModel>` | One shared user list and one hasher (it holds no per-user state). | A real app uses ASP.NET Core Identity with a database. |
+| `AppUserModel? CheckPassword` | Wrong password is a normal outcome → `null`. | An exception for a normal failed login is slow and noisy. |
 | `bool Register` | `false` = name taken. | — |
 | `List<Claim>` | The claims list given to `ClaimsIdentity`. | — |
 | `string? returnUrl` | Usually missing. | — |

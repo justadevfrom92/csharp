@@ -1,4 +1,4 @@
-@model List<ActivityEntry>
+@model List<ActivityEntryModel>
 
 <h3>Recent activity</h3>
 @if (Model.Count == 0)
@@ -6,7 +6,7 @@
     <p>Nothing yet.</p>
 }
 <ul>
-    @foreach (ActivityEntry entry in Model)
+    @foreach (ActivityEntryModel entry in Model)
     {
         <li>
             <a href="/Activity/Day?day=@entry.Date.ToString("yyyy-MM-dd")">@entry.Date.ToString("yyyy-MM-dd")</a>

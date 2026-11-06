@@ -1,4 +1,4 @@
-@model Product
+@model ProductModel
 
 @*
     asp-validation-summary="ModelOnly" shows errors that belong to the WHOLE form, not one field
@@ -8,10 +8,10 @@
 <div asp-validation-summary="ModelOnly"></div>
 
 @*
-    asp-for="Name" connects the tag to the Product.Name property. From that ONE attribute it writes:
+    asp-for="Name" connects the tag to the ProductModel.Name property. From that ONE attribute it writes:
       <label for="Name">Name</label>                       (text = property name, or [Display(Name=...)])
       <input type="text" id="Name" name="Name" value="..." maxlength="50" data-val-...="..." />
-        - name="Name"  -> on POST, model binding puts the value back into Product.Name
+        - name="Name"  -> on POST, model binding puts the value back into ProductModel.Name
         - value="..."  -> the current value, so the form is pre-filled on Edit and after an error
         - type         -> picked from the C# type (decimal -> text, bool -> checkbox, DateOnly -> date)
         - maxlength / data-val-*  -> copied from [StringLength], [Required], [Range] on the model

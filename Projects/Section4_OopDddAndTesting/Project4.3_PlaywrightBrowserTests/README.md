@@ -29,10 +29,10 @@ CHROMIUM_PATH=/path/to/chrome dotnet test
 
 ## How it works
 
-- `ProductCatalogWebsite` starts the real 3.1 app **inside the test process** with
+- `ProductCatalogWebsiteFixture` starts the real 3.1 app **inside the test process** with
   `WebApplicationFactory<Program>` + `UseKestrel(0)` (port 0 = pick any free port), and launches
   one headless Chromium.
-- `ProductCatalogBrowserTests` drives the pages using element ids (`#Name`, `#save-button`,
+- `ProductCatalogBrowserTest` drives the pages using element ids (`#Name`, `#save-button`,
   `#success-alert`) that the views render.
 
 ## Test isolation — how tests avoid affecting each other
@@ -63,8 +63,8 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `class ProductCatalogWebsite : IAsyncLifetime` | xUnit calls `InitializeAsync`/`DisposeAsync` on this interface — needed because starting a browser is async. | A constructor can't `await`; `IDisposable` can't be async. |
-| `IClassFixture<ProductCatalogWebsite>` | One server + one browser shared by all tests in the class. | Creating them per test would make every test seconds slower. |
+| `class ProductCatalogWebsiteFixture : IAsyncLifetime` | xUnit calls `InitializeAsync`/`DisposeAsync` on this interface — needed because starting a browser is async. | A constructor can't `await`; `IDisposable` can't be async. |
+| `IClassFixture<ProductCatalogWebsiteFixture>` | One server + one browser shared by all tests in the class. | Creating them per test would make every test seconds slower. |
 | `IBrowser Browser { get; private set; } = null!` | Set in `InitializeAsync`, not the constructor. `null!` tells the compiler it will be set before use; `private set` stops tests from replacing it. | Making it nullable would force `Browser!` everywhere. |
 | `WebApplicationFactory<Program>? factory` | Really can be null if setup failed, so `DisposeAsync` checks it. | — |
 | `IReadOnlyList<string>` for error texts | That's what Playwright's `AllInnerTextsAsync` returns; we only read it. | — |

@@ -25,12 +25,18 @@ Add a 3rd-party package the normal way, e.g. `dotnet add package Humanizer.Core`
 **Namespaces.**
 ```
 Roadmap.SimpleHelpers              (package name = root namespace)
-├── .Text        UrlSlugMaker, TextShortener
-└── .Validation  PaymentCardNumberChecker
+├── .Generators  UrlSlugGenerator
+├── .Shorteners  TextShortener
+└── .Validators  PaymentCardNumberValidator
 ```
 The root matches the package name, so users can guess the `using` from the package they
-installed. Classes are grouped by what they work on (text vs validation), so a user only
-imports what they need, and a new helper has an obvious home.
+installed. Each folder (and namespace) is named after the KIND of class in it, and every class
+name ends in that kind: a `...Generator` is in `Generators/`, a `...Validator` in `Validators/`.
+So the name alone tells you where to find a class, and a new helper has an obvious home.
+
+**Version 2.0.0:** the class names changed (`UrlSlugMaker` → `UrlSlugGenerator`,
+`PaymentCardNumberChecker` → `PaymentCardNumberValidator`), which breaks code using 1.0.0.
+Breaking changes bump the FIRST number of the version, so users can see it's not a drop-in upgrade.
 
 **Public API: small and static.**
 - Each helper is a `static class` with one clear method. They don't keep any state, so there
@@ -52,8 +58,8 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `static class` for every helper | They keep no state: same input, same output. Just call `UrlSlugMaker.MakeUrlSlug(...)`. | An instance class would force users to `new` an object that holds nothing. |
-| No interfaces | Pure functions don't need swapping out in tests — you test them directly. | `IUrlSlugMaker` would double the public API for no benefit. |
+| `static class` for every helper | They keep no state: same input, same output. Just call `UrlSlugGenerator.MakeUrlSlug(...)`. | An instance class would force users to `new` an object that holds nothing. |
+| No interfaces | Pure functions don't need swapping out in tests — you test them directly. | `IUrlSlugGenerator` would double the public API for no benefit. |
 | `StringBuilder` in `MakeUrlSlug` | Builds the slug one character at a time. | `string +=` creates a new string per character. |
 | `char.IsAsciiLetterOrDigit` | Slugs must be plain a–z/0–9 to be safe in every URL. | `char.IsLetterOrDigit` also accepts `é`, `ß`, Chinese characters. |
 | `bool IsValidCardNumber` | The caller just wants yes/no; a bad card number is a normal answer. | Throwing would force try/catch around a simple check. |

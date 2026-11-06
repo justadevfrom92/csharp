@@ -1,4 +1,4 @@
-@model ShoppingCart
+@model ShoppingCartModel
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><title>Cart</title></head>
@@ -10,7 +10,7 @@
         The hidden input uses plain name="itemId" (not asp-for) because Add(int itemId) takes a simple
         parameter, not a model property. Only the id is sent - the price is looked up on the server.
     *@
-    @foreach (ShopItem item in ViewBag.ItemsForSale)
+    @foreach (ShopItemModel item in ViewBag.ItemsForSale)
     {
         <form asp-action="Add" method="post" style="display:inline">
             <input type="hidden" name="itemId" value="@item.Id" />
@@ -24,7 +24,7 @@
         <p>Empty.</p>
     }
     <ul>
-        @foreach (CartLine line in Model.Lines)
+        @foreach (CartLineModel line in Model.Lines)
         {
             <li>
                 @line.Quantity x @line.Name = @((line.Price * line.Quantity).ToString("0.00"))

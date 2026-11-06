@@ -14,14 +14,14 @@ The database (`library.db`, SQLite) is created and migrated on startup.
 
 ## Migrations (code-first)
 
-The model classes are in `Data/` (`Author.cs`, `AuthorProfile.cs`, `Book.cs`, `Tag.cs`). After changing them:
+The model classes are in `Models/` (`AuthorModel.cs`, `AuthorProfileModel.cs`, `BookModel.cs`, `TagModel.cs`). After changing them:
 
 ```bash
 dotnet tool restore
 ```
 
 ```bash
-dotnet ef migrations add SomeChangeName -o Data/Migrations
+dotnet ef migrations add SomeChangeName -o Migrations
 ```
 
 ```bash
@@ -78,9 +78,9 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 |---|---|---|
 | Entities are `class` with `{ get; set; }` | EF creates them empty, fills properties from the database, and tracks changes to them. | Records are meant to stay unchanged; EF change tracking expects mutable objects. |
 | `int Id` | EF's convention: an `int` named `Id` becomes an auto-increment primary key. | `Guid` works too but makes bigger, unordered indexes for no gain here. |
-| `List<Book> Books { get; set; } = new()` | Navigation collection EF fills; starting with an empty list means code never hits `null`. | `ICollection<T>` is also common; `List` is simpler and EF accepts it. |
-| `AuthorProfile? Profile` | An author may have no profile yet (the 1:1 is optional). | Non-nullable would claim every author has one. |
-| `Author Author { get; set; } = null!` | Every book *has* an author, but EF sets it after loading. `null!` says "filled in later". | `Author?` would force null checks on something that's never null once loaded. |
+| `List<BookModel> Books { get; set; } = new()` | Navigation collection EF fills; starting with an empty list means code never hits `null`. | `ICollection<T>` is also common; `List` is simpler and EF accepts it. |
+| `AuthorProfileModel? Profile` | An author may have no profile yet (the 1:1 is optional). | Non-nullable would claim every author has one. |
+| `AuthorModel Author { get; set; } = null!` | Every book *has* an author, but EF sets it after loading. `null!` says "filled in later". | `AuthorModel?` would force null checks on something that's never null once loaded. |
 | `DbSet<T> { get; set; } = null!` | EF finds and fills these properties itself. | — |
 | `database.Books` is `IQueryable`, ends with `ToListAsync()` | `Where`/`Include`/`OrderBy` on `IQueryable` become SQL. `ToListAsync` runs it **now**, inside the request. | Handing a lazy query to the view would run SQL during rendering — harder to log, and fails if the `DbContext` is gone. |
 | `AsNoTracking()` | Read-only page; EF skips the change-tracking bookkeeping. | Tracking costs memory and time for objects we'll never save. |

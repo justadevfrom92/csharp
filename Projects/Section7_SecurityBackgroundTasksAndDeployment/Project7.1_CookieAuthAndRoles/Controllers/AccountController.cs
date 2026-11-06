@@ -1,7 +1,8 @@
 using System.Security.Claims;
 using CookieAuthAndRoles.Models;
-using Microsoft.AspNetCore.Authentication;
+using CookieAuthAndRoles.Stores;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,7 +25,7 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string userName, string password, string? returnUrl)
     {
-        AppUser? user = UserStore.CheckPassword(userName ?? "", password ?? "");
+        AppUserModel? user = UserStore.CheckPassword(userName ?? "", password ?? "");
         if (user == null)
         {
             // Same message for "no such user" and "wrong password", so attackers can't find valid user names.

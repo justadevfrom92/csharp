@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
-using OutputCachingCatalog.Models;
+using OutputCachingCatalog.Databases;
 
 namespace OutputCachingCatalog.Controllers;
 

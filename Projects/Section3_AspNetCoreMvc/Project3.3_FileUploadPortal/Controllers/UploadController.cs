@@ -1,4 +1,4 @@
-using FileUploadPortal.Models;
+using FileUploadPortal.Forms;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FileUploadPortal.Controllers;
@@ -28,7 +28,7 @@ public class UploadController : Controller
     }
 
     // GET /Upload/Avatar - show the empty form.
-    // AvatarUploadForm is defined in Models/AvatarUploadForm.cs.
+    // AvatarUploadForm is defined in Forms/AvatarUploadForm.cs.
     // View(...) renders Views/Upload/Avatar.cshtml, whose first line "@model AvatarUploadForm"
     // says it expects this type. The asp-for="Avatar" input in that file is tied to its Avatar property.
     [HttpGet]
@@ -58,7 +58,7 @@ public class UploadController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // GET /Upload/Document - same pattern as Avatar. DocumentUploadForm is in Models/DocumentUploadForm.cs.
+    // GET /Upload/Document - same pattern as Avatar. DocumentUploadForm is in Forms/DocumentUploadForm.cs.
     [HttpGet]
     public IActionResult Document()
     {

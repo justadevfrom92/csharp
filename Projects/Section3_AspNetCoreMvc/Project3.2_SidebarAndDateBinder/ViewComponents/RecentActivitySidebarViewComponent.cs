@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SidebarAndDateBinder.Models;
+using SidebarAndDateBinder.Stores;
 
 namespace SidebarAndDateBinder.ViewComponents;
 
@@ -9,7 +10,7 @@ public class RecentActivitySidebarViewComponent : ViewComponent
 {
     public Task<IViewComponentResult> InvokeAsync(int count)
     {
-        List<ActivityEntry> newestEntries = ActivityLog.GetNewest(count);
+        List<ActivityEntryModel> newestEntries = ActivityLogStore.GetNewest(count);
         IViewComponentResult result = View(newestEntries); // Views/Shared/Components/RecentActivitySidebar/Default.cshtml
         return Task.FromResult(result);
     }

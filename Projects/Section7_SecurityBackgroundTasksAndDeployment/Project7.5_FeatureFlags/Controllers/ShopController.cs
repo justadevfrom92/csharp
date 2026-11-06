@@ -1,4 +1,6 @@
-using FeatureFlags.Features;
+using FeatureFlags.Attributes;
+using FeatureFlags.Constants;
+using FeatureFlags.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FeatureFlags.Controllers;
@@ -20,7 +22,7 @@ public class ShopController : Controller
     // One URL, two behaviours: the flag decides which checkout runs.
     public IActionResult Checkout()
     {
-        if (featureFlags.IsEnabled(FeatureNames.NewCheckout))
+        if (featureFlags.IsEnabled(FeatureNameConstants.NewCheckout))
         {
             return Content("NEW one-page checkout (behind the NewCheckout flag)");
         }
@@ -28,7 +30,7 @@ public class ShopController : Controller
     }
 
     // The whole page only exists while the flag is on.
-    [RequireFeatureFlag(FeatureNames.ProductReviews)]
+    [RequireFeatureFlag(FeatureNameConstants.ProductReviews)]
     public IActionResult Reviews()
     {
         return Content("Product reviews page (behind the ProductReviews flag)");
@@ -39,9 +41,9 @@ public class ShopController : Controller
     {
         return Json(new
         {
-            holidayBanner = featureFlags.IsEnabled(FeatureNames.HolidayBanner),
-            newCheckout = featureFlags.IsEnabled(FeatureNames.NewCheckout),
-            productReviews = featureFlags.IsEnabled(FeatureNames.ProductReviews),
+            holidayBanner = featureFlags.IsEnabled(FeatureNameConstants.HolidayBanner),
+            newCheckout = featureFlags.IsEnabled(FeatureNameConstants.NewCheckout),
+            productReviews = featureFlags.IsEnabled(FeatureNameConstants.ProductReviews),
         });
     }
 }

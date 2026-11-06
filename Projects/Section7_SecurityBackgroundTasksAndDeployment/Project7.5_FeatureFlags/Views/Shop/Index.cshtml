@@ -2,7 +2,7 @@
 <html>
 <head><meta charset="utf-8" /><title>Shop</title></head>
 <body style="font-family: sans-serif; padding: 16px;">
-    @if (FeatureFlags.IsEnabled(FeatureNames.HolidayBanner))
+    @if (FeatureFlags.IsEnabled(FeatureNameConstants.HolidayBanner))
     {
         <div id="holiday-banner" style="background: #c62828; color: white; padding: 10px;">Holiday sale: 20% off everything!</div>
     }
@@ -10,7 +10,7 @@
     <h1>Shop</h1>
     <ul>
         <li><a href="/Shop/Checkout">Checkout</a></li>
-        @if (FeatureFlags.IsEnabled(FeatureNames.ProductReviews))
+        @if (FeatureFlags.IsEnabled(FeatureNameConstants.ProductReviews))
         {
             <li><a href="/Shop/Reviews">Reviews</a></li>
         }

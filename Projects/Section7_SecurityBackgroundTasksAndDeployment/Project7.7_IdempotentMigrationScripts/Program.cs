@@ -1,4 +1,4 @@
-using IdempotentMigrationScripts.Data;
+using IdempotentMigrationScripts.DbContexts;
 using Microsoft.EntityFrameworkCore;
 
 // The app NEVER changes the database schema itself (no Database.Migrate()).

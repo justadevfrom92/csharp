@@ -48,10 +48,11 @@ The first line of a view says **what type of object** the controller passes in.
 |---|---|---|
 | `Upload/Index.cshtml` | `List<string>` | `return View(savedFileNames);` |
 | `Upload/Avatar.cshtml` | `AvatarUploadForm` | `return View(new AvatarUploadForm());` |
-| `Products/Index.cshtml` (3.1) | `List<Product>` | `return View(ProductStore.GetAll());` |
+| `Products/Index.cshtml` (3.1) | `List<ProductModel>` | `return View(ProductStore.GetAll());` |
 
-Where are those classes? Always in the project's `Models/` folder, **one class per file, file named
-after the class**: `AvatarUploadForm` → `Models/AvatarUploadForm.cs`.
+Where are those classes? **The folder is named after the kind of class, and the class name ends
+in it** (see [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md)): `AvatarUploadForm` → `Forms/AvatarUploadForm.cs`,
+`ProductModel` → `Models/ProductModel.cs`. One class per file, file named after the class.
 
 ---
 
@@ -99,7 +100,7 @@ The **model** is the page's main data. Sometimes a page needs one or two extra t
 
 | | Example | Lives for | Type-checked? |
 |---|---|---|---|
-| `Model` | `@model List<Product>` | this request | **Yes** |
+| `Model` | `@model List<ProductModel>` | this request | **Yes** |
 | `ViewBag.X` | `ViewBag.Categories = ...` in controller, `ViewBag.Categories` in view | this request | **No** — it's `dynamic`, typos only fail when the page runs |
 | `ViewData["X"]` | `ViewData["Title"] = "Products"` | this request | No (same storage as `ViewBag`, just with string keys) |
 | `TempData["X"]` | message after a save | **until it's read, even across a redirect** | No |

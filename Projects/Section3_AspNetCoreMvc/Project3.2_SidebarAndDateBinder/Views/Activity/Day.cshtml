@@ -1,4 +1,4 @@
-@model List<ActivityEntry>
+@model List<ActivityEntryModel>
 
 <h2>Activity on @(((DateOnly)ViewBag.Day).ToString("dddd d MMMM yyyy"))</h2>
 @if (ViewBag.Error != null)
@@ -6,7 +6,7 @@
     <p class="error">@ViewBag.Error Showing today instead.</p>
 }
 <ul>
-    @foreach (ActivityEntry entry in Model)
+    @foreach (ActivityEntryModel entry in Model)
     {
         <li>@entry.Time.ToString("HH:mm") - @entry.Text</li>
     }
