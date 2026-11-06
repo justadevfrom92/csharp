@@ -1,12 +1,40 @@
 @model Product
 
+@*
+    asp-validation-summary="ModelOnly" shows errors that belong to the WHOLE form, not one field
+    (added in code with ModelState.AddModelError("", "...")). Other options:
+      "All"  = list every error here too,   "None" = show nothing.
+*@
 <div asp-validation-summary="ModelOnly"></div>
 
+@*
+    asp-for="Name" connects the tag to the Product.Name property. From that ONE attribute it writes:
+      <label for="Name">Name</label>                       (text = property name, or [Display(Name=...)])
+      <input type="text" id="Name" name="Name" value="..." maxlength="50" data-val-...="..." />
+        - name="Name"  -> on POST, model binding puts the value back into Product.Name
+        - value="..."  -> the current value, so the form is pre-filled on Edit and after an error
+        - type         -> picked from the C# type (decimal -> text, bool -> checkbox, DateOnly -> date)
+        - maxlength / data-val-*  -> copied from [StringLength], [Required], [Range] on the model
+          (data-val-* is for client-side validation; this demo doesn't load that script, so checks run on the server)
+        - class="input-validation-error" -> added when this field has an error (CSS can turn it red)
+    Why not write name="Name" by hand? A typo (name="Nmae") compiles fine and silently loses the value.
+    asp-for="Nmae" is a COMPILE error, because it's checked against the Product class.
+*@
 <label asp-for="Name"></label>
 <input asp-for="Name" />
+@*
+    asp-validation-for="Name" shows the error message for that one property, e.g. "Name is required.".
+    Empty when there's no error. The message text comes from the attribute on the model.
+*@
 <span asp-validation-for="Name" class="field-error"></span>
 
 <label asp-for="Category"></label>
+@*
+    On a <select>: asp-for sets name/id and marks the matching option as selected.
+    asp-items gives the list of <option>s. SelectList turns our string[] into options:
+        <option>Computers</option> <option>Furniture</option> <option>Lighting</option>
+    The hand-written "-- choose --" option stays first (value="" -> [Required] fails if picked).
+*@
 <select asp-for="Category" asp-items="@(new SelectList((string[])ViewBag.Categories))">
     <option value="">-- choose --</option>
 </select>
@@ -17,4 +45,5 @@
 <span asp-validation-for="Price" class="field-error"></span>
 
 <label asp-for="Description"></label>
+@* On a <textarea>, asp-for does the same job: name, id, current text, maxlength. *@
 <textarea asp-for="Description"></textarea>

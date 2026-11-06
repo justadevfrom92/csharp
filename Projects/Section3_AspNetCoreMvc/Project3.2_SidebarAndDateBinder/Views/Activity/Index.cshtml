@@ -1,10 +1,18 @@
 <h2>Add activity</h2>
+@*
+    POST form: asp-action="Add" -> action="/Activity/Add", PLUS a hidden __RequestVerificationToken
+    (anti-forgery token) that [ValidateAntiForgeryToken] on the Add action checks.
+*@
 <form asp-action="Add" method="post">
     <input name="text" placeholder="What happened?" />
     <button type="submit">Add</button>
 </form>
 
 <h2>Look up a day</h2>
+@*
+    GET form: asp-action="Day" -> action="/Activity/Day". No token is added for GET (GET must never change data).
+    The browser puts the inputs in the URL: /Activity/Day?day=2026-11-05, which our custom binder reads.
+*@
 <form asp-action="Day" method="get">
     <input name="day" placeholder="yyyy-MM-dd" />
     <button type="submit">Show</button>

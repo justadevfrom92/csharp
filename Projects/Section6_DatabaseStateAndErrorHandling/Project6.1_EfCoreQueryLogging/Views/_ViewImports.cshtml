@@ -1,2 +1,7 @@
 @using EfCoreQueryLogging.Data
+@*
+    Turns on the built-in "asp-*" Tag Helpers (asp-action, asp-for, ...). They run on the SERVER and
+    rewrite tags into plain HTML; the browser never sees "asp-". Without this line they do nothing.
+    Full explanation with examples: Project 3.1 Views.
+*@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

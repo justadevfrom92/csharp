@@ -127,3 +127,31 @@ Full explanation in Project 1.1's README.
 | `ViewBag` | Small extras (a dropdown list, an error message). It's `dynamic`: **no compile-time checking**, typos only show up at runtime. Fine for a demo; a real app should put these in a view-model class. |
 | `TempData` | A message that must survive **one redirect** ("Product added"). `ViewBag` is lost on redirect. |
 | `Controller` vs `ControllerBase` | `Controller` adds views. Pure JSON APIs (6.3, 7.3) use `ControllerBase`. |
+
+---
+
+## 8. `asp-*` attributes (Tag Helpers) in the `.cshtml` files
+
+Tag Helpers are C# code that runs **on the server** while a page renders. They read `asp-*`
+attributes and turn the tag into plain HTML. The browser never sees `asp-` (use "View page source").
+They only work if `_ViewImports.cshtml` contains `@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers`.
+Every view that uses them has a comment next to it; Project 3.1's views explain each one in full.
+
+| You write | The browser gets | Why use it instead of plain HTML |
+|---|---|---|
+| `<a asp-controller="Products" asp-action="Create">` | `<a href="/Products/Create">` | URL is built from the routes. Change a route and every link follows; a hand-typed `href` silently breaks. |
+| `asp-action` without `asp-controller` | link to an action on the **current** controller | Shorter when linking inside the same controller. |
+| `asp-route-id="5"` | fills `{id}`: `/Products/Edit/5` — or `/product/5` if that action has an attribute route | Each action can have a different URL shape; the tag helper picks the right one. Unknown names become `?name=value`. |
+| `<form asp-action="Create" method="post">` | `<form action="/Products/Create" method="post">` **+ hidden `__RequestVerificationToken`** | The anti-forgery token is added for you. A plain `<form>` has none, and `[ValidateAntiForgeryToken]` rejects it (400). |
+| `<input asp-for="Name" />` | `<input type="text" id="Name" name="Name" value="..." maxlength="50" data-val-...>` | `name` matches the model property so binding works; value is pre-filled; type and limits come from the C# type and attributes. A typo is a **compile error**, unlike `name="Nmae"`. |
+| `<label asp-for="Name">` | `<label for="Name">Name</label>` | Text comes from the property name (or `[Display(Name = "...")]`), linked to the input. |
+| `<select asp-for="Category" asp-items="...">` | `<select name="Category">` + one `<option>` per item, the current one `selected` | Builds the options and remembers the chosen one after an error. |
+| `<span asp-validation-for="Name">` | `<span>Name is required.</span>` (empty if no error) | Shows the message from that property's validation attribute. |
+| `<div asp-validation-summary="ModelOnly">` | list of form-wide errors | `ModelOnly` = errors not tied to one field; `All` = every error. |
+| `<partial name="_Header" />` | the HTML of `_Header.cshtml` | Reuse a piece of HTML (3.1 header/footer/form fields). |
+| `<vc:recent-activity-sidebar count="5" />` | whatever the view component renders | Calls a view component; class and parameters are checked at compile time. Needs `@addTagHelper *, <YourProject>`. |
+| `href="~/css/site.css"` | `href="/css/site.css"` | `~/` = site root (wwwroot), still correct if the site runs under a sub-folder. |
+
+**When we use plain `name="..."` instead of `asp-for`:** when the action takes simple parameters
+(`Create(string title, ...)`, `Add(int itemId)`) instead of a model, there's no property for `asp-for`
+to point at. The `name` must then match the parameter name exactly.

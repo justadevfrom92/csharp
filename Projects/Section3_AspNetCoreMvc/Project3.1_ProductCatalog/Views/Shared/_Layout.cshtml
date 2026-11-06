@@ -3,9 +3,13 @@
 <head>
     <meta charset="utf-8" />
     <title>@ViewData["Title"] - Product Catalog</title>
+    @* "~/" means "the root of the website" (the wwwroot folder). It becomes href="/css/site.css".
+       It still works if the site is hosted under a sub-folder like /shop/, unlike a hard-coded "/css/...". *@
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
+    @* <partial name="..."> is a Tag Helper too: it pastes in the HTML of Views/Shared/_Header.cshtml.
+       Same as @await Html.PartialAsync("_Header"), just written like HTML. *@
     <partial name="_Header" />
     <partial name="_Navigation" />
     <main>

@@ -1,3 +1,9 @@
 @using SidebarAndDateBinder.Models
+@*
+    Line 1: turns on the built-in "asp-*" Tag Helpers (asp-action, asp-for, ...).
+            They run on the server and rewrite tags into plain HTML. Full explanation: Project 3.1 Views.
+    Line 2: also registers OUR project's tag helpers. View components count as tag helpers, which is
+            what makes <vc:recent-activity-sidebar /> in _Layout work. Without it, that tag is ignored.
+*@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @addTagHelper *, SidebarAndDateBinder

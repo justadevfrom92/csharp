@@ -1,2 +1,12 @@
 @using ProductCatalog.Models
+@*
+    @addTagHelper turns ON the "asp-*" attributes (Tag Helpers) for every view in this folder.
+    "*" = all tag helpers in the Microsoft.AspNetCore.Mvc.TagHelpers library.
+    Without this line, asp-for, asp-action etc. are NOT processed: they would be sent to the
+    browser as meaningless attributes and the links/forms would not work.
+
+    What a Tag Helper is: C# code that runs on the SERVER while the page is rendered. It reads
+    attributes like asp-action="Create" and rewrites the tag into normal HTML (href="/Products/Create").
+    The browser never sees "asp-" anything - check "View page source" in your browser.
+*@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

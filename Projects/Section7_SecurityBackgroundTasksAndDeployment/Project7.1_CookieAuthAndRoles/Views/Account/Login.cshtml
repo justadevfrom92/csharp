@@ -3,6 +3,11 @@
 {
     <p style="color: #b00020">@ViewBag.Error</p>
 }
+@*
+    asp-action="Login" + method="post" -> action="/Account/Login" + hidden anti-forgery token.
+    Plain name="userName"/"password" (no asp-for): the Login action takes simple parameters, not a model.
+    returnUrl is carried in a hidden field so we can send the user back to the page they wanted.
+*@
 <form asp-action="Login" method="post">
     <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
     <input name="userName" placeholder="User name" />

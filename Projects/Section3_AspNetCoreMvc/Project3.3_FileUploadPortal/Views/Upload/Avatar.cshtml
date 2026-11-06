@@ -1,9 +1,19 @@
 @model AvatarUploadForm
 
 <h2>Upload avatar (.jpg/.png, max 1 MB)</h2>
-<!-- enctype="multipart/form-data" is required, or the file is not sent. -->
+@*
+    asp-action="Avatar" + method="post" -> action="/Upload/Avatar" + a hidden anti-forgery token.
+    enctype="multipart/form-data" is plain HTML (not a tag helper): without it the browser sends only
+    the file NAME, not its bytes, and AvatarUploadForm.Avatar would be null.
+*@
 <form asp-action="Avatar" method="post" enctype="multipart/form-data">
+    @*
+        asp-for="Avatar" -> id="Avatar" name="Avatar", so the uploaded file binds to AvatarUploadForm.Avatar (IFormFile).
+        We write type="file" ourselves: an explicit type always wins over the one asp-for would pick.
+        accept="..." only filters the browser's file picker; the REAL check is our server-side attribute.
+    *@
     <input asp-for="Avatar" type="file" accept=".jpg,.jpeg,.png" />
+    @* Shows the error from [MaximumFileSizeValidation] / [ValidatePermittedFileExtension] / [Required], if any. *@
     <span asp-validation-for="Avatar" class="error"></span>
     <button type="submit">Upload</button>
 </form>

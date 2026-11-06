@@ -10,7 +10,14 @@
     <p>Try posting <code>&lt;script&gt;alert('hacked')&lt;/script&gt;</code> or <code>&lt;b&gt;bold&lt;/b&gt;</code>
        as a message, or <code>javascript:alert(1)</code> as a website.</p>
 
-    <!-- The form tag helper adds a hidden __RequestVerificationToken field automatically. -->
+    @*
+        asp-action="Index" + method="post" -> action="/" + a hidden __RequestVerificationToken.
+        That token is what the global AutoValidateAntiforgeryToken filter checks: a form on another
+        website can't know it, so a forged POST is rejected with 400.
+        asp-for="Name" -> id/name="Name", current value (HTML-encoded, so it's safe), and maxlength from [StringLength].
+        asp-validation-for shows that field's error message.
+        (This is a Razor comment, not an HTML comment: HTML comments are sent to the browser, Razor comments are not.)
+    *@
     <form asp-action="Index" method="post">
         <div><input asp-for="Name" placeholder="Name" /> <span asp-validation-for="Name"></span></div>
         <div><textarea asp-for="Message" placeholder="Message"></textarea> <span asp-validation-for="Message"></span></div>

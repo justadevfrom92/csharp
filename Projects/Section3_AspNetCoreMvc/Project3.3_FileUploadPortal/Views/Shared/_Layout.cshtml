@@ -10,6 +10,8 @@
     </style>
 </head>
 <body>
+    @* asp-action (no asp-controller) = action on the current controller, Upload.
+       Becomes href="/", "/Upload/Avatar", "/Upload/Document" - generated from the routes. *@
     <nav>
         <a asp-action="Index">Files</a> |
         <a asp-action="Avatar">Upload avatar</a> |

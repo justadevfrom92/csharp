@@ -12,10 +12,18 @@
 </head>
 <body>
     <main>
+        @* asp-action with no asp-controller = an action on the CURRENT controller (Activity here).
+           Becomes href="/" and href="/Activity/Day". Built from the routes, so they never go stale. *@
         <a asp-action="Index">Home</a> | <a asp-action="Day">Today's activity</a>
         @RenderBody()
     </main>
     <aside>
+        @*
+            <vc:...> calls a VIEW COMPONENT. The name is the class name in kebab-case, minus "ViewComponent":
+                RecentActivitySidebarViewComponent  ->  <vc:recent-activity-sidebar>
+            Each attribute becomes a parameter of InvokeAsync: count="5" -> InvokeAsync(count: 5).
+            A misspelled name or parameter is a COMPILE error (unlike the older @await Component.InvokeAsync("...")).
+        *@
         <vc:recent-activity-sidebar count="5" />
     </aside>
 </body>

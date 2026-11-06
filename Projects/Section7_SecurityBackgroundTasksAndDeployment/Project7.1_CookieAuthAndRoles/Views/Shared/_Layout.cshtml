@@ -2,20 +2,28 @@
 <html>
 <head><meta charset="utf-8" /><title>Auth Demo</title></head>
 <body style="font-family: sans-serif; padding: 16px;">
+    @*
+        asp-controller + asp-action build each URL from the routes:
+            Home/Index -> "/",  Account/Profile -> "/Account/Profile",  Admin/Index -> "/Admin"
+        The Admin link is shown to everyone on purpose: hiding a link is not security, the
+        [Authorize(Roles = "Admin")] check on the server is.
+    *@
     <nav>
-        <a href="/">Home</a> |
-        <a href="/Account/Profile">Profile</a> |
-        <a href="/Admin">Admin</a> |
+        <a asp-controller="Home" asp-action="Index">Home</a> |
+        <a asp-controller="Account" asp-action="Profile">Profile</a> |
+        <a asp-controller="Admin" asp-action="Index">Admin</a> |
         @if (User.Identity?.IsAuthenticated == true)
         {
             <span>Logged in as <b>@User.Identity.Name</b> (@(User.IsInRole("Admin") ? "Admin" : "User"))</span>
+            @* Logout is a POST form (-> action="/Account/Logout" + anti-forgery token), not a link.
+               A GET link could be triggered by any other site with <img src="/Account/Logout">. *@
             <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline">
                 <button type="submit">Log out</button>
             </form>
         }
         else
         {
-            <a href="/Account/Login">Log in</a> <a href="/Account/Register">Register</a>
+            <a asp-controller="Account" asp-action="Login">Log in</a> <a asp-controller="Account" asp-action="Register">Register</a>
         }
     </nav>
     @if (TempData["Message"] is string message)

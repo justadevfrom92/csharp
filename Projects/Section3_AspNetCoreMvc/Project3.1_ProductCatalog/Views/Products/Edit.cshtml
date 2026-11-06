@@ -4,7 +4,12 @@
 }
 
 <h2>Edit @Model.Name</h2>
+@* Becomes <form method="post" action="/Products/Edit/5"> + anti-forgery token (see Create.cshtml). *@
 <form asp-action="Edit" method="post">
+    @*
+        type="hidden" + asp-for="Id"  ->  <input type="hidden" id="Id" name="Id" value="5" />
+        The id must be sent back with the form, or the POST action wouldn't know WHICH product to update.
+    *@
     <input type="hidden" asp-for="Id" />
     <partial name="_ProductFormFields" model="Model" />
     <button type="submit" id="save-button">Save</button>

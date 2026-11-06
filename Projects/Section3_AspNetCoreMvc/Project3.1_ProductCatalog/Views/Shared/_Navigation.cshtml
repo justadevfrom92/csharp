@@ -1,3 +1,14 @@
+@*
+    asp-controller + asp-action build the link URL from the ROUTING rules, instead of us typing it.
+        <a asp-controller="Products" asp-action="Create">   becomes   <a href="/Products/Create">
+        <a asp-controller="Products" asp-action="Index">    becomes   <a href="/">
+    (Index on Products is the default route, so MVC writes the shortest URL: "/".)
+
+    Why not just write href="/Products/Create"?
+    If the route changes (e.g. to "/shop/products/new"), every hand-typed link breaks silently.
+    Tag-helper links are generated from the routes, so they update themselves.
+    If asp-controller is left out, the CURRENT controller is used.
+*@
 <nav>
     <a asp-controller="Products" asp-action="Index">All products</a> |
     <a asp-controller="Products" asp-action="Create">Add product</a>

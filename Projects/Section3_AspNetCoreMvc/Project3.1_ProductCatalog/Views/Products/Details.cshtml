@@ -7,4 +7,5 @@
 <p>Category: @Model.Category</p>
 <p>Price: @Model.Price.ToString("0.00")</p>
 <p>@(Model.Description ?? "No description.")</p>
+@* Becomes href="/Products/Edit/5". See Index.cshtml for how asp-route-id works. *@
 <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a>

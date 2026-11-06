@@ -20,6 +20,14 @@
     </ul>
 
     <h2>Add book</h2>
+    @*
+        asp-action="Create" + method="post" -> action="/Books/Create" + a hidden anti-forgery token
+        (checked by [ValidateAntiForgeryToken] on Create).
+        The inputs use plain name="..." instead of asp-for: asp-for needs a property on this page's
+        @model, but the model here is the book LIST. The names match the Create(...) parameters
+        (title, publishedYear, authorName, tagIds), which is how model binding fills them.
+        Several checkboxes with the same name="tagIds" arrive as one int[] array.
+    *@
     <form asp-action="Create" method="post">
         <input name="title" placeholder="Title" required />
         <input name="publishedYear" type="number" value="2026" />

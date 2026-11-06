@@ -9,6 +9,16 @@
     @foreach (Product product in Model)
     {
         <tr>
+            @*
+                asp-route-id adds a route value called "id". MVC fills it into the matching route:
+                  asp-action="Details" asp-route-id="1"  ->  href="/product/1"
+                    (Details has the attribute route [HttpGet("/product/{id:int}")], so that wins)
+                  asp-action="Edit"    asp-route-id="1"  ->  href="/Products/Edit/1"
+                    (normal route {controller}/{action}/{id?})
+                Any name works: asp-route-page="2" adds ?page=2 if no route has a {page} slot.
+                This is the clearest example of why tag helpers beat hand-typed links: the two
+                links look the same here but produce different URLs, decided by the routes.
+            *@
             <td><a asp-action="Details" asp-route-id="@product.Id">@product.Name</a></td>
             <td>@product.Category</td>
             <td>@product.Price.ToString("0.00")</td>

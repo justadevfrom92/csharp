@@ -4,7 +4,20 @@
 }
 
 <h2>Add product</h2>
+@*
+    <form asp-action="Create" method="post"> becomes:
+        <form method="post" action="/Products/Create">
+            ...
+            <input name="__RequestVerificationToken" type="hidden" value="CfDJ8..." />
+        </form>
+    So the form tag helper does TWO things:
+      1. builds action="..." from the routes (same as links),
+      2. for method="post", adds the hidden ANTI-FORGERY token automatically.
+         [ValidateAntiForgeryToken] on the controller checks it (protects against CSRF, see Project 7.2).
+    A plain <form action="/Products/Create"> would have NO token, and the POST would be rejected (400).
+*@
 <form asp-action="Create" method="post">
+    @* model="Model" passes this page's Product to the partial, which uses it for its asp-for fields. *@
     <partial name="_ProductFormFields" model="Model" />
     <button type="submit" id="save-button">Save</button>
 </form>

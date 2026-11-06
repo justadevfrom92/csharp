@@ -1,4 +1,5 @@
 <h2>Uploaded files</h2>
+@* "~/" = site root (wwwroot). "~/uploads/abc.png" becomes "/uploads/abc.png", served by UseStaticFiles. *@
 <ul>
     @foreach (string fileName in ViewBag.SavedFiles)
     {

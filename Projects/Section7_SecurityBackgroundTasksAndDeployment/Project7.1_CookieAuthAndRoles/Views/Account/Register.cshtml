@@ -3,6 +3,7 @@
 {
     <p style="color: #b00020">@ViewBag.Error</p>
 }
+@* -> action="/Account/Register" + anti-forgery token. Input names match Register(string userName, string password). *@
 <form asp-action="Register" method="post">
     <input name="userName" placeholder="User name" />
     <input name="password" type="password" placeholder="Password (8+ characters)" />
