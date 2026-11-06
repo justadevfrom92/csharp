@@ -22,7 +22,7 @@ namespace IdempotentMigrationScripts.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("IdempotentMigrationScripts.Data.Entities.Customer", b =>
+            modelBuilder.Entity("IdempotentMigrationScripts.Data.Customer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -43,7 +43,7 @@ namespace IdempotentMigrationScripts.Data.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("IdempotentMigrationScripts.Data.Entities.Order", b =>
+            modelBuilder.Entity("IdempotentMigrationScripts.Data.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -68,9 +68,9 @@ namespace IdempotentMigrationScripts.Data.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("IdempotentMigrationScripts.Data.Entities.Order", b =>
+            modelBuilder.Entity("IdempotentMigrationScripts.Data.Order", b =>
                 {
-                    b.HasOne("IdempotentMigrationScripts.Data.Entities.Customer", "Customer")
+                    b.HasOne("IdempotentMigrationScripts.Data.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)

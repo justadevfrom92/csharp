@@ -1,6 +1,6 @@
 # Project 6.4 — Session Shopping Cart
 
-> New to `.cshtml` files (`@model`, `@foreach`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
 ```bash
 dotnet dev-certs https --trust
@@ -54,7 +54,5 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `decimal Total { get { ... } }` (computed) | Always worked out from the lines, never stored. | A stored total can go out of sync with the lines. |
 | `static class SessionJsonExtensions` with generic `<T>` | Extension methods must be in a static class; `<T>` makes them work for any type, not just carts. | A cart-only helper would be copied for the next object. |
 | `T?` return / `default` | No value in session → `null`, and the caller uses `?? new ShoppingCart()`. | — |
-| `ShopCatalog.ItemsForSale` is an `IReadOnlyList<ShopItem>` (in `Data/`) | Fixed demo catalog; `IReadOnlyList` says "never changes" and blocks `Add`. Moved out of the controller so the controller only handles requests. | A `List` inside the controller mixed data with request handling. |
+| `static readonly List<ShopItem> itemsForSale` | Fixed demo catalog. | Could be an `IReadOnlyList` or array to make "never changes" explicit — fair improvement. |
 | `const string CartSessionKey` | One key name used everywhere. | — |
-| `CartPageViewModel` (`ItemsForSale` + `Cart`) | The page needs two things; one typed object carries both. | `ViewBag.ItemsForSale` isn't type-checked. |
-| `ShoppingCart`/`CartLine` in `SessionState/`, not `Models/` | They are what's saved in the session, not what a view is built from. | Putting them in `Models/` would mix stored state with view models. |

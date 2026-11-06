@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SharedCacheAndSettings.Services;
-using SharedCacheAndSettings.Settings;
 
 namespace SharedCacheAndSettings.Controllers;
 

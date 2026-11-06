@@ -31,7 +31,7 @@ namespace EfCoreQueryLogging.Data.Migrations
                     b.ToTable("BookTag");
                 });
 
-            modelBuilder.Entity("EfCoreQueryLogging.Data.Entities.Author", b =>
+            modelBuilder.Entity("EfCoreQueryLogging.Data.Author", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -54,7 +54,7 @@ namespace EfCoreQueryLogging.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("EfCoreQueryLogging.Data.Entities.AuthorProfile", b =>
+            modelBuilder.Entity("EfCoreQueryLogging.Data.AuthorProfile", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -83,7 +83,7 @@ namespace EfCoreQueryLogging.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("EfCoreQueryLogging.Data.Entities.Book", b =>
+            modelBuilder.Entity("EfCoreQueryLogging.Data.Book", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -116,7 +116,7 @@ namespace EfCoreQueryLogging.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("EfCoreQueryLogging.Data.Entities.Tag", b =>
+            modelBuilder.Entity("EfCoreQueryLogging.Data.Tag", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -148,33 +148,33 @@ namespace EfCoreQueryLogging.Data.Migrations
 
             modelBuilder.Entity("BookTag", b =>
                 {
-                    b.HasOne("EfCoreQueryLogging.Data.Entities.Book", null)
+                    b.HasOne("EfCoreQueryLogging.Data.Book", null)
                         .WithMany()
                         .HasForeignKey("BooksId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EfCoreQueryLogging.Data.Entities.Tag", null)
+                    b.HasOne("EfCoreQueryLogging.Data.Tag", null)
                         .WithMany()
                         .HasForeignKey("TagsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("EfCoreQueryLogging.Data.Entities.AuthorProfile", b =>
+            modelBuilder.Entity("EfCoreQueryLogging.Data.AuthorProfile", b =>
                 {
-                    b.HasOne("EfCoreQueryLogging.Data.Entities.Author", "Author")
+                    b.HasOne("EfCoreQueryLogging.Data.Author", "Author")
                         .WithOne("Profile")
-                        .HasForeignKey("EfCoreQueryLogging.Data.Entities.AuthorProfile", "AuthorId")
+                        .HasForeignKey("EfCoreQueryLogging.Data.AuthorProfile", "AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Author");
                 });
 
-            modelBuilder.Entity("EfCoreQueryLogging.Data.Entities.Book", b =>
+            modelBuilder.Entity("EfCoreQueryLogging.Data.Book", b =>
                 {
-                    b.HasOne("EfCoreQueryLogging.Data.Entities.Author", "Author")
+                    b.HasOne("EfCoreQueryLogging.Data.Author", "Author")
                         .WithMany("Books")
                         .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -183,7 +183,7 @@ namespace EfCoreQueryLogging.Data.Migrations
                     b.Navigation("Author");
                 });
 
-            modelBuilder.Entity("EfCoreQueryLogging.Data.Entities.Author", b =>
+            modelBuilder.Entity("EfCoreQueryLogging.Data.Author", b =>
                 {
                     b.Navigation("Books");
 

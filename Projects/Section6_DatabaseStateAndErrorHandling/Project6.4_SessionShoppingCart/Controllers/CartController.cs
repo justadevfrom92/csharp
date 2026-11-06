@@ -1,9 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SessionShoppingCart.Data;
-using SessionShoppingCart.Data.Entities;
-using SessionShoppingCart.Extensions;
 using SessionShoppingCart.Models;
-using SessionShoppingCart.SessionState;
 
 namespace SessionShoppingCart.Controllers;
 
@@ -11,21 +7,24 @@ public class CartController : Controller
 {
     private const string CartSessionKey = "ShoppingCart";
 
+    private static readonly List<ShopItem> itemsForSale =
+    [
+        new ShopItem(1, "Keyboard", 25.00m),
+        new ShopItem(2, "Mouse", 12.50m),
+        new ShopItem(3, "Monitor", 180.00m),
+    ];
+
     public IActionResult Index()
     {
-        var page = new CartPageViewModel
-        {
-            ItemsForSale = ShopCatalog.ItemsForSale,
-            Cart = LoadCart(),
-        };
-        return View(page);
+        ViewBag.ItemsForSale = itemsForSale;
+        return View(LoadCart());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Add(int itemId)
     {
-        ShopItem? item = ShopCatalog.FindById(itemId);
+        ShopItem? item = itemsForSale.FirstOrDefault(existing => existing.Id == itemId);
         if (item != null)
         {
             ShoppingCart cart = LoadCart();

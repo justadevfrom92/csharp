@@ -1,14 +1,10 @@
-@*
-    @model CatalogPageViewModel (Models/CatalogPageViewModel.cs) = the products, when the page was built, and whether it's cached.
-    New to .cshtml? See Projects/RAZOR_BASICS.md.
-*@
-@model CatalogPageViewModel
+@model List<CatalogProduct>
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><title>Catalog</title></head>
 <body style="font-family: sans-serif; padding: 16px;">
-    <h1>Catalog (@(Model.IsOutputCached ? "output cached" : "NOT cached"))</h1>
-    <p>Page rendered at <b id="rendered-at">@Model.RenderedAt</b> - refresh: on the cached page this time doesn't change.</p>
+    <h1>Catalog (@(ViewBag.Cached ? "output cached" : "NOT cached"))</h1>
+    <p>Page rendered at <b id="rendered-at">@ViewBag.RenderedAt</b> - refresh: on the cached page this time doesn't change.</p>
     <p><a href="/Catalog/Index">Cached</a> | <a href="/Catalog/Uncached">Uncached</a> | <a href="/stats">DB reads</a> | <a href="/health">Health</a></p>
 
     @* Plain form on purpose: the asp-action tag helper would add an anti-forgery cookie, and responses that set cookies are never output cached.
@@ -20,7 +16,7 @@
     </form>
 
     <ul>
-        @foreach (CatalogProduct product in Model.Products)
+        @foreach (CatalogProduct product in Model)
         {
             <li>@product.Name - @product.Price.ToString("0.00")</li>
         }

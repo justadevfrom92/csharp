@@ -15,11 +15,11 @@ Browser asks for /Upload/Avatar
         │
         ▼
 UploadController.Avatar()                         Controllers/UploadController.cs
-    return View(new AvatarUploadViewModel());          ← creates the data and picks the view
+    return View(new AvatarUploadForm());          ← creates the data and picks the view
         │
         ▼
 Views/Upload/Avatar.cshtml                        ← found by NAME: Views/{Controller}/{Action}.cshtml
-    @model AvatarUploadViewModel                       ← "I receive an AvatarUploadViewModel"
+    @model AvatarUploadForm                       ← "I receive an AvatarUploadForm"
     ... HTML using Model ...
         │
         ▼
@@ -36,7 +36,7 @@ Plain HTML sent to the browser
 ## 2. `@model` and `Model`
 
 ```cshtml
-@model AvatarUploadViewModel
+@model AvatarUploadForm
 ```
 
 The first line of a view says **what type of object** the controller passes in.
@@ -47,13 +47,11 @@ The first line of a view says **what type of object** the controller passes in.
 | View | `@model` | Controller passes |
 |---|---|---|
 | `Upload/Index.cshtml` | `List<string>` | `return View(savedFileNames);` |
-| `Products/Create.cshtml` (3.1) | `ProductFormViewModel` | `return View(form);` |
-| `Upload/Avatar.cshtml` | `AvatarUploadViewModel` | `return View(new AvatarUploadViewModel());` |
+| `Upload/Avatar.cshtml` | `AvatarUploadForm` | `return View(new AvatarUploadForm());` |
 | `Products/Index.cshtml` (3.1) | `List<Product>` | `return View(ProductStore.GetAll());` |
 
-Where are those classes? A `...ViewModel` is always in the project's `Models/` folder, **one class
-per file, file named after the class**: `AvatarUploadViewModel` → `Models/AvatarUploadViewModel.cs`.
-Entities like `Product` are in `Data/Entities/`. Full layout: [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
+Where are those classes? Always in the project's `Models/` folder, **one class per file, file named
+after the class**: `AvatarUploadForm` → `Models/AvatarUploadForm.cs`.
 
 ---
 
@@ -61,12 +59,12 @@ Entities like `Product` are in `Data/Entities/`. Full layout: [FOLDER_STRUCTURE.
 
 ```csharp
 [HttpPost]
-public async Task<IActionResult> Avatar(AvatarUploadViewModel form)
+public async Task<IActionResult> Avatar(AvatarUploadForm form)
 ```
 
-Nobody writes `new AvatarUploadViewModel()` for the POST. **MVC creates it**:
+Nobody writes `new AvatarUploadForm()` for the POST. **MVC creates it**:
 1. The browser posts the form fields: a file named `Avatar` (the name comes from `asp-for="Avatar"`).
-2. MVC sees the parameter type `AvatarUploadViewModel`, creates one, and copies every posted field into
+2. MVC sees the parameter type `AvatarUploadForm`, creates one, and copies every posted field into
    the property with the **same name**.
 3. It runs the validation attributes (`[Required]`, `[MaximumFileSizeValidation(1)]`, ...) and puts the
    result in `ModelState`. `ModelState.IsValid` is `false` if any failed.
@@ -94,23 +92,20 @@ where the C# ends and the HTML begins.
 
 ---
 
-## 5. `ViewBag`, `ViewData`, `TempData`
+## 5. Passing small extras: `ViewBag`, `ViewData`, `TempData`
 
-Besides the model, MVC has three loose "bags" for passing values to a view:
+The **model** is the page's main data. Sometimes a page needs one or two extra things too
+(a dropdown list, an error message, a title).
 
 | | Example | Lives for | Type-checked? |
 |---|---|---|---|
-| `Model` | `@model CartPageViewModel` | this request | **Yes** |
-| `ViewBag.X` | `ViewBag.Categories = ...` | this request | **No** — it's `dynamic`, typos only fail when the page runs |
-| `ViewData["X"]` | `ViewData["Title"] = "Products"` | this request | No (same storage as `ViewBag`, string keys) |
+| `Model` | `@model List<Product>` | this request | **Yes** |
+| `ViewBag.X` | `ViewBag.Categories = ...` in controller, `ViewBag.Categories` in view | this request | **No** — it's `dynamic`, typos only fail when the page runs |
+| `ViewData["X"]` | `ViewData["Title"] = "Products"` | this request | No (same storage as `ViewBag`, just with string keys) |
 | `TempData["X"]` | message after a save | **until it's read, even across a redirect** | No |
 
-Rules used in these projects:
-- **Everything a page shows goes in its view model** (`Models/...ViewModel.cs`) — including small extras
-  like dropdown choices or an error message. `ViewBag` is **not used anywhere**, because the compiler
-  can't check it.
-- **`ViewData["Title"]`** is used only for the `<title>` in 3.1's layout (the one standard use).
-- **`TempData`** only for a message that must survive a redirect (read in `_Layout.cshtml`, see 3.1).
+Rule used in these projects: **main data → `Model`. Small extras → `ViewBag`/`ViewData`.**
+Message that must survive a redirect → `TempData` (read in the layout, see 3.1 `_Layout.cshtml`).
 
 ---
 

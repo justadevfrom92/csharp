@@ -11,7 +11,7 @@ GO
 BEGIN TRANSACTION;
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261106064319_InitialCreate'
+    WHERE [MigrationId] = N'20261105220827_InitialCreate'
 )
 BEGIN
     CREATE TABLE [Customers] (
@@ -23,7 +23,7 @@ END;
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261106064319_InitialCreate'
+    WHERE [MigrationId] = N'20261105220827_InitialCreate'
 )
 BEGIN
     CREATE TABLE [Orders] (
@@ -38,7 +38,7 @@ END;
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261106064319_InitialCreate'
+    WHERE [MigrationId] = N'20261105220827_InitialCreate'
 )
 BEGIN
     CREATE INDEX [IX_Orders_CustomerId] ON [Orders] ([CustomerId]);
@@ -46,11 +46,11 @@ END;
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261106064319_InitialCreate'
+    WHERE [MigrationId] = N'20261105220827_InitialCreate'
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261106064319_InitialCreate', N'10.0.14');
+    VALUES (N'20261105220827_InitialCreate', N'10.0.14');
 END;
 
 COMMIT;
@@ -59,7 +59,7 @@ GO
 BEGIN TRANSACTION;
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261106064325_AddCustomerEmail'
+    WHERE [MigrationId] = N'20261105220838_AddCustomerEmail'
 )
 BEGIN
     ALTER TABLE [Customers] ADD [Email] nvarchar(max) NULL;
@@ -67,11 +67,11 @@ END;
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261106064325_AddCustomerEmail'
+    WHERE [MigrationId] = N'20261105220838_AddCustomerEmail'
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261106064325_AddCustomerEmail', N'10.0.14');
+    VALUES (N'20261105220838_AddCustomerEmail', N'10.0.14');
 END;
 
 COMMIT;

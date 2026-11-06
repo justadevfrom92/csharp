@@ -1,6 +1,4 @@
-using EnvironmentAwareEmail.BackgroundServices;
-using EnvironmentAwareEmail.Services.Email;
-using EnvironmentAwareEmail.Settings;
+using EnvironmentAwareEmail.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 

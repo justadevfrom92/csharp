@@ -1,8 +1,4 @@
-@*
-    @model BookLibraryViewModel (Models/BookLibraryViewModel.cs) = the books to show + the "Add book" form fields.
-    New to .cshtml? See Projects/RAZOR_BASICS.md.
-*@
-@model BookLibraryViewModel
+@model List<Book>
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><title>Library</title></head>
@@ -10,7 +6,7 @@
     <h1>Books</h1>
     <p>Watch the console: every SQL query EF runs is logged there and in <code>logs/</code>.</p>
     <ul>
-        @foreach (Book book in Model.Books)
+        @foreach (Book book in Model)
         {
             <li>
                 <b>@book.Title</b> (@book.PublishedYear) by @book.Author.Name
@@ -27,22 +23,18 @@
     @*
         asp-action="Create" + method="post" -> action="/Books/Create" + a hidden anti-forgery token
         (checked by [ValidateAntiForgeryToken] on Create).
-        asp-for="Title" -> name="Title", the current value, and maxlength from [StringLength] on the view model.
-        On POST, model binding fills BookLibraryViewModel.Title etc. from those names.
-        asp-validation-for shows the message from [Required]/[Range] when the form comes back with errors.
+        The inputs use plain name="..." instead of asp-for: asp-for needs a property on this page's
+        @model, but the model here is the book LIST. The names match the Create(...) parameters
+        (title, publishedYear, authorName, tagIds), which is how model binding fills them.
+        Several checkboxes with the same name="tagIds" arrive as one int[] array.
     *@
     <form asp-action="Create" method="post">
-        <input asp-for="Title" placeholder="Title" /> <span asp-validation-for="Title" style="color: #b00020"></span>
-        <input asp-for="PublishedYear" /> <span asp-validation-for="PublishedYear" style="color: #b00020"></span>
-        <input asp-for="AuthorName" placeholder="Author" /> <span asp-validation-for="AuthorName" style="color: #b00020"></span>
-        @*
-            Checkboxes for an int[] can't use asp-for (it only handles a single bool per checkbox),
-            so we write name="SelectedTagIds" by hand. It must match the view model property name.
-            Every ticked box sends SelectedTagIds=<id>; model binding collects them into the array.
-        *@
-        @foreach (Tag tag in Model.AllTags)
+        <input name="title" placeholder="Title" required />
+        <input name="publishedYear" type="number" value="2026" />
+        <input name="authorName" placeholder="Author" required />
+        @foreach (Tag tag in ViewBag.Tags)
         {
-            <label><input type="checkbox" name="SelectedTagIds" value="@tag.Id" checked="@Model.SelectedTagIds.Contains(tag.Id)" /> @tag.Name</label>
+            <label><input type="checkbox" name="tagIds" value="@tag.Id" /> @tag.Name</label>
         }
         <button type="submit">Add</button>
     </form>

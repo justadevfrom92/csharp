@@ -1,6 +1,6 @@
 # Project 3.1 — MVC Product Catalog
 
-> New to `.cshtml` files (`@model`, `@foreach`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
 A small ASP.NET Core MVC site to list, add, view and edit products.
 
@@ -44,8 +44,8 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `Product` (in `Data/Entities/`) vs `ProductFormViewModel` (in `Models/`) | The entity is what's **stored**. The view model is what the **form shows and posts**, with the validation attributes and the dropdown choices. The controller copies values between them. | Binding the form straight to the stored class lets a user post *any* property it has (e.g. an `Id` or a future `IsDiscounted` flag) — called over-posting. A separate form class only accepts the fields we chose. |
-| `static class ProductStore` (in `Data/`) | One shared list for the whole app, nothing to configure. Simplest thing that works. | A DI singleton (shown in 6.3) is easier to swap in tests. Static is fine for a demo without a database. |
+| `class Product` with `{ get; set; }` | MVC model binding creates an empty object and sets each form field. Needs a mutable class. | A `record` with a constructor works for binding but fights with partial edits and validation attributes. |
+| `static class ProductStore` | One shared list for the whole app, nothing to configure. Simplest thing that works. | A DI singleton (shown in 6.3) is easier to swap in tests. Static is fine for a demo without a database. |
 | `private static readonly List<Product>` | Must grow (`Add`). `readonly` stops anyone replacing the whole list by mistake. | Array can't grow. |
 | `static readonly string[] Categories` | Fixed set of 3 categories. | `List` suggests categories can be added at runtime. |
 | `object listLock` | Requests run on many threads; `List<T>` isn't thread-safe. A private object only used for locking. | `lock (products)` works but anyone holding the list could lock it too. |
@@ -53,7 +53,7 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `Product? FindById` | "Not found" is normal (bad id in URL) → `null`, and the controller returns 404. | Throwing an exception for a normal case is slow and noisy. |
 | `bool Update` | Same idea: `false` = not found. | — |
 | `IActionResult` return type | Actions return `View`, `NotFound` or `Redirect` — different classes. | A specific type like `ViewResult` couldn't return `NotFound()`. |
-| `@model ProductFormViewModel` on forms, `@model Product` / `List<Product>` on display pages | Forms need validation and only-allowed fields; pages that only *show* data can use the entity directly. | A view model per display page would be extra classes copying the same fields. |
-| `string[] CategoryChoices` on the view model | The dropdown options travel *with* the form model, checked by the compiler. Refilled by the controller after a failed POST (browsers don't post the option list back). | `ViewBag.Categories` is `dynamic`: a typo only fails when the page runs. |
+| `@model Product` / `@model List<Product>` | Main page data, checked by the compiler. | — |
+| `ViewBag.Categories` | A small side list for the dropdown. | **Trade-off:** `ViewBag` is `dynamic`, so a typo is a runtime error. A `ProductFormViewModel` class with a `Categories` property would be safer; kept as `ViewBag` to keep the demo short. |
 | `TempData["SuccessMessage"]` | The message has to survive the redirect after a save. | `ViewBag` is gone after a redirect. |
 | `public partial class Program` | Lets the Playwright tests (4.3) reference the app's entry point. | Without it, top-level `Program` is not visible to other projects. |

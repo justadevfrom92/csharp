@@ -1,6 +1,6 @@
 # Project 7.4 — Output Caching Catalog (+ Health Check)
 
-> New to `.cshtml` files (`@model`, `@foreach`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
 ```bash
 dotnet run -c Release
@@ -68,4 +68,4 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `Task<List<CatalogProduct>>` | Async like a real query; returns a finished copy made inside the lock. | Lazy `IEnumerable` would escape the lock. |
 | `class CatalogDatabaseHealthCheck : IHealthCheck` | ASP.NET Core runs every registered `IHealthCheck`; we add ours. | — |
 | `IOutputCacheStore` injected | Needed to evict by tag. | — |
-| `CatalogPageViewModel` (`Products`, `RenderedAt`, `IsOutputCached`) | One typed object for both the cached and uncached page. | `ViewBag` extras aren't type-checked. |
+| `ViewBag.Cached`, `ViewBag.RenderedAt` | Two tiny extras. | Same `ViewBag` trade-off as 3.1. |

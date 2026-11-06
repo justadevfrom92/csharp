@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
-using OutputCachingCatalog.Data;
 using OutputCachingCatalog.Models;
 
 namespace OutputCachingCatalog.Controllers;
@@ -20,25 +19,17 @@ public class CatalogController : Controller
     [OutputCache(PolicyName = "Catalog")]
     public async Task<IActionResult> Index()
     {
-        var page = new CatalogPageViewModel
-        {
-            Products = await database.LoadAllProductsAsync(),
-            RenderedAt = DateTime.Now.ToString("HH:mm:ss.fff"),
-            IsOutputCached = true,
-        };
-        return View(page);
+        ViewBag.RenderedAt = DateTime.Now.ToString("HH:mm:ss.fff");
+        ViewBag.Cached = true;
+        return View(await database.LoadAllProductsAsync());
     }
 
     // Same page, never cached - for comparison.
     public async Task<IActionResult> Uncached()
     {
-        var page = new CatalogPageViewModel
-        {
-            Products = await database.LoadAllProductsAsync(),
-            RenderedAt = DateTime.Now.ToString("HH:mm:ss.fff"),
-            IsOutputCached = false,
-        };
-        return View("Index", page);
+        ViewBag.RenderedAt = DateTime.Now.ToString("HH:mm:ss.fff");
+        ViewBag.Cached = false;
+        return View("Index", await database.LoadAllProductsAsync());
     }
 
     // Changing data throws away every cached page tagged "catalog", so nobody sees the old price.

@@ -1,5 +1,4 @@
-using OutputCachingCatalog.Data;
-using OutputCachingCatalog.HealthChecks;
+using OutputCachingCatalog.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

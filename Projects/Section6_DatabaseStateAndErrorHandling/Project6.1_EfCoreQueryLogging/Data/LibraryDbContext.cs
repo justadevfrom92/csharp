@@ -1,4 +1,3 @@
-using EfCoreQueryLogging.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EfCoreQueryLogging.Data;

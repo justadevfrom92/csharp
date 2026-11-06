@@ -1,5 +1,4 @@
 using SharedCacheAndSettings.Services;
-using SharedCacheAndSettings.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 

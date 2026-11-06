@@ -1,5 +1,3 @@
-using FormSecurityXssCsrf.Data;
-using FormSecurityXssCsrf.Data.Entities;
 using FormSecurityXssCsrf.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,35 +5,41 @@ namespace FormSecurityXssCsrf.Controllers;
 
 public class GuestbookController : Controller
 {
+    private static readonly List<GuestbookEntry> entries = new();
+    private static readonly object listLock = new();
+
     public IActionResult Index()
     {
-        var page = new GuestbookPageViewModel { Entries = GuestbookStore.GetNewestFirst() };
-        return View(page);
+        lock (listLock)
+        {
+            ViewBag.Entries = entries.OrderByDescending(entry => entry.PostedAtUtc).ToList();
+        }
+        return View(new GuestbookEntry());
     }
 
     // No [ValidateAntiForgeryToken] needed here: it's added to ALL POST actions globally in Program.cs.
-    // Model binding fills Name, Message and Website from the form.
     [HttpPost]
-    public IActionResult Index(GuestbookPageViewModel form)
+    public IActionResult Index(GuestbookEntry entry)
     {
-        if (!string.IsNullOrEmpty(form.Website) && !IsSafeWebLink(form.Website))
+        if (!string.IsNullOrEmpty(entry.Website) && !IsSafeWebLink(entry.Website))
         {
-            ModelState.AddModelError(nameof(form.Website), "Only http:// and https:// links are allowed.");
+            ModelState.AddModelError(nameof(entry.Website), "Only http:// and https:// links are allowed.");
         }
         if (!ModelState.IsValid)
         {
-            form.Entries = GuestbookStore.GetNewestFirst(); // not posted, so load again
-            return View(form);
+            lock (listLock)
+            {
+                ViewBag.Entries = entries.OrderByDescending(existing => existing.PostedAtUtc).ToList();
+            }
+            return View(entry);
         }
 
         // We store exactly what the user typed. Encoding happens when SHOWING it (see the view).
-        GuestbookStore.Add(new GuestbookEntry
+        entry.PostedAtUtc = DateTime.UtcNow;
+        lock (listLock)
         {
-            Name = form.Name,
-            Message = form.Message,
-            Website = form.Website,
-            PostedAtUtc = DateTime.UtcNow,
-        });
+            entries.Add(entry);
+        }
         return RedirectToAction(nameof(Index));
     }
 
