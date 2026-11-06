@@ -1,4 +1,6 @@
 using EfCoreQueryLogging.Data;
+using EfCoreQueryLogging.Data.Entities;
+using EfCoreQueryLogging.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,39 +15,49 @@ public class BooksController : Controller
         this.database = database;
     }
 
+    // GET /  - the list + an empty "Add book" form.
     public async Task<IActionResult> Index()
     {
-        List<Book> books = await database.Books
-            .Include(book => book.Author)
-            .ThenInclude(author => author.Profile)
-            .Include(book => book.Tags)
-            .AsNoTracking() // read-only page: no need for EF to track changes
-            .OrderBy(book => book.Title)
-            .ToListAsync();
-
-        ViewBag.Tags = await database.Tags.AsNoTracking().OrderBy(tag => tag.Name).ToListAsync();
-        return View(books);
+        var page = new BookLibraryViewModel();
+        await LoadBooksAndTagsAsync(page);
+        return View(page);
     }
 
+    // POST /Books/Create - model binding fills Title, PublishedYear, AuthorName and SelectedTagIds.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(string title, int publishedYear, string authorName, int[] tagIds)
+    public async Task<IActionResult> Create(BookLibraryViewModel form)
     {
-        if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(authorName))
+        if (!ModelState.IsValid)
         {
-            return RedirectToAction(nameof(Index));
+            await LoadBooksAndTagsAsync(form); // the lists are not posted, so load them again
+            return View("Index", form);        // same page, now showing the error messages
         }
 
-        Author? author = await database.Authors.FirstOrDefaultAsync(existing => existing.Name == authorName.Trim());
+        string authorName = form.AuthorName.Trim();
+        Author? author = await database.Authors.FirstOrDefaultAsync(existing => existing.Name == authorName);
         if (author == null)
         {
-            author = new Author { Name = authorName.Trim() };
+            author = new Author { Name = authorName };
         }
 
-        List<Tag> tags = await database.Tags.Where(tag => tagIds.Contains(tag.Id)).ToListAsync();
-        database.Books.Add(new Book { Title = title.Trim(), PublishedYear = publishedYear, Author = author, Tags = tags });
+        List<Tag> tags = await database.Tags.Where(tag => form.SelectedTagIds.Contains(tag.Id)).ToListAsync();
+        database.Books.Add(new Book { Title = form.Title.Trim(), PublishedYear = form.PublishedYear, Author = author, Tags = tags });
         await database.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task LoadBooksAndTagsAsync(BookLibraryViewModel page)
+    {
+        page.Books = await database.Books
+            .Include(book => book.Author)
+            .ThenInclude(author => author.Profile)
+            .Include(book => book.Tags)
+            .AsNoTracking() // read-only list: no need for EF to track changes
+            .OrderBy(book => book.Title)
+            .ToListAsync();
+
+        page.AllTags = await database.Tags.AsNoTracking().OrderBy(tag => tag.Name).ToListAsync();
     }
 }

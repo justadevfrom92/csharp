@@ -1,16 +1,30 @@
+@*
+    @model LoginViewModel (Models/LoginViewModel.cs) = user name, password, and where to go after login.
+    New to .cshtml? See Projects/RAZOR_BASICS.md.
+*@
+@model LoginViewModel
+
 <h1>Log in</h1>
-@if (ViewBag.Error != null)
-{
-    <p style="color: #b00020">@ViewBag.Error</p>
-}
 @*
     asp-action="Login" + method="post" -> action="/Account/Login" + hidden anti-forgery token.
-    Plain name="userName"/"password" (no asp-for): the Login action takes simple parameters, not a model.
-    returnUrl is carried in a hidden field so we can send the user back to the page they wanted.
+    asp-validation-summary="ModelOnly" shows errors for the WHOLE form, like "Wrong user name or password."
+    (added in the controller with ModelState.AddModelError("", ...)).
 *@
 <form asp-action="Login" method="post">
-    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-    <input name="userName" placeholder="User name" />
-    <input name="password" type="password" placeholder="Password" />
+    <div asp-validation-summary="ModelOnly" style="color: #b00020"></div>
+
+    @* type="hidden" + asp-for -> <input type="hidden" name="ReturnUrl" value="/Admin">, posted back with the form. *@
+    <input type="hidden" asp-for="ReturnUrl" />
+
+    @* asp-for -> name="UserName" (binds to LoginViewModel.UserName). The label text comes from [Display(Name = "User name")]. *@
+    <label asp-for="UserName"></label>
+    <input asp-for="UserName" />
+    <span asp-validation-for="UserName" style="color: #b00020"></span>
+
+    @* [DataType(DataType.Password)] on the property -> asp-for renders type="password" and never puts the password back in the page. *@
+    <label asp-for="Password"></label>
+    <input asp-for="Password" />
+    <span asp-validation-for="Password" style="color: #b00020"></span>
+
     <button type="submit">Log in</button>
 </form>

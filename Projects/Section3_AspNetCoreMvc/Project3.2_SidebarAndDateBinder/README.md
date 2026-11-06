@@ -1,6 +1,6 @@
 # Project 3.2 — Recent Activity Sidebar & ISO Date Binder
 
-> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+> New to `.cshtml` files (`@model`, `@foreach`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
 ```bash
 dotnet run
@@ -47,4 +47,4 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `Task` return from `BindModelAsync` | The interface demands `Task`. We do no async work, so we return `Task.CompletedTask`. | — |
 | `DateOnly? day` parameter | Missing or invalid → `null` → we fall back to today. | Non-nullable `DateOnly` would silently become `0001-01-01`. |
 | `Task<IViewComponentResult> InvokeAsync` | The usual view-component shape; ready if the data ever comes from a database. | Data is in memory, so a plain `Invoke` would also work. `Task.FromResult` is used because nothing is awaited. |
-| `ViewBag.Day`, `ViewBag.Error` | Two small extras next to the main `List<ActivityEntry>` model. | Same `ViewBag` trade-off as 3.1. |
+| `DailyActivityViewModel` (`Day`, `DateErrorMessage`, `Entries`) | Everything the day page needs in one typed object. | `ViewBag.Day` needed a cast in the view (`(DateOnly)ViewBag.Day`) and typos only fail at runtime. |

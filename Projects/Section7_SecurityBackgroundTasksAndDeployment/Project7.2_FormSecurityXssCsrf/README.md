@@ -1,6 +1,6 @@
 # Project 7.2 — Form Security: XSS & CSRF
 
-> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+> New to `.cshtml` files (`@model`, `@foreach`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
 A guestbook where anyone can post — the classic place for both attacks.
 
@@ -45,9 +45,9 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 
 | Choice | Why | Why not the alternative |
 |---|---|---|
-| `class GuestbookEntry` (form model) | Model binding sets each field; validation attributes on the properties. | See 3.1. |
+| `GuestbookPageViewModel` (form + entries) vs `GuestbookEntry` (in `Data/Entities/`) | The view model has the validation attributes and only the fields a visitor may post; the entity is what's stored (plus `PostedAtUtc`, set by the server). | Binding straight to the entity would let a visitor post their own `PostedAtUtc`. |
 | `string? Website` | Optional field. | — |
 | `DateTime PostedAtUtc` | Sort newest first; always UTC. | — |
-| `static List<GuestbookEntry>` + `lock` | Shared in-memory store across requests. | Same pattern and trade-offs as 3.1. |
+| `static class GuestbookStore` (in `Data/`) + `lock` | Shared in-memory store across requests, kept out of the controller. | Same pattern and trade-offs as 3.1's `ProductStore`. |
 | `static bool IsSafeWebLink` | Pure check using only its input. | — |
 | `Uri.TryCreate(..., out Uri? uri)` | Parses properly instead of string tricks like `StartsWith("http")`, which `httpjavascript:...` could fool. | — |

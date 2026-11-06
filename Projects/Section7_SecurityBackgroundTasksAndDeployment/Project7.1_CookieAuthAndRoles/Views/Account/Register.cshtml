@@ -1,11 +1,20 @@
+@*
+    @model RegisterViewModel (Models/RegisterViewModel.cs) = the user name and password to register.
+    It has no Role property, so the form can't make anyone an admin.
+*@
+@model RegisterViewModel
+
 <h1>Register</h1>
-@if (ViewBag.Error != null)
-{
-    <p style="color: #b00020">@ViewBag.Error</p>
-}
-@* -> action="/Account/Register" + anti-forgery token. Input names match Register(string userName, string password). *@
+@* -> action="/Account/Register" + anti-forgery token. asp-for binds each input to a RegisterViewModel property;
+   asp-validation-for shows that property's error (length rules, or "That user name is taken."). *@
 <form asp-action="Register" method="post">
-    <input name="userName" placeholder="User name" />
-    <input name="password" type="password" placeholder="Password (8+ characters)" />
+    <label asp-for="UserName"></label>
+    <input asp-for="UserName" />
+    <span asp-validation-for="UserName" style="color: #b00020"></span>
+
+    <label asp-for="Password"></label>
+    <input asp-for="Password" />
+    <span asp-validation-for="Password" style="color: #b00020"></span>
+
     <button type="submit">Create account</button>
 </form>

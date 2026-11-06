@@ -1,6 +1,6 @@
 # Project 6.1 — EF Core with SQL Query Logging
 
-> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+> New to `.cshtml` files (`@model`, `@foreach`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
 An MVC page listing books (with author, author profile and tags). Every SQL command EF runs
 is logged — exact SQL, parameters and time — to the console and `logs/app-<date>.log` via Serilog.
@@ -14,7 +14,7 @@ The database (`library.db`, SQLite) is created and migrated on startup.
 
 ## Migrations (code-first)
 
-The model classes are in `Data/` (`Author.cs`, `AuthorProfile.cs`, `Book.cs`, `Tag.cs`). After changing them:
+The entity classes are in `Data/Entities/` (`Author.cs`, `AuthorProfile.cs`, `Book.cs`, `Tag.cs`). After changing them:
 
 ```bash
 dotnet tool restore
@@ -35,7 +35,7 @@ dotnet ef database update
 - **Relationships:** Author–AuthorProfile (1:1), Author–Books (1:N), Books–Tags (N:N).
 - **Seed data:** `HasData` in `OnModelCreating` — it's part of the first migration.
 - **Query logging, two ways:**
-  - `SqlQueryLoggingInterceptor` (a `DbCommandInterceptor`) — our own code, sees every command.
+  - `Data/Interceptors/SqlQueryLoggingInterceptor` (a `DbCommandInterceptor`) — our own code, sees every command.
   - `EnableSensitiveDataLogging()` (Development only) — shows real parameter values.
   - (`options.LogTo(Console.WriteLine)` is the quickest third option for console apps.)
 - **Pooling:** `AddDbContextPool` reuses `DbContext` objects between requests.
@@ -88,4 +88,4 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `ValueTask<...>` return types in the interceptor | That's the signature of the base methods we override. | — |
 | Interceptor registered as **singleton** | It holds only a logger — safe to share. | Scoped would create one per request for nothing. |
 | `const int SlowQueryMilliseconds` | Fixed threshold, known at compile time. | Could move to config if ops need to tune it. |
-| `int[] tagIds` action parameter | The model binder fills an array from repeated `tagIds=1&tagIds=2` checkbox values. | — |
+| `BookLibraryViewModel` with `int[] SelectedTagIds` | One typed object for the page: the books and tags to show, plus the "Add book" fields with `[Required]`/`[Range]`. Repeated `SelectedTagIds=1&SelectedTagIds=2` checkbox values bind into the array. | Loose action parameters (`string title, ...`) can't carry validation attributes, and `ViewBag.Tags` isn't type-checked. |

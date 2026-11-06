@@ -1,4 +1,5 @@
 using EfCoreQueryLogging.Data;
+using EfCoreQueryLogging.Data.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 

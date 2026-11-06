@@ -1,2 +1,5 @@
-<h1>Error @ViewBag.StatusCode</h1>
+@* @model StatusCodeErrorViewModel (Models/StatusCodeErrorViewModel.cs) = the HTTP status code. *@
+@model StatusCodeErrorViewModel
+
+<h1>Error @Model.StatusCode</h1>
 <p>That request could not be completed.</p>

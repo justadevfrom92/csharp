@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using TransactionalCheckout.Data;
+using TransactionalCheckout.Data.Entities;
 
 // Fresh database every run so the demo always shows the same thing.
 using (var database = new ShopDbContext())

@@ -1,4 +1,5 @@
-using FeatureFlags.Features;
+using FeatureFlags.Services;
+using FeatureFlags.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 

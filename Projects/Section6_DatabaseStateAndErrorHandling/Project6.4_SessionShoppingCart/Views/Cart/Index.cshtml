@@ -1,4 +1,8 @@
-@model ShoppingCart
+@*
+    @model CartPageViewModel (Models/CartPageViewModel.cs) = the items for sale + the user's cart.
+    New to .cshtml? See Projects/RAZOR_BASICS.md.
+*@
+@model CartPageViewModel
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><title>Cart</title></head>
@@ -10,7 +14,7 @@
         The hidden input uses plain name="itemId" (not asp-for) because Add(int itemId) takes a simple
         parameter, not a model property. Only the id is sent - the price is looked up on the server.
     *@
-    @foreach (ShopItem item in ViewBag.ItemsForSale)
+    @foreach (ShopItem item in Model.ItemsForSale)
     {
         <form asp-action="Add" method="post" style="display:inline">
             <input type="hidden" name="itemId" value="@item.Id" />
@@ -19,12 +23,12 @@
     }
 
     <h2>Your cart</h2>
-    @if (Model.Lines.Count == 0)
+    @if (Model.Cart.Lines.Count == 0)
     {
         <p>Empty.</p>
     }
     <ul>
-        @foreach (CartLine line in Model.Lines)
+        @foreach (CartLine line in Model.Cart.Lines)
         {
             <li>
                 @line.Quantity x @line.Name = @((line.Price * line.Quantity).ToString("0.00"))
@@ -36,7 +40,7 @@
             </li>
         }
     </ul>
-    <p><b>Total: <span id="cart-total">@Model.Total.ToString("0.00")</span></b></p>
+    <p><b>Total: <span id="cart-total">@Model.Cart.Total.ToString("0.00")</span></b></p>
     @* -> action="/Cart/Clear" + token. Clearing is a POST, never a GET link, because it changes data. *@
     <form asp-action="Clear" method="post"><button type="submit">Empty cart</button></form>
 </body>

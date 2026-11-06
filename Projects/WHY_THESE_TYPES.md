@@ -42,7 +42,7 @@ view), the `DbContext` may already be gone. `ToListAsync()` runs the SQL right t
 | Kind | Pick it when | Example in these projects |
 |---|---|---|
 | `record` | Plain data that **never changes after it's created**, and two values with the same data should count as **equal**. One-line syntax. | `Order`, `Sale` (2.1), `Money` and the domain events (4.2), `EmailMessage` (7.3), `CatalogProduct` (7.4) |
-| `class` | The thing **changes over time**, has an **identity** (two accounts with the same balance are still two accounts), or a framework needs settable properties. | `Product` stock (2.1), `BankAccount` (4.2), EF entities (6.x), form models (3.x), controllers, services |
+| `class` | The thing **changes over time**, has an **identity** (two accounts with the same balance are still two accounts), or a framework needs settable properties. | `Product` stock (2.1), `BankAccount` (4.2), EF entities (6.x), view models (`Models/`), controllers, services |
 | `struct` | Tiny value (a few numbers) created in huge amounts, where avoiding heap allocations matters. | **Not used.** See note below. |
 | `interface` | You need **several interchangeable implementations**, or a fake for tests. Only describes *what*, no code. | `IEmailSender` (3 senders, 7.3), `IBankAccountRepository` (fake + in-memory, 4.2) |
 | `abstract class` | Several classes share **real code** and only fill in a few parts. | Not written by us, but we *inherit* framework ones: `BackgroundService`, `ValidationAttribute`, `DbCommandInterceptor`, `ActionFilterAttribute` |
@@ -57,7 +57,7 @@ constructor. The memory saving of a struct doesn't matter at this scale.
 code that buys nothing. `BankAccountService` has no `IBankAccountService` because there's only one.
 Add the interface the day a second implementation (or a test fake) actually needs it.
 
-**Why entity and form classes aren't records:** EF Core and MVC model binding create the object
+**Why entity and view-model classes aren't records:** EF Core and MVC model binding create the object
 empty and then **set properties one at a time**. That needs a mutable `class` with `{ get; set; }`.
 
 ---
@@ -123,8 +123,8 @@ Full explanation in Project 1.1's README.
 | Choice | Why |
 |---|---|
 | `IActionResult` return type | One action can return a `View`, a `Redirect`, or `NotFound` — different classes. The interface covers them all. |
-| Strongly-typed `@model` | The main data of a page. The compiler checks property names. |
-| `ViewBag` | Small extras (a dropdown list, an error message). It's `dynamic`: **no compile-time checking**, typos only show up at runtime. Fine for a demo; a real app should put these in a view-model class. |
+| Strongly-typed `@model` | Everything a page shows: a `...ViewModel` from `Models/` (or an entity, on pages that only display it). The compiler checks property names. |
+| `ViewBag` | **Not used in these projects.** It's `dynamic`: no compile-time checking, typos only show up when the page runs. Every page's extras (dropdown choices, error messages) live in its `...ViewModel` class instead. |
 | `TempData` | A message that must survive **one redirect** ("Product added"). `ViewBag` is lost on redirect. Set in the controller, **read in `Views/Shared/_Layout.cshtml`** (3.1, 3.3, 7.1) so it shows on whichever page the redirect lands on; reading it deletes it, so a refresh doesn't show it again. |
 | `Controller` vs `ControllerBase` | `Controller` adds views. Pure JSON APIs (6.3, 7.3) use `ControllerBase`. |
 

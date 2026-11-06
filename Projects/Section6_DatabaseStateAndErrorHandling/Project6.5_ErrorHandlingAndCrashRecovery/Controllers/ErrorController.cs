@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ErrorHandlingAndCrashRecovery.Models;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,8 +27,7 @@ public class ErrorController : Controller
 
         // ...the user only gets an id to quote to support. No message, no stack trace.
         Response.StatusCode = StatusCodes.Status500InternalServerError;
-        ViewBag.ErrorId = errorId;
-        return View();
+        return View(new ServerErrorViewModel { ErrorId = errorId });
     }
 
     [Route("/Error/Status/{statusCode:int}")]
@@ -41,7 +41,6 @@ public class ErrorController : Controller
         {
             return View("NotFound");
         }
-        ViewBag.StatusCode = statusCode;
-        return View("OtherStatus");
+        return View("OtherStatus", new StatusCodeErrorViewModel { StatusCode = statusCode });
     }
 }

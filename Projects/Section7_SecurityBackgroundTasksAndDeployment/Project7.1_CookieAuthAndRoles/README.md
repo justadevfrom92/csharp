@@ -1,6 +1,6 @@
 # Project 7.1 — Cookie Login & Role-Based Access
 
-> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+> New to `.cshtml` files (`@model`, `@foreach`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
 ```bash
 dotnet dev-certs https --trust
@@ -46,7 +46,7 @@ Not logged in → sent to the login page. Logged in but wrong role → "Access d
 
 - **Passwords are hashed**, never stored or compared as plain text.
 - **Same error for wrong user and wrong password**, so attackers can't test which user names exist.
-- **`Url.IsLocalUrl(returnUrl)`** stops "open redirect" attacks (`/Account/Login?returnUrl=https://evil.com`).
+- **`Url.IsLocalUrl(form.ReturnUrl)`** stops "open redirect" attacks (`/Account/Login?ReturnUrl=https://evil.com`).
 - **Logout is a POST with an anti-forgery token**, so another site can't log you out with an `<img>` tag.
 - **Cookie:** `HttpOnly`, `Secure`, `SameSite=Lax`, 1-hour sliding expiry.
 - **Real apps** should use ASP.NET Core Identity with a database (lockout after failed tries, email
@@ -63,6 +63,6 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `AppUser? CheckPassword` | Wrong password is a normal outcome → `null`. | An exception for a normal failed login is slow and noisy. |
 | `bool Register` | `false` = name taken. | — |
 | `List<Claim>` | The claims list given to `ClaimsIdentity`. | — |
-| `string? returnUrl` | Usually missing. | — |
-| `userName ?? ""` | If the form field is missing, compare against empty instead of crashing. | — |
+| `LoginViewModel` / `RegisterViewModel` (in `Models/`) | Typed forms with `[Required]`, `[StringLength]`, `[DataType(DataType.Password)]`. `RegisterViewModel` has **no `Role` property**, so posting `Role=Admin` does nothing. `ReturnUrl` is nullable: usually missing. | Loose parameters + `ViewBag.Error` had no validation attributes and no compile-time checks. |
+| `ModelState.AddModelError("", ...)` for a wrong password | `""` = an error for the whole form, shown by `asp-validation-summary`. The "name taken" error is attached to `UserName` instead, so it shows next to that field. | — |
 | Global `AuthorizeFilter` + `[AllowAnonymous]` per action | Locked by default; each public page opts out. | `[Authorize]` per controller can be forgotten. |

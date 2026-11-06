@@ -1,3 +1,5 @@
+using FormSecurityXssCsrf.Data;
+using FormSecurityXssCsrf.Data.Entities;
 using FormSecurityXssCsrf.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -5,41 +7,35 @@ namespace FormSecurityXssCsrf.Controllers;
 
 public class GuestbookController : Controller
 {
-    private static readonly List<GuestbookEntry> entries = new();
-    private static readonly object listLock = new();
-
     public IActionResult Index()
     {
-        lock (listLock)
-        {
-            ViewBag.Entries = entries.OrderByDescending(entry => entry.PostedAtUtc).ToList();
-        }
-        return View(new GuestbookEntry());
+        var page = new GuestbookPageViewModel { Entries = GuestbookStore.GetNewestFirst() };
+        return View(page);
     }
 
     // No [ValidateAntiForgeryToken] needed here: it's added to ALL POST actions globally in Program.cs.
+    // Model binding fills Name, Message and Website from the form.
     [HttpPost]
-    public IActionResult Index(GuestbookEntry entry)
+    public IActionResult Index(GuestbookPageViewModel form)
     {
-        if (!string.IsNullOrEmpty(entry.Website) && !IsSafeWebLink(entry.Website))
+        if (!string.IsNullOrEmpty(form.Website) && !IsSafeWebLink(form.Website))
         {
-            ModelState.AddModelError(nameof(entry.Website), "Only http:// and https:// links are allowed.");
+            ModelState.AddModelError(nameof(form.Website), "Only http:// and https:// links are allowed.");
         }
         if (!ModelState.IsValid)
         {
-            lock (listLock)
-            {
-                ViewBag.Entries = entries.OrderByDescending(existing => existing.PostedAtUtc).ToList();
-            }
-            return View(entry);
+            form.Entries = GuestbookStore.GetNewestFirst(); // not posted, so load again
+            return View(form);
         }
 
         // We store exactly what the user typed. Encoding happens when SHOWING it (see the view).
-        entry.PostedAtUtc = DateTime.UtcNow;
-        lock (listLock)
+        GuestbookStore.Add(new GuestbookEntry
         {
-            entries.Add(entry);
-        }
+            Name = form.Name,
+            Message = form.Message,
+            Website = form.Website,
+            PostedAtUtc = DateTime.UtcNow,
+        });
         return RedirectToAction(nameof(Index));
     }
 

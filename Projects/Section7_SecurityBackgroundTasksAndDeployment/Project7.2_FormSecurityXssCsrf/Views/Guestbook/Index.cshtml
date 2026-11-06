@@ -1,7 +1,8 @@
-@model GuestbookEntry
-@{
-    var allEntries = (List<GuestbookEntry>)ViewBag.Entries;
-}
+@*
+    @model GuestbookPageViewModel (Models/GuestbookPageViewModel.cs) = the form fields + the entries to show.
+    New to .cshtml? See Projects/RAZOR_BASICS.md.
+*@
+@model GuestbookPageViewModel
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><title>Guestbook</title></head>
@@ -25,7 +26,7 @@
         <button type="submit">Post</button>
     </form>
 
-    @foreach (GuestbookEntry entry in allEntries)
+    @foreach (GuestbookEntry entry in Model.Entries)
     {
         <div class="entry" style="border-top: 1px solid #ccc; margin-top: 10px;">
             @* SAFE: @entry.Message is HTML-encoded, so "<script>" is shown as text, not run. *@

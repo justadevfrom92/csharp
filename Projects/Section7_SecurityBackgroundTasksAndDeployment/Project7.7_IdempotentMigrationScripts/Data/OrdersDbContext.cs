@@ -1,3 +1,4 @@
+using IdempotentMigrationScripts.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace IdempotentMigrationScripts.Data;

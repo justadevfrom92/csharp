@@ -1,4 +1,4 @@
-using EnvironmentAwareEmail.Email;
+using EnvironmentAwareEmail.Services.Email;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EnvironmentAwareEmail.Controllers;
