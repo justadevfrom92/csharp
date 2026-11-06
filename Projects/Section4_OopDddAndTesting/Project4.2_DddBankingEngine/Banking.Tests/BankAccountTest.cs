@@ -5,6 +5,10 @@ using Banking.Domain.ValueObjects;
 
 namespace Banking.Tests;
 
+// Every behaviour has three kinds of test:
+//   PositivePositive - VALID input            -> succeeds
+//   PositiveNegative - well-formed input that breaks a business rule -> correctly refused, nothing changes
+//   NegativeNegative - MALFORMED or missing input (null, zero, bad format) -> rejected cleanly
 public class BankAccountTest
 {
     private static MoneyValueObject Dollars(decimal amount)
@@ -12,19 +16,50 @@ public class BankAccountTest
         return new MoneyValueObject(amount, "USD");
     }
 
-    [Fact]
-    public void New_account_has_zero_balance_and_an_AccountOpened_event()
+    private static BankAccountAggregate AccountWithBalance(decimal amount)
     {
         BankAccountAggregate account = BankAccountAggregate.Open("Alice", "USD");
+        if (amount > 0)
+        {
+            account.Deposit(Dollars(amount));
+        }
+        return account;
+    }
 
+    // ---------- Open ----------
+
+    [Fact]
+    public void Open_PositivePositive_ValidOwnerAndCurrency_HasZeroBalanceAndAccountOpenedEvent()
+    {
+        BankAccountAggregate account = BankAccountAggregate.Open("  Alice  ", "USD");
+
+        Assert.Equal("Alice", account.OwnerName);
         Assert.Equal(Dollars(0), account.Balance);
         Assert.IsType<AccountOpenedEvent>(Assert.Single(account.PendingEvents));
     }
 
     [Fact]
-    public void Deposit_increases_balance_and_raises_event()
+    public void Open_PositiveNegative_WhitespaceOwnerName_IsRefused()
     {
-        BankAccountAggregate account = BankAccountAggregate.Open("Alice", "USD");
+        // "   " is a real string, but it isn't a name.
+        Assert.Throws<ArgumentException>(() => BankAccountAggregate.Open("   ", "USD"));
+    }
+
+    [Theory]
+    [InlineData(null, "USD")]
+    [InlineData("Alice", "US")]
+    [InlineData("Alice", null)]
+    public void Open_NegativeNegative_MissingOrMalformedInput_IsRejected(string? owner, string? currency)
+    {
+        Assert.Throws<ArgumentException>(() => BankAccountAggregate.Open(owner!, currency!));
+    }
+
+    // ---------- Deposit ----------
+
+    [Fact]
+    public void Deposit_PositivePositive_ValidAmount_IncreasesBalanceAndRaisesEvent()
+    {
+        BankAccountAggregate account = AccountWithBalance(0);
 
         account.Deposit(Dollars(100));
 
@@ -34,50 +69,111 @@ public class BankAccountTest
     }
 
     [Fact]
-    public void Withdrawing_more_than_balance_throws_and_balance_is_unchanged()
+    public void Deposit_PositiveNegative_ValidAmountIntoClosedAccount_IsRefused()
     {
-        BankAccountAggregate account = BankAccountAggregate.Open("Alice", "USD");
-        account.Deposit(Dollars(50));
+        BankAccountAggregate account = AccountWithBalance(0);
+        account.Close();
 
-        var exception = Assert.Throws<InsufficientFundsException>(() => account.Withdraw(Dollars(80)));
+        Assert.Throws<AccountClosedException>(() => account.Deposit(Dollars(10)));
+        Assert.Equal(Dollars(0), account.Balance);
+    }
 
-        Assert.Equal(Dollars(80), exception.Requested);
+    [Fact]
+    public void Deposit_PositiveNegative_ValidAmountInWrongCurrency_IsRefused()
+    {
+        BankAccountAggregate account = AccountWithBalance(50);
+
+        Assert.Throws<InvalidOperationException>(() => account.Deposit(new MoneyValueObject(10, "EUR")));
         Assert.Equal(Dollars(50), account.Balance);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(0.001)] // rounds to 0.00
-    public void Deposit_of_zero_is_rejected(decimal amount)
+    public void Deposit_NegativeNegative_ZeroAmount_IsRejected(decimal amount)
     {
-        BankAccountAggregate account = BankAccountAggregate.Open("Alice", "USD");
+        BankAccountAggregate account = AccountWithBalance(0);
 
         Assert.Throws<ArgumentException>(() => account.Deposit(Dollars(amount)));
     }
 
     [Fact]
-    public void Deposit_in_wrong_currency_is_rejected()
+    public void Deposit_NegativeNegative_Null_IsRejected()
     {
-        BankAccountAggregate account = BankAccountAggregate.Open("Alice", "USD");
+        BankAccountAggregate account = AccountWithBalance(0);
 
-        Assert.Throws<InvalidOperationException>(() => account.Deposit(new MoneyValueObject(10, "EUR")));
+        Assert.Throws<ArgumentNullException>(() => account.Deposit(null!));
+    }
+
+    // ---------- Withdraw ----------
+
+    [Fact]
+    public void Withdraw_PositivePositive_ValidAmount_ReducesBalanceAndRaisesEvent()
+    {
+        BankAccountAggregate account = AccountWithBalance(100);
+
+        account.Withdraw(Dollars(30));
+
+        Assert.Equal(Dollars(70), account.Balance);
+        Assert.IsType<MoneyWithdrawnEvent>(account.PendingEvents.Last());
     }
 
     [Fact]
-    public void Account_with_money_cannot_be_closed()
+    public void Withdraw_PositiveNegative_ValidAmountOverBalance_IsRefusedAndBalanceUnchanged()
     {
-        BankAccountAggregate account = BankAccountAggregate.Open("Alice", "USD");
-        account.Deposit(Dollars(1));
+        BankAccountAggregate account = AccountWithBalance(100);
 
-        Assert.Throws<InvalidOperationException>(() => account.Close());
+        var exception = Assert.Throws<InsufficientFundsException>(() => account.Withdraw(Dollars(500)));
+
+        Assert.Equal(Dollars(500), exception.Requested);
+        Assert.Equal(Dollars(100), account.Balance);
     }
 
     [Fact]
-    public void Closed_account_rejects_deposits()
+    public void Withdraw_NegativeNegative_ZeroAmount_IsRejected()
     {
-        BankAccountAggregate account = BankAccountAggregate.Open("Alice", "USD");
+        BankAccountAggregate account = AccountWithBalance(100);
+
+        Assert.Throws<ArgumentException>(() => account.Withdraw(Dollars(0)));
+        Assert.Equal(Dollars(100), account.Balance);
+    }
+
+    [Fact]
+    public void Withdraw_NegativeNegative_Null_IsRejected()
+    {
+        BankAccountAggregate account = AccountWithBalance(100);
+
+        Assert.Throws<ArgumentNullException>(() => account.Withdraw(null!));
+    }
+
+    // ---------- Close ----------
+
+    [Fact]
+    public void Close_PositivePositive_ZeroBalance_ClosesAndRaisesEvent()
+    {
+        BankAccountAggregate account = AccountWithBalance(0);
+
         account.Close();
 
-        Assert.Throws<AccountClosedException>(() => account.Deposit(Dollars(10)));
+        Assert.True(account.IsClosed);
+        Assert.IsType<AccountClosedEvent>(account.PendingEvents.Last());
+    }
+
+    [Fact]
+    public void Close_PositiveNegative_AccountStillHasMoney_IsRefused()
+    {
+        BankAccountAggregate account = AccountWithBalance(1);
+
+        Assert.Throws<InvalidOperationException>(() => account.Close());
+        Assert.False(account.IsClosed);
+    }
+
+    [Fact]
+    public void Close_NegativeNegative_AlreadyClosedAccount_IsRejected()
+    {
+        BankAccountAggregate account = AccountWithBalance(0);
+        account.Close();
+
+        Assert.Throws<AccountClosedException>(() => account.Close());
     }
 }

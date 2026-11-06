@@ -27,6 +27,26 @@ Already have Chromium installed? Skip the install and point at it instead:
 CHROMIUM_PATH=/path/to/chrome dotnet test
 ```
 
+## The three kinds of test (every behaviour has all three)
+
+| Kind | Input | Expected |
+|---|---|---|
+| **PositivePositive** | Valid: right type, right format, within the rules | Succeeds |
+| **PositiveNegative** | Well-formed, but breaks a business rule | Correctly refused (or a "no" answer), and **nothing changes** |
+| **NegativeNegative** | Malformed or missing: `null`, zero, wrong format, unknown id | Rejected cleanly with a clear error |
+
+Test names say which one they are: `Behaviour_Kind_Situation_ExpectedResult`.
+
+| Page | PositivePositive | PositiveNegative | NegativeNegative |
+|---|---|---|---|
+| Details (`/product/{id}`) | `/product/1` shows "Keyboard" | `/product/9999` (well-formed id, no such product) → 404 | `/product/abc` → 404 |
+| Create | valid product → redirect to list, success alert, new row in table | name `"A"`, price `0` → rule errors shown, nothing saved | empty form + price `"abc"` → "required" / "not valid" errors, stays on page |
+| Edit | price `42.50` → saved, alert, details page shows the new price | price `0` → error shown, details page still shows the old price | `/Products/Edit/abc` → 404 |
+
+**Why the 404 checks don't open the page in the browser:** when a 404 has an empty body, Chromium reports a
+navigation *error* instead of showing a page, so `page.GotoAsync` throws. Those three tests ask for the URL
+with Playwright's HTTP client (`page.APIRequest`, same cookies as the browser) and check the status code.
+
 ## How it works
 
 - `ProductCatalogWebsiteFixture` starts the real 3.1 app **inside the test process** with

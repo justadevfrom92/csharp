@@ -52,6 +52,8 @@ public record MoneyValueObject
 
     private void CheckSameCurrency(MoneyValueObject other)
     {
+        // null is a programming mistake: say so clearly instead of crashing with NullReferenceException.
+        ArgumentNullException.ThrowIfNull(other);
         if (other.Currency != Currency)
         {
             throw new InvalidOperationException($"Cannot mix {Currency} and {other.Currency}.");

@@ -96,6 +96,7 @@ public class BankAccountAggregate
 
     private void CheckAmountIsPositive(MoneyValueObject amount)
     {
+        ArgumentNullException.ThrowIfNull(amount);
         if (amount.Amount <= 0)
         {
             throw new ArgumentException("Amount must be more than zero.", nameof(amount));

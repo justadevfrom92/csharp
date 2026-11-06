@@ -20,6 +20,34 @@ dotnet test Banking.Tests --collect:"XPlat Code Coverage"
 dotnet run --project Banking.Demo
 ```
 
+## The three kinds of test (every behaviour has all three)
+
+| Kind | Input | Expected |
+|---|---|---|
+| **PositivePositive** | Valid: right type, right format, within the rules | Succeeds |
+| **PositiveNegative** | Well-formed, but breaks a business rule | Correctly refused (or a "no" answer), and **nothing changes** |
+| **NegativeNegative** | Malformed or missing: `null`, zero, wrong format, unknown id | Rejected cleanly with a clear error |
+
+Test names say which one they are: `Behaviour_Kind_Situation_ExpectedResult`.
+
+| Behaviour | PositivePositive | PositiveNegative | NegativeNegative |
+|---|---|---|---|
+| Create money | `10.456 usd` → `10.46 USD` | `-1 USD` → refused | currency `""`, `"US"`, `"DOLLARS"`, `null` → rejected |
+| Equals | `10 USD` = `10.00 usd` | `10 USD` ≠ `11 USD` | compared with `null` → not equal |
+| Add | `10 + 5 = 15`, original unchanged | USD + EUR → refused | `Add(null)` → rejected |
+| Subtract | `10 - 4 = 6` | `10 - 15` → refused (would be negative) | `Subtract(null)` → rejected |
+| IsLessThan | `5 < 10` → true | `10 < 5` → false | `IsLessThan(null)` → rejected |
+| Open account | `"  Alice  "` → trimmed, zero balance, event | owner `"   "` → refused | owner `null`, currency `"US"`/`null` → rejected |
+| Deposit | 100 → balance 100, event | into a closed account / wrong currency → refused, balance unchanged | `0`, `0.001`, `null` → rejected |
+| Withdraw | 30 of 100 → 70, event | 500 of 100 → `InsufficientFundsException`, balance unchanged | `0`, `null` → rejected |
+| Close | zero balance → closed, event | still has money → refused, stays open | already closed → rejected |
+| Service: OpenAccount / Deposit / Withdraw / GetBalance | saved, events sent once in order | rule broken → nothing saved, **no event sent** | unknown account id → `KeyNotFoundException` |
+
+**A bug these tests found:** before, `Deposit(null)`, `Withdraw(null)`, `Add(null)`, `Subtract(null)` and
+`IsLessThan(null)` crashed with a `NullReferenceException` from deep inside the method. The NegativeNegative
+tests were written first and failed; the methods now start with `ArgumentNullException.ThrowIfNull(...)`,
+which names the bad argument straight away.
+
 ## The DDD pieces
 
 - **Value object** — `MoneyValueObject`: no id, compared by value, can't be changed (every operation returns a new `MoneyValueObject`).
