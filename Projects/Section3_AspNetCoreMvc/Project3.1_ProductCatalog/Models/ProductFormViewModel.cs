@@ -2,7 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProductCatalog.Models;
 
-public class Product
+// What the Create and Edit FORMS show and post. Only these fields can be sent by the browser.
+public class ProductFormViewModel
 {
     public int Id { get; set; }
 
@@ -18,4 +19,7 @@ public class Product
 
     [StringLength(500)]
     public string? Description { get; set; }
+
+    // Options for the Category dropdown. Filled by the controller, NOT posted back by the form.
+    public string[] CategoryChoices { get; set; } = [];
 }

@@ -2,7 +2,12 @@
 // The classes it uses (InMemoryAccountRepository, ConsoleEventDispatcher) are defined at the BOTTOM of this file.
 // (In C#, top-level code must come before any class definitions in the file.)
 
-using Banking.Domain;
+using Banking.Domain.Aggregates;
+using Banking.Domain.Events;
+using Banking.Domain.Exceptions;
+using Banking.Domain.Repositories;
+using Banking.Domain.Services;
+using Banking.Domain.ValueObjects;
 using Microsoft.Extensions.DependencyInjection;
 
 // ---------- Dependency Injection setup ----------

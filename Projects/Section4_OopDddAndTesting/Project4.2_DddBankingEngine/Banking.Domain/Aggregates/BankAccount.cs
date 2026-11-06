@@ -1,4 +1,8 @@
-namespace Banking.Domain;
+using Banking.Domain.Events;
+using Banking.Domain.Exceptions;
+using Banking.Domain.ValueObjects;
+
+namespace Banking.Domain.Aggregates;
 
 // AGGREGATE ROOT: the only way to change an account is through these methods,
 // so the rules (invariants) below can never be skipped:
@@ -38,7 +42,7 @@ public class BankAccount
         }
 
         var account = new BankAccount(Guid.NewGuid(), ownerName.Trim(), currency);
-        account.pendingEvents.Add(new AccountOpened(account.Id, account.OwnerName, DateTimeOffset.UtcNow));
+        account.pendingEvents.Add(new AccountOpenedEvent(account.Id, account.OwnerName, DateTimeOffset.UtcNow));
         return account;
     }
 
@@ -48,7 +52,7 @@ public class BankAccount
         CheckAmountIsPositive(amount);
 
         Balance = Balance.Add(amount);
-        pendingEvents.Add(new MoneyDeposited(Id, amount, Balance, DateTimeOffset.UtcNow));
+        pendingEvents.Add(new MoneyDepositedEvent(Id, amount, Balance, DateTimeOffset.UtcNow));
     }
 
     public void Withdraw(Money amount)
@@ -61,7 +65,7 @@ public class BankAccount
         }
 
         Balance = Balance.Subtract(amount);
-        pendingEvents.Add(new MoneyWithdrawn(Id, amount, Balance, DateTimeOffset.UtcNow));
+        pendingEvents.Add(new MoneyWithdrawnEvent(Id, amount, Balance, DateTimeOffset.UtcNow));
     }
 
     public void Close()
@@ -73,7 +77,7 @@ public class BankAccount
         }
 
         IsClosed = true;
-        pendingEvents.Add(new AccountClosed(Id, DateTimeOffset.UtcNow));
+        pendingEvents.Add(new AccountClosedEvent(Id, DateTimeOffset.UtcNow));
     }
 
     // Called after the events have been sent, so they are not sent twice.

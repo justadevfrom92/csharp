@@ -1,4 +1,4 @@
-namespace Banking.Domain;
+namespace Banking.Domain.Exceptions;
 
 public class AccountClosedException : Exception
 {

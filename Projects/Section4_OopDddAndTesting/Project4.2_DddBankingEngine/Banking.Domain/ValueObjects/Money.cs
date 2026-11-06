@@ -1,4 +1,4 @@
-namespace Banking.Domain;
+namespace Banking.Domain.ValueObjects;
 
 // VALUE OBJECT: no id, it is equal to another Money if amount and currency match.
 // "record" gives us that equality for free, and get-only properties make it immutable.

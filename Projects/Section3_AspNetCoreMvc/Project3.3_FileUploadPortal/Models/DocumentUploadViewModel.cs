@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using FileUploadPortal.Models.ValidationAttributes;
 
 namespace FileUploadPortal.Models;
 
-public class DocumentUploadForm
+// What the "Upload document" form posts.
+public class DocumentUploadViewModel
 {
     [Required(ErrorMessage = "Choose a document.")]
     [MaximumFileSizeValidation(5)]

@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace SidebarAndDateBinder.Models;
+namespace SidebarAndDateBinder.ModelBinders;
 
 // Reads a date from the query string ONLY in ISO format: yyyy-MM-dd (e.g. ?day=2026-11-05).
 // Use it on a parameter with: [ModelBinder(typeof(CustomIsoDateFormatModelBinder))]

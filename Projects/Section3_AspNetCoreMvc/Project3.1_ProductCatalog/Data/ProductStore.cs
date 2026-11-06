@@ -1,4 +1,6 @@
-namespace ProductCatalog.Models;
+using ProductCatalog.Data.Entities;
+
+namespace ProductCatalog.Data;
 
 // Simple in-memory list shared by every request. Data is lost when the app stops (no database yet).
 public static class ProductStore

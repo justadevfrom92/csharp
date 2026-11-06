@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace FileUploadPortal.Models;
+namespace FileUploadPortal.Models.ValidationAttributes;
 
 // Usage: [MaximumFileSizeValidation(2)]  -> file must be 2 MB or smaller.
 public class MaximumFileSizeValidationAttribute : ValidationAttribute

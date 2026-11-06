@@ -1,4 +1,6 @@
-namespace Banking.Domain;
+using Banking.Domain.ValueObjects;
+
+namespace Banking.Domain.Exceptions;
 
 // Custom exceptions so callers can catch exactly the business problem they care about.
 public class InsufficientFundsException : Exception

@@ -1,15 +1,15 @@
 @*
     New to .cshtml? See Projects/RAZOR_BASICS.md.
 
-    @model DocumentUploadForm = "this page receives a DocumentUploadForm" (class in Models/DocumentUploadForm.cs).
-    UploadController.Document() passes it with "return View(new DocumentUploadForm());".
+    @model DocumentUploadViewModel = "this page receives a DocumentUploadViewModel" (class in Models/DocumentUploadViewModel.cs).
+    UploadController.Document() passes it with "return View(new DocumentUploadViewModel());".
     asp-for="Document" and asp-for="Note" below refer to that class's two properties.
 *@
-@model DocumentUploadForm
+@model DocumentUploadViewModel
 
 <h2>Upload document (.pdf/.txt, max 5 MB)</h2>
 @* Same as Avatar.cshtml: post form + token, multipart so the file bytes are sent,
-   asp-for binds the inputs to DocumentUploadForm.Document and .Note, asp-validation-for shows their errors. *@
+   asp-for binds the inputs to DocumentUploadViewModel.Document and .Note, asp-validation-for shows their errors. *@
 <form asp-action="Document" method="post" enctype="multipart/form-data">
     <input asp-for="Document" type="file" accept=".pdf,.txt" />
     <span asp-validation-for="Document" class="error"></span>

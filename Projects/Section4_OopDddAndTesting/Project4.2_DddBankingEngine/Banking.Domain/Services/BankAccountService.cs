@@ -1,4 +1,9 @@
-namespace Banking.Domain;
+using Banking.Domain.Aggregates;
+using Banking.Domain.Events;
+using Banking.Domain.Repositories;
+using Banking.Domain.ValueObjects;
+
+namespace Banking.Domain.Services;
 
 // Loads an account, runs one action on it, saves it, then sends out its events.
 public class BankAccountService

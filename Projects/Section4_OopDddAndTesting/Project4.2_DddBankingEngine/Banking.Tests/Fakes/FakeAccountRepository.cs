@@ -1,6 +1,7 @@
-using Banking.Domain;
+using Banking.Domain.Aggregates;
+using Banking.Domain.Repositories;
 
-namespace Banking.Tests;
+namespace Banking.Tests.Fakes;
 
 // Hand-written fakes instead of a mocking library: they are tiny and easy to read.
 public class FakeAccountRepository : IBankAccountRepository

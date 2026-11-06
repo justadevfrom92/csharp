@@ -25,7 +25,7 @@ dotnet run --project Banking.Demo
 - **Value object** — `Money`: no id, compared by value, can't be changed (every operation returns a new `Money`).
 - **Entity / aggregate root** — `BankAccount`: has an `Id`, and is the only door to change the
   balance. The setter is `private`, so the rules can't be skipped.
-- **Domain events** — `AccountOpened`, `MoneyDeposited`, `MoneyWithdrawn`, `AccountClosed`.
+- **Domain events** — `AccountOpenedEvent`, `MoneyDepositedEvent`, `MoneyWithdrawnEvent`, `AccountClosedEvent`.
   The account collects them; `BankAccountService` sends them out after saving.
 - **Repository interface** — `IBankAccountRepository`, declared in the domain, implemented outside it.
 - **Custom exceptions** — `InsufficientFundsException`, `AccountClosedException`. The demo catches
@@ -72,7 +72,7 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `record Money` | A value object: `10 USD` equals any other `10 USD` (records compare by value). Get-only properties mean it can't change; `Add` returns a *new* `Money`. | A `class` compares by reference (two `10 USD` objects would be "different") and we'd have to write `Equals`/`GetHashCode` ourselves. |
 | `record` not `struct` for `Money` | Every `Money` must go through the constructor checks. | A struct has a `default` value with `Currency = null` that skips the constructor — an invalid `Money` would exist. |
 | `class BankAccount` | An entity: it has an `Id` and changes over time. Two accounts with the same balance are still different accounts. | A record's value equality is wrong for something with identity. |
-| Private constructor + `static Open(...)` | The only way to create an account also validates the owner and raises `AccountOpened`. | A public constructor could create an account without the event. |
+| Private constructor + `static Open(...)` | The only way to create an account also validates the owner and raises `AccountOpenedEvent`. | A public constructor could create an account without the event. |
 | `Balance { get; private set; }` | Readable by anyone, changeable only by `Deposit`/`Withdraw` — so the rules can't be skipped (encapsulation). | A public setter lets anyone write `account.Balance = new Money(1000000, "USD")`. |
 | `IReadOnlyList<IDomainEvent> PendingEvents` over a private `List` | Outside code can read the events (with `Count`, index), but can't add or remove. | Exposing the `List` lets anyone fake events. `IEnumerable` would hide `Count`, which tests use. |
 | Events: `record` + `interface IDomainEvent` | Each event is an unchangeable fact (`record`). The interface lets different event types share one list. | An `abstract class` base would also work, but there's no shared code to put in it. |

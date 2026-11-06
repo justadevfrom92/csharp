@@ -1,12 +1,16 @@
-@model List<ActivityEntry>
+@*
+    @model DailyActivityViewModel (Models/DailyActivityViewModel.cs) = the day, an optional error, and the entries.
+    ActivityController.Day() builds it and passes it with "return View(page);".
+*@
+@model DailyActivityViewModel
 
-<h2>Activity on @(((DateOnly)ViewBag.Day).ToString("dddd d MMMM yyyy"))</h2>
-@if (ViewBag.Error != null)
+<h2>Activity on @Model.Day.ToString("dddd d MMMM yyyy")</h2>
+@if (Model.DateErrorMessage != null)
 {
-    <p class="error">@ViewBag.Error Showing today instead.</p>
+    <p class="error">@Model.DateErrorMessage Showing today instead.</p>
 }
 <ul>
-    @foreach (ActivityEntry entry in Model)
+    @foreach (ActivityEntry entry in Model.Entries)
     {
         <li>@entry.Time.ToString("HH:mm") - @entry.Text</li>
     }

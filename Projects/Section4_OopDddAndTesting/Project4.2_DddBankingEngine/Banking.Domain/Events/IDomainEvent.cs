@@ -1,4 +1,4 @@
-namespace Banking.Domain;
+namespace Banking.Domain.Events;
 
 // DOMAIN EVENTS: facts about something that already happened, named in the past tense.
 public interface IDomainEvent

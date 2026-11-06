@@ -1,4 +1,6 @@
-namespace SidebarAndDateBinder.Models;
+using SidebarAndDateBinder.Data.Entities;
+
+namespace SidebarAndDateBinder.Data;
 
 // In-memory activity list shared by the whole app.
 public static class ActivityLog
