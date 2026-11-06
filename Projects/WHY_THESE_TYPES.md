@@ -125,7 +125,7 @@ Full explanation in Project 1.1's README.
 | `IActionResult` return type | One action can return a `View`, a `Redirect`, or `NotFound` — different classes. The interface covers them all. |
 | Strongly-typed `@model` | The main data of a page. The compiler checks property names. |
 | `ViewBag` | Small extras (a dropdown list, an error message). It's `dynamic`: **no compile-time checking**, typos only show up at runtime. Fine for a demo; a real app should put these in a view-model class. |
-| `TempData` | A message that must survive **one redirect** ("Product added"). `ViewBag` is lost on redirect. |
+| `TempData` | A message that must survive **one redirect** ("Product added"). `ViewBag` is lost on redirect. Set in the controller, **read in `Views/Shared/_Layout.cshtml`** (3.1, 3.3, 7.1) so it shows on whichever page the redirect lands on; reading it deletes it, so a refresh doesn't show it again. |
 | `Controller` vs `ControllerBase` | `Controller` adds views. Pure JSON APIs (6.3, 7.3) use `ControllerBase`. |
 
 ---

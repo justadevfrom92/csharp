@@ -13,6 +13,19 @@
     <partial name="_Header" />
     <partial name="_Navigation" />
     <main>
+        @*
+            TempData["SuccessMessage"] is SET in ProductsController (Create and Edit) right before a redirect,
+            and READ here. It's in the layout (not one view) so the message shows on whatever page we land on.
+
+            How TempData works:
+              1. Controller: TempData["SuccessMessage"] = "..."; return RedirectToAction(...);
+              2. The value is saved (in a cookie) and the browser follows the redirect - a brand-new request.
+              3. Here we read it once. Reading it marks it for deletion, so refreshing the page
+                 does NOT show the message again.
+            Why not ViewBag? ViewBag only lives for the current request, so it's gone after the redirect.
+            Why redirect at all? So pressing F5 after saving doesn't post the form twice (Post/Redirect/Get).
+            "is string successMessage" checks it exists AND is a string, then gives it a name - no message, no box.
+        *@
         @if (TempData["SuccessMessage"] is string successMessage)
         {
             <div class="success-alert" id="success-alert">@successMessage</div>

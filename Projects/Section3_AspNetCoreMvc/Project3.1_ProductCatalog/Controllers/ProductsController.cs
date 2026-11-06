@@ -41,6 +41,9 @@ public class ProductsController : Controller
         }
 
         ProductStore.Add(product);
+
+        // TempData survives ONE redirect. We redirect to Index next, so ViewBag would be lost here.
+        // It is READ in Views/Shared/_Layout.cshtml (the green box at the top of every page).
         TempData["SuccessMessage"] = $"Product '{product.Name}' was added.";
         return RedirectToAction(nameof(Index)); // redirect so refreshing the page doesn't post twice
     }
@@ -71,6 +74,7 @@ public class ProductsController : Controller
             return NotFound();
         }
 
+        // Read in Views/Shared/_Layout.cshtml after the redirect (see Create above).
         TempData["SuccessMessage"] = $"Product '{product.Name}' was updated.";
         return RedirectToAction(nameof(Index));
     }

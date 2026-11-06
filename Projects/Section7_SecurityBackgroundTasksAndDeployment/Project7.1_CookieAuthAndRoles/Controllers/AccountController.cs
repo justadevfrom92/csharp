@@ -72,6 +72,7 @@ public class AccountController : Controller
             ViewBag.Error = "That user name is taken.";
             return View();
         }
+        // TempData survives ONE redirect (to Login). Read in Views/Shared/_Layout.cshtml.
         TempData["Message"] = "Account created. Please log in.";
         return RedirectToAction(nameof(Login));
     }

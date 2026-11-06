@@ -38,6 +38,7 @@ public class UploadController : Controller
         }
 
         string savedName = await SaveFileAsync(form.Avatar!);
+        // TempData survives ONE redirect (ViewBag would be lost). Read in Views/Shared/_Layout.cshtml.
         TempData["Message"] = $"Avatar saved as {savedName}";
         return RedirectToAction(nameof(Index));
     }
@@ -58,6 +59,7 @@ public class UploadController : Controller
         }
 
         string savedName = await SaveFileAsync(form.Document!);
+        // Read in Views/Shared/_Layout.cshtml after the redirect.
         TempData["Message"] = $"Document saved as {savedName}";
         return RedirectToAction(nameof(Index));
     }
