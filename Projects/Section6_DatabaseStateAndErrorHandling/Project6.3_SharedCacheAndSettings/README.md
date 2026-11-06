@@ -59,3 +59,19 @@ should be cached for seconds, or not at all.
 - Only small, shared data is cached (a list of category names). Big or per-user data doesn't belong here.
 - `IMemoryCache` lives in *one* server's memory. With several servers each has its own copy and
   clearing it on one doesn't clear the others — that's when you move to Redis (`IDistributedCache`).
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `class ShopSettings` with setters | The options binder creates it empty and sets each value from JSON. `[Range]`/`[Required]` check them at startup. | A record with a constructor can't be bound this way. |
+| `IOptions<ShopSettings>` (not `IOptionsMonitor`) | Settings are read once at startup and don't change while running. | `IOptionsMonitor` is for live-reload (used for feature flags in 7.5). |
+| `settings.Value` stored in a field | Read once in the constructor, then just a normal object. | — |
+| `CategoryService` as **singleton class** | One shared service holding the cache and settings — both thread-safe. | Scoped would be fine too, but the cache is the shared part anyway. |
+| `int databaseCallCount` field + `Interlocked` | Several requests can hit it at once. | `count++` would lose updates (see 5.1). |
+| `const string CategoriesCacheKey` | One spelling for the key, used in get and remove. | Typing the string twice risks a typo that silently never clears. |
+| `List<string>` categories | A finished list (cache must store real data, not a lazy query). | Caching a lazy `IEnumerable` would re-run the "database" call on every loop. |
+| Anonymous object `new { categories, milliseconds, ... }` | Only used to shape one JSON response. | A named record would be extra code used once. |
+| `ControllerBase` + `[ApiController]` | JSON only, no views. | `Controller` adds view support we don't use. |

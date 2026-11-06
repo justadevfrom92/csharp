@@ -14,8 +14,18 @@ Console.WriteLine($"int     range: {int.MinValue} to {int.MaxValue}");
 Console.WriteLine($"double  range: {double.MinValue} to {double.MaxValue}");
 Console.WriteLine($"decimal range: {decimal.MinValue} to {decimal.MaxValue}");
 
+// An int is 32 bits, so it can only hold up to 2,147,483,647 (int.MaxValue).
+// What happens if we add 1 to that?
 int biggestInt = int.MaxValue;
+
+// unchecked = "don't check for overflow". The extra bit is thrown away and the number
+// wraps around to int.MinValue (-2,147,483,648). No error, just a wrong answer.
+// This is ALSO what C# does by default when you write neither keyword. We write "unchecked"
+// here only to make it visible. Use it on purpose when wrapping is what you want (e.g. hash codes).
 Console.WriteLine($"unchecked int.MaxValue + 1 = {unchecked(biggestInt + 1)}  (wraps around silently)");
+
+// checked = "throw an OverflowException instead of wrapping". For money, counts or sizes a
+// silently wrong number is much worse than a crash, so checked turns a hidden bug into a loud one.
 try
 {
     Console.WriteLine(checked(biggestInt + 1));

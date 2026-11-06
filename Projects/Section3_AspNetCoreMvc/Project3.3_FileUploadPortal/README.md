@@ -35,3 +35,20 @@ and use a GUID, so a file can never overwrite another file or land outside `uplo
 
 **Limits of this demo.** The extension check trusts the file name. A real site should also
 check the file's first bytes (e.g. PNG files start with `89 50 4E 47`) and maybe scan for viruses.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| Attributes inherit `ValidationAttribute` | MVC already calls `IsValid` on every `ValidationAttribute` (polymorphism). We only override that one method. | Writing our own checking system would duplicate what MVC does. |
+| `params string[] permittedExtensions` | Lets you write `[ValidatePermittedFileExtension(".jpg", ".png")]`. Attributes can only take constants and arrays. | A `List<string>` can't be passed to an attribute. |
+| `int maximumMegabytes` | Readable in the attribute: `[MaximumFileSizeValidation(5)]`. | Bytes (`5242880`) are hard to read. |
+| `1024L * 1024L` (`long`) | `IFormFile.Length` is a `long`. Using `L` makes the multiply `long` math. | `int` math overflows at 2,048 MB and wraps negative — the bug from 1.1. |
+| `IFormFile?` on the form models | The user may submit without choosing a file. `[Required]` reports that properly. | Non-nullable would lie: the binder *can* leave it null. |
+| Two form classes, not one | Avatar and document have different limits and fields. | One class can't carry two different sets of attributes on the same property. |
+| `readonly string uploadFolder` | Worked out once in the constructor, never changes. | — |
+| `async Task<IActionResult>` | Saving a file is disk I/O; the thread is freed while waiting. | A sync action would block a thread per upload. |
+| `Guid` for saved names | Unique without checking the folder; can't contain `../`. | User's file name can be faked and can clash. |
+| `await using FileStream` | Closes the file even if copying throws. | Forgetting to close leaves the file locked. |

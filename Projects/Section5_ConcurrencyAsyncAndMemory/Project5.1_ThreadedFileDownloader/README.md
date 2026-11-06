@@ -54,3 +54,25 @@ dotnet run
   *between programs* (e.g. "only one copy of this app may run"). Use `lock` for anything inside one app.
 - **Real code would use `async`/`await`** with `HttpClient` for downloads, because a thread waiting
   for the network is a wasted thread. This project uses threads on purpose to learn the basics.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| Counters are **fields** (`int finishedCount`), shown through properties | `Interlocked.Increment(ref finishedCount)` needs `ref` to a real variable. | A property is really a method; you can't take `ref` of it. |
+| `int` counters, `long totalBytes` | File counts are small; total bytes can pass 2 GB (int max). | `int` bytes would overflow and wrap negative. |
+| `Interlocked.Read` for the `long` | On 32-bit machines a 64-bit read can be half old, half new. | `Volatile.Read` is enough for `int` only. |
+| `List<string> log` + `lock` | List isn't thread-safe; the lock lets one thread add at a time. | `ConcurrentBag` has no order. `ConcurrentQueue` would also work, but the point here is learning `lock`. |
+| `GetLog()` returns `List<string>` copy | Copy made inside the lock; caller can't touch the shared list. | Returning the real list (or a lazy `IEnumerable`) lets callers read it without the lock. |
+| `object logLock` | Private, used only for locking. | `lock (this)` lets outside code take the same lock → deadlock risk. |
+| `SemaphoreSlim` | "At most 3 at once" is exactly what a semaphore counts. | `lock` allows only 1. `Semaphore` (no Slim) is slower and cross-process. |
+| `class DownloadFinishedEventArgs : EventArgs` | The .NET convention for `EventHandler<T>`: data in a class with get-only properties. | A tuple or bare parameters don't fit the `EventHandler<T>` pattern. |
+| `event EventHandler<DownloadFinishedEventArgs>` | `event` lets outside code subscribe (`+=`) but not fire or clear the event. | A public `Action` field could be overwritten or invoked by anyone. |
+| `Func<long, string>` | A function that takes a value and returns one. | — |
+| `Action<string>` | A function that returns nothing. | — |
+| `Predicate<string>` | `Array.FindAll` asks for a `Predicate<T>` (older API). Same as `Func<T, bool>`. | `Func<string, bool>` doesn't convert to `Predicate` automatically. |
+| `string[] fileNames` | 10 names, never changes. | — |
+| `Thread` and `ThreadPool` instead of `Task` | The project is *about* the low-level pieces. | Real code would use `Task` + `async` (see 5.2). |
+| `Mutex` (once) | The only lock here that works between separate programs. | Far slower than `lock`; never used for in-app locking. |

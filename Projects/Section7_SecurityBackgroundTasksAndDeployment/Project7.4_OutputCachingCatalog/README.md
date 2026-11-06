@@ -53,3 +53,17 @@ for i in $(seq 100); do curl -s -o /dev/null localhost:5000/Catalog/Index; done;
 action would be on a separate, uncached page with `[Authorize(Roles = "Admin")]` and a token (see 7.1 and 7.2).
 **Multiple servers:** the default output cache store is in-memory per server. With several servers, use
 the Redis output cache store so an eviction clears every server.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `record CatalogProduct` + `with { Price = ... }` | A price change **replaces** the item instead of editing it. A request reading the old item never sees half a change. | A mutable `class` edited in place while another thread reads it. |
+| `CatalogDatabase` singleton class | Pretend database shared by all requests. | — |
+| `int readCount` field + `Interlocked` | Counted from many requests at once. | See 5.1. |
+| `Task<List<CatalogProduct>>` | Async like a real query; returns a finished copy made inside the lock. | Lazy `IEnumerable` would escape the lock. |
+| `class CatalogDatabaseHealthCheck : IHealthCheck` | ASP.NET Core runs every registered `IHealthCheck`; we add ours. | — |
+| `IOutputCacheStore` injected | Needed to evict by tag. | — |
+| `ViewBag.Cached`, `ViewBag.RenderedAt` | Two tiny extras. | Same `ViewBag` trade-off as 3.1. |

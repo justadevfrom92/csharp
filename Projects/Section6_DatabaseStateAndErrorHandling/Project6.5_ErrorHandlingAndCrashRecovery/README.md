@@ -51,3 +51,16 @@ and filtered by field in tools like Seq, Elastic or Azure, instead of grepping t
 
 **Why `UseExceptionHandler` first in the pipeline:** middleware only catches errors from things that run
 after it, so it must wrap everything else.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| Static `Log.Logger` created before the host | Must exist *before* the app starts, so startup crashes are logged. | A logger from DI only exists after startup succeeded. |
+| `try` / `catch` / `finally` around the whole app | `catch` logs a fatal startup error; `finally` flushes logs even when crashing. | Without `CloseAndFlush`, the last log lines (often the important ones) can be lost. |
+| `IExceptionHandlerPathFeature?` | Only set when we arrived via the exception handler; could be missing if someone opens `/Error/ServerError` directly. | — |
+| `Activity.Current?.Id ?? HttpContext.TraceIdentifier` | Use the trace id if tracing is on, otherwise the request id. `?.` and `??` handle "no current activity". | — |
+| `{statusCode:int}` route + `int statusCode` | Only numbers match the route. | — |
+| Separate `ErrorController` | Error pages are their own concern, reached only by middleware. | Mixing them into `HomeController` blurs that. |

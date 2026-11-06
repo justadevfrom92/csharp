@@ -56,3 +56,16 @@ the whole test class. With a database (Section 6) you'd reset or use a fresh dat
 
 No separate process to start, wait for and kill, no fixed port, and when the tests end the server
 is guaranteed to stop. It's the same app code — just hosted by the test.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `class ProductCatalogWebsite : IAsyncLifetime` | xUnit calls `InitializeAsync`/`DisposeAsync` on this interface — needed because starting a browser is async. | A constructor can't `await`; `IDisposable` can't be async. |
+| `IClassFixture<ProductCatalogWebsite>` | One server + one browser shared by all tests in the class. | Creating them per test would make every test seconds slower. |
+| `IBrowser Browser { get; private set; } = null!` | Set in `InitializeAsync`, not the constructor. `null!` tells the compiler it will be set before use; `private set` stops tests from replacing it. | Making it nullable would force `Browser!` everywhere. |
+| `WebApplicationFactory<Program>? factory` | Really can be null if setup failed, so `DisposeAsync` checks it. | — |
+| `IReadOnlyList<string>` for error texts | That's what Playwright's `AllInnerTextsAsync` returns; we only read it. | — |
+| `Guid` slice for product names | A unique name per run, so tests never match each other's data. | A fixed name breaks the second time the tests run against the same app. |

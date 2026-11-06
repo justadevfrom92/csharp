@@ -49,3 +49,18 @@ Not logged in → sent to the login page. Logged in but wrong role → "Access d
 - **Cookie:** `HttpOnly`, `Secure`, `SameSite=Lax`, 1-hour sliding expiry.
 - **Real apps** should use ASP.NET Core Identity with a database (lockout after failed tries, email
   confirmation, 2FA). This project builds the core by hand to show how it works.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `class AppUser` | `PasswordHash` is set *after* the object exists, because `PasswordHasher.HashPassword(user, ...)` needs the user. | A record created all at once can't do that order. |
+| `static class UserStore` + `static readonly PasswordHasher<AppUser>` | One shared user list and one hasher (it holds no per-user state). | A real app uses ASP.NET Core Identity with a database. |
+| `AppUser? CheckPassword` | Wrong password is a normal outcome → `null`. | An exception for a normal failed login is slow and noisy. |
+| `bool Register` | `false` = name taken. | — |
+| `List<Claim>` | The claims list given to `ClaimsIdentity`. | — |
+| `string? returnUrl` | Usually missing. | — |
+| `userName ?? ""` | If the form field is missing, compare against empty instead of crashing. | — |
+| Global `AuthorizeFilter` + `[AllowAnonymous]` per action | Locked by default; each public page opts out. | `[Authorize]` per controller can be forgotten. |

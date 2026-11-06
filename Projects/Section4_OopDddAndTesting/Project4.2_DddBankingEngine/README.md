@@ -62,3 +62,24 @@ NSubstitute) is handy for big interfaces, but here it would just add a dependenc
 - `AddSingleton` — the repository: one store shared by everyone, or data would disappear.
 - `AddTransient` — the service: it holds no data, so a fresh one each time is cheap and safe.
 - `AddScoped` (not used here) — one per web request; that's what EF Core's `DbContext` uses in Section 6.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `record Money` | A value object: `10 USD` equals any other `10 USD` (records compare by value). Get-only properties mean it can't change; `Add` returns a *new* `Money`. | A `class` compares by reference (two `10 USD` objects would be "different") and we'd have to write `Equals`/`GetHashCode` ourselves. |
+| `record` not `struct` for `Money` | Every `Money` must go through the constructor checks. | A struct has a `default` value with `Currency = null` that skips the constructor — an invalid `Money` would exist. |
+| `class BankAccount` | An entity: it has an `Id` and changes over time. Two accounts with the same balance are still different accounts. | A record's value equality is wrong for something with identity. |
+| Private constructor + `static Open(...)` | The only way to create an account also validates the owner and raises `AccountOpened`. | A public constructor could create an account without the event. |
+| `Balance { get; private set; }` | Readable by anyone, changeable only by `Deposit`/`Withdraw` — so the rules can't be skipped (encapsulation). | A public setter lets anyone write `account.Balance = new Money(1000000, "USD")`. |
+| `IReadOnlyList<IDomainEvent> PendingEvents` over a private `List` | Outside code can read the events (with `Count`, index), but can't add or remove. | Exposing the `List` lets anyone fake events. `IEnumerable` would hide `Count`, which tests use. |
+| Events: `record` + `interface IDomainEvent` | Each event is an unchangeable fact (`record`). The interface lets different event types share one list. | An `abstract class` base would also work, but there's no shared code to put in it. |
+| `interface IBankAccountRepository`, `IDomainEventDispatcher` | Two implementations each (test fake + demo in-memory), and later a SQL one. The domain only knows the interface. | Using the concrete class would tie the domain to one storage. |
+| `class BankAccountService` (no interface) | Only one implementation exists. | An `IBankAccountService` would be code with no second user. |
+| Exceptions as `class ... : Exception` | C# requires exceptions to inherit `Exception`. Custom types let callers catch exactly *this* problem; extra properties (`Balance`, `Requested`) carry the details. | A plain `InvalidOperationException` can only be told apart by its message text. |
+| `Guid` ids | Created in memory, unique everywhere, no database needed. | `int` ids usually come from the database, which the domain must not depend on. |
+| `DateTimeOffset HappenedAt` | An exact moment, unambiguous on any server. | `DateTime` can be unclear about local vs UTC. |
+| `decimal` amounts, rounded to 2 places | Money. | — |
+| Test fakes use `Dictionary` and `List` | `Dictionary` finds accounts by id; `List` keeps events in order so the test can check the order. | — |

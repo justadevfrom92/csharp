@@ -72,3 +72,17 @@ A rename is done as add-new → copy data → (next release) drop-old, never as 
 5. **Startup gets slow and unpredictable**, which breaks health checks and auto-scaling.
 
 `Migrate()` at startup is fine for local development and single-instance demos — that's why Project 6.1 uses it.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| Entities are `class` | Same reasons as 6.1. | — |
+| `string? Email` (nullable) | Old app versions don't know this column; they must still be able to insert rows during a rolling deploy. | A required column would make old servers' inserts fail. |
+| `decimal` + `HasPrecision(18, 2)` | Money; SQL Server needs to know the size of the column. | Without it EF warns and picks a default that may cut digits. |
+| `DesignTimeDbContextFactory : IDesignTimeDbContextFactory<T>` | The `dotnet ef` tool looks for this interface to create the context without running the app. | — |
+| `return 0` / `return 1` from top-level code | The program's exit code. A deploy pipeline checks it: non-zero = stop. | Printing an error but exiting with 0 would let a broken deploy continue. |
+| `List<string> pendingMigrations` | We need `Count` and then the names — `ToList()` runs the check once. | A lazy `IEnumerable` would query the database twice. |
+| `string? connectionString` | Missing environment variable → `null` → print help instead of crashing. | — |

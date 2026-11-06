@@ -39,3 +39,18 @@ Open `https://localhost:7064`, add items, refresh, open a second browser — eac
 restart. In-memory session is lost when the app restarts and isn't shared between servers.
 **Session vs login:** session is for temporary state like a cart. Who the user *is* belongs in an
 authentication cookie (Project 7.1).
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `record ShopItem` | Catalog items are fixed data. | — |
+| `class CartLine` with setters | `Quantity` changes, and `System.Text.Json` must set properties when reading the cart back from session. | A record's constructor-only properties work with JSON too, but `Quantity++` wouldn't. |
+| `class ShoppingCart`, `List<CartLine> Lines { get; set; }` | Lines are added and removed; the JSON reader needs a settable list. | `IReadOnlyList` can't be filled by the deserializer or changed by `AddItem`. |
+| `decimal Total { get { ... } }` (computed) | Always worked out from the lines, never stored. | A stored total can go out of sync with the lines. |
+| `static class SessionJsonExtensions` with generic `<T>` | Extension methods must be in a static class; `<T>` makes them work for any type, not just carts. | A cart-only helper would be copied for the next object. |
+| `T?` return / `default` | No value in session → `null`, and the caller uses `?? new ShoppingCart()`. | — |
+| `static readonly List<ShopItem> itemsForSale` | Fixed demo catalog. | Could be an `IReadOnlyList` or array to make "never changes" explicit — fair improvement. |
+| `const string CartSessionKey` | One key name used everywhere. | — |

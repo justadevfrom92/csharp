@@ -42,3 +42,22 @@ snapshot or will loop over the result many times.
 
 **Why `Product` is a class but `Order` is a record.** Product stock changes, so it needs a
 settable property. Orders and sales never change after they're made, so a one-line `record` is enough.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `Dictionary<string, Product>` for stock | Every order asks "find product by code" — O(1). | `List<Product>` checks items one by one (O(n)); Part 6 measures it. |
+| `HashSet<string>(StringComparer.OrdinalIgnoreCase)` | Categories must be unique; "Computers" and "computers" are the same. | `List` allows duplicates; the default comparer is case-sensitive. |
+| `Queue<Order>` | Orders are handled in arrival order. | `List` + `RemoveAt(0)` shifts every item each time (slow) and hides the intent. |
+| `Stack<Order>` | Undo cancels the *latest* order first. | — |
+| `List<Sale>` | Grows as orders complete; we loop over it and remove the last one. | Array can't grow. |
+| `IEnumerable<Product> allProducts` | The reports only *loop* over products; they don't need lookup or indexing. Also lets Part 5 show a lazy query. | Keeping the `Dictionary` type would invite lookups the reports don't need. |
+| `IEnumerable` vs `List` in Part 5 | The *point* of Part 5: `IEnumerable` from `Where` is lazy and re-runs; `ToList()` is a snapshot. | — |
+| `class Product` | `QuantityInStock` changes, so it needs a setter; one product is one object everyone shares. | A `record` is meant to stay unchanged; changing stock would mean replacing it in the dictionary each time. |
+| `record Order`, `record Sale` | Created once, never changed. One line each, with `ToString` and equality for free. | A `class` would need ~10 lines of constructor and properties for the same thing. |
+| `decimal` prices, `long` timings | Money exact; `Stopwatch.ElapsedMilliseconds` is a `long`. | — |
+| `var` for the `GroupBy`/`Select` result | `new { Category, Value }` is an *anonymous type* — it has no name you could write. | A named record would be fine too, but it's used in one loop only. |
+| `const int itemCount` | Fixed value known at compile time. | — |

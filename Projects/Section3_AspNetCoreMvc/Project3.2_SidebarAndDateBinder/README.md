@@ -30,3 +30,19 @@ May 11th or November 5th depending on where the server runs. The custom binder o
 
 **Why the binder is put on the parameter and not registered globally.** Only this one action
 needs it. Applying it with an attribute keeps the rest of the app's binding normal.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `record ActivityEntry(DateOnly, TimeOnly, string)` | An activity is a fact — it never changes after it's logged. One line. | A `class` would add a lot of code and allow edits we don't want. |
+| `DateOnly` + `TimeOnly` instead of one `DateTime` | "Entries for a day" becomes simple `entry.Date == day`; the URL takes just a date. | With `DateTime` every comparison needs `.Date` and a time-zone decision. |
+| `static class ActivityLog` + static constructor | One shared log; the static constructor adds sample entries once. | Same trade-off as 3.1's `ProductStore`. |
+| `List<ActivityEntry>` returns (copies) | Copied inside the lock, then sorted/filtered. | Lazy `IEnumerable` would escape the lock (see 3.1). |
+| `class CustomIsoDateFormatModelBinder : IModelBinder` | MVC asks for this interface; any class implementing it can bind a value. | — |
+| `Task` return from `BindModelAsync` | The interface demands `Task`. We do no async work, so we return `Task.CompletedTask`. | — |
+| `DateOnly? day` parameter | Missing or invalid → `null` → we fall back to today. | Non-nullable `DateOnly` would silently become `0001-01-01`. |
+| `Task<IViewComponentResult> InvokeAsync` | The usual view-component shape; ready if the data ever comes from a database. | Data is in memory, so a plain `Invoke` would also work. `Task.FromResult` is used because nothing is awaited. |
+| `ViewBag.Day`, `ViewBag.Error` | Two small extras next to the main `List<ActivityEntry>` model. | Same `ViewBag` trade-off as 3.1. |

@@ -67,3 +67,23 @@ already says. One clear source is easier to read.
 
 **Why the levels live in appsettings and not in code:** you can turn on Debug logging on a live server
 by changing config, without rebuilding the app.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| Entities are `class` with `{ get; set; }` | EF creates them empty, fills properties from the database, and tracks changes to them. | Records are meant to stay unchanged; EF change tracking expects mutable objects. |
+| `int Id` | EF's convention: an `int` named `Id` becomes an auto-increment primary key. | `Guid` works too but makes bigger, unordered indexes for no gain here. |
+| `List<Book> Books { get; set; } = new()` | Navigation collection EF fills; starting with an empty list means code never hits `null`. | `ICollection<T>` is also common; `List` is simpler and EF accepts it. |
+| `AuthorProfile? Profile` | An author may have no profile yet (the 1:1 is optional). | Non-nullable would claim every author has one. |
+| `Author Author { get; set; } = null!` | Every book *has* an author, but EF sets it after loading. `null!` says "filled in later". | `Author?` would force null checks on something that's never null once loaded. |
+| `DbSet<T> { get; set; } = null!` | EF finds and fills these properties itself. | — |
+| `database.Books` is `IQueryable`, ends with `ToListAsync()` | `Where`/`Include`/`OrderBy` on `IQueryable` become SQL. `ToListAsync` runs it **now**, inside the request. | Handing a lazy query to the view would run SQL during rendering — harder to log, and fails if the `DbContext` is gone. |
+| `AsNoTracking()` | Read-only page; EF skips the change-tracking bookkeeping. | Tracking costs memory and time for objects we'll never save. |
+| `SqlQueryLoggingInterceptor : DbCommandInterceptor` | EF's base class already has empty versions of ~20 methods; we override only the 5 we need. | Implementing `IDbCommandInterceptor` directly means writing all of them. |
+| `ValueTask<...>` return types in the interceptor | That's the signature of the base methods we override. | — |
+| Interceptor registered as **singleton** | It holds only a logger — safe to share. | Scoped would create one per request for nothing. |
+| `const int SlowQueryMilliseconds` | Fixed threshold, known at compile time. | Could move to config if ops need to tune it. |
+| `int[] tagIds` action parameter | The model binder fills an array from repeated `tagIds=1&tagIds=2` checkbox values. | — |

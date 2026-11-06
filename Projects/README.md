@@ -2,6 +2,10 @@
 
 Every project has its own `README.md` with how to run it and **why** it was built that way.
 
+**Why `List` vs `IEnumerable`, `record` vs `class` vs `interface`, `decimal` vs `double`, `checked`...?**
+The general rules are in [WHY_THESE_TYPES.md](WHY_THESE_TYPES.md), and every project README ends with a
+**"Why these types"** table covering each choice made in that project.
+
 ```bash
 dotnet build CSharpMasteryRoadmap.slnx
 ```

@@ -52,3 +52,24 @@ any is wrong. Drop modes are fine for things like live sensor readings where onl
 million lines, which the garbage collector then has to clean up. A `ReadOnlySpan<char>` is just
 a "window" onto the existing string: slicing it creates nothing. Same result, ~5x faster, 0 MB.
 Spans can't be used across `await` (they live on the stack), which is why `Memory<T>` exists.
+
+## Why these types
+
+General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
+
+| Choice | Why | Why not the alternative |
+|---|---|---|
+| `Channel<string>` (bounded) | Thread-safe async queue with built-in waiting when full (backpressure). | `Queue<T>` isn't thread-safe; `ConcurrentQueue` can't make the producer wait. |
+| `ReadOnlySpan<char>` for parsing | A window onto the existing string — slicing creates nothing (0 MB vs 236 MB). | `string.Split` allocates an array and a string per word. |
+| `ref ReadOnlySpan<char> rest` | `NextWord` moves the window forward for the caller. | Returning a tuple would also work; `ref` keeps the call short. |
+| `Span<byte>` for the rented buffer | Writable window onto only the part of the array we asked for. | `ArrayPool` may hand back a bigger array; using it directly risks reading leftover bytes. |
+| `Memory<byte>` in `FillLaterAsync` | Can survive an `await`. | A `Span` lives on the stack and isn't allowed across `await`. |
+| `ArrayPool<byte>` | Borrow and return a buffer instead of allocating each time. | `new byte[4096]` in a hot loop creates garbage. |
+| `ValueTask<string>` in `SettingCache` | Most calls are cache hits that finish instantly — no `Task` object allocated. | `Task<string>` allocates even for instant answers. (Rule: await a `ValueTask` only once.) |
+| `class LogTotals` with public **fields** | Shared counters updated with `Interlocked.Increment(ref totals.Error)` — needs real fields. | Properties can't be passed by `ref`. Normally we'd use properties; this is the exception. |
+| `long` counters | Millions of lines per second; a long run could pass 2.1 billion. | `int` would overflow and wrap. |
+| `static class LogLineParser` | Pure parsing functions, no state. | — |
+| `Dictionary` in `SettingCache` (not thread-safe) | In this demo only one task uses it. | Shared across threads it would need a lock or `ConcurrentDictionary`. |
+| `static` local functions (`Sum`, `FillLaterAsync`) | `static` stops them from accidentally using outside variables. | — |
+| `Task[] consumers` | Exactly 3, fixed. | — |
+| `CancellationTokenSource(TimeSpan)` | One object handles both the 3-second timeout and Ctrl+C. | — |
