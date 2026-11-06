@@ -7,9 +7,3 @@ public interface IBankAccountRepository
     BankAccount? FindById(Guid id);
     void Save(BankAccount account);
 }
-
-// Whoever wants to react to events (send email, write audit log...) implements this.
-public interface IDomainEventDispatcher
-{
-    void Dispatch(IDomainEvent domainEvent);
-}

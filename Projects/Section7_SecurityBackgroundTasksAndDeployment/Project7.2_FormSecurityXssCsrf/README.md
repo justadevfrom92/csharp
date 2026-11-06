@@ -1,5 +1,7 @@
 # Project 7.2 — Form Security: XSS & CSRF
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 A guestbook where anyone can post — the classic place for both attacks.
 
 ```bash

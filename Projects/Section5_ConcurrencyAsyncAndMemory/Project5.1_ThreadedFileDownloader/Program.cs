@@ -1,3 +1,7 @@
+// This whole app is ONE file. The program runs from the top.
+// The classes it uses (DownloadFinishedEventArgs, FileDownloader) are defined at the BOTTOM of this file.
+// (In C#, top-level code must come before any class definitions in the file.)
+
 using System.Diagnostics;
 
 // "Downloads" are simulated (sleep + write random bytes to a file) so the demo needs no internet.

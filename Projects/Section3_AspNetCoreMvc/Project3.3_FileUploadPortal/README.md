@@ -1,5 +1,7 @@
 # Project 3.3 — Avatar & Document Upload Portal
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 ```bash
 dotnet run
 ```

@@ -1,41 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 
-public class Product
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = "";
-    public decimal Price { get; set; }
-    public int Stock { get; set; }
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAtUtc { get; set; }
-}
-
-public class Customer
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = "";
-    public decimal WalletBalance { get; set; }
-}
-
-public class Order
-{
-    public int Id { get; set; }
-    public int CustomerId { get; set; }
-    public DateTime CreatedAtUtc { get; set; }
-    public decimal Total { get; set; }
-    public List<OrderLine> Lines { get; set; } = new();
-}
-
-public class OrderLine
-{
-    public int Id { get; set; }
-    public int OrderId { get; set; }
-    public int ProductId { get; set; }
-    public Product Product { get; set; } = null!;
-    public int Quantity { get; set; }
-    public decimal UnitPrice { get; set; } // copied at checkout, so later price changes don't change old orders
-}
-
 public class ShopDbContext : DbContext
 {
     public DbSet<Product> Products { get; set; } = null!;

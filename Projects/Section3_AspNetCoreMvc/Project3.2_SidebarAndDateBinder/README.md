@@ -1,5 +1,7 @@
 # Project 3.2 — Recent Activity Sidebar & ISO Date Binder
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 ```bash
 dotnet run
 ```

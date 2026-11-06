@@ -1,5 +1,7 @@
 # Project 6.4 — Session Shopping Cart
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 ```bash
 dotnet dev-certs https --trust
 ```

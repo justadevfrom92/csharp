@@ -1,5 +1,7 @@
 # Project 6.1 — EF Core with SQL Query Logging
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 An MVC page listing books (with author, author profile and tags). Every SQL command EF runs
 is logged — exact SQL, parameters and time — to the console and `logs/app-<date>.log` via Serilog.
 
@@ -12,7 +14,7 @@ The database (`library.db`, SQLite) is created and migrated on startup.
 
 ## Migrations (code-first)
 
-The model classes are in `Data/LibraryModels.cs`. After changing them:
+The model classes are in `Data/` (`Author.cs`, `AuthorProfile.cs`, `Book.cs`, `Tag.cs`). After changing them:
 
 ```bash
 dotnet tool restore

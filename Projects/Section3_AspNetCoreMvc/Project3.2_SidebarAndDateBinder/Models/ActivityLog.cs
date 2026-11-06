@@ -1,7 +1,5 @@
 namespace SidebarAndDateBinder.Models;
 
-public record ActivityEntry(DateOnly Date, TimeOnly Time, string Text);
-
 // In-memory activity list shared by the whole app.
 public static class ActivityLog
 {

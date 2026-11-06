@@ -1,3 +1,7 @@
+// This whole app is ONE file. The program runs from the top.
+// The classes it uses (Product, Order, Sale) are defined at the BOTTOM of this file.
+// (In C#, top-level code must come before any class definitions in the file.)
+
 using System.Diagnostics;
 using System.Globalization;
 

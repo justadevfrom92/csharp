@@ -1,5 +1,7 @@
 # Project 3.1 — MVC Product Catalog
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 A small ASP.NET Core MVC site to list, add, view and edit products.
 
 ```bash

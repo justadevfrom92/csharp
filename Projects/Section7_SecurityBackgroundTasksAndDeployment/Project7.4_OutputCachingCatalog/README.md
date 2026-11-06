@@ -1,5 +1,7 @@
 # Project 7.4 — Output Caching Catalog (+ Health Check)
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 ```bash
 dotnet run -c Release
 ```

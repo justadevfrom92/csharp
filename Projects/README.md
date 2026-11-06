@@ -6,6 +6,8 @@ Every project has its own `README.md` with how to run it and **why** it was buil
 The general rules are in [WHY_THESE_TYPES.md](WHY_THESE_TYPES.md), and every project README ends with a
 **"Why these types"** table covering each choice made in that project.
 
+**New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)?** Read [RAZOR_BASICS.md](RAZOR_BASICS.md) first.
+
 ```bash
 dotnet build CSharpMasteryRoadmap.slnx
 ```

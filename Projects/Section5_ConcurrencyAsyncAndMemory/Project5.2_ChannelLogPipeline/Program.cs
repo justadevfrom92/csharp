@@ -1,3 +1,7 @@
+// This whole app is ONE file. The program runs from the top.
+// The classes it uses (LogTotals, LogLineParser, SettingCache) are defined at the BOTTOM of this file.
+// (In C#, top-level code must come before any class definitions in the file.)
+
 using System.Buffers;
 using System.Diagnostics;
 using System.Threading.Channels;

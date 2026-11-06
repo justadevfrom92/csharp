@@ -1,5 +1,7 @@
 # Project 7.1 — Cookie Login & Role-Based Access
 
+> New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
+
 ```bash
 dotnet dev-certs https --trust
 ```

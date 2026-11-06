@@ -2,13 +2,6 @@ using Microsoft.AspNetCore.Identity;
 
 namespace CookieAuthAndRoles.Models;
 
-public class AppUser
-{
-    public string UserName { get; set; } = "";
-    public string PasswordHash { get; set; } = "";
-    public string Role { get; set; } = "User";
-}
-
 // In-memory users. Passwords are stored HASHED, never as plain text.
 public static class UserStore
 {

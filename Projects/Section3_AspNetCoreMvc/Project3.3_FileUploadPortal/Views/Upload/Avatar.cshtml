@@ -1,3 +1,11 @@
+@*
+    New to .cshtml? See Projects/RAZOR_BASICS.md.
+
+    @model AvatarUploadForm = "this page receives an AvatarUploadForm object" (class in Models/AvatarUploadForm.cs).
+    The controller passes it with "return View(new AvatarUploadForm());" (empty form)
+    or "return View(form);" (the submitted form, with its errors).
+    Because of this line, asp-for="Avatar" below is checked against that class when you build.
+*@
 @model AvatarUploadForm
 
 <h2>Upload avatar (.jpg/.png, max 1 MB)</h2>

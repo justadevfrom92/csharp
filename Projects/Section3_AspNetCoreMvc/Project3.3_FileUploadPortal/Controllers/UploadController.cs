@@ -13,15 +13,23 @@ public class UploadController : Controller
         Directory.CreateDirectory(uploadFolder);
     }
 
+    // GET /  (or /Upload/Index)
     public IActionResult Index()
     {
-        ViewBag.SavedFiles = Directory.GetFiles(uploadFolder)
-            .Select(Path.GetFileName)
-            .Where(name => name != ".gitkeep")
+        List<string> savedFileNames = Directory.GetFiles(uploadFolder)
+            .Select(fullPath => Path.GetFileName(fullPath))
+            .Where(fileName => fileName != ".gitkeep")
             .ToList();
-        return View();
+
+        // View(savedFileNames) renders Views/Upload/Index.cshtml and hands it this list.
+        // Inside that file, "@model List<string>" says what type it receives, and "Model" is the list.
+        return View(savedFileNames);
     }
 
+    // GET /Upload/Avatar - show the empty form.
+    // AvatarUploadForm is defined in Models/AvatarUploadForm.cs.
+    // View(...) renders Views/Upload/Avatar.cshtml, whose first line "@model AvatarUploadForm"
+    // says it expects this type. The asp-for="Avatar" input in that file is tied to its Avatar property.
     [HttpGet]
     public IActionResult Avatar()
     {
@@ -30,11 +38,17 @@ public class UploadController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    // POST /Upload/Avatar - the form was submitted.
+    // We never write "new AvatarUploadForm()" here: MODEL BINDING does it. MVC sees the parameter type,
+    // creates an AvatarUploadForm, and fills its Avatar property from the uploaded file named "Avatar"
+    // (that name comes from asp-for="Avatar" in the view). It also runs the validation attributes on the
+    // class and stores the result in ModelState.
     public async Task<IActionResult> Avatar(AvatarUploadForm form)
     {
         if (!ModelState.IsValid)
         {
-            return View(form); // the attributes already checked size and extension
+            // Show Avatar.cshtml again with the SAME object, so asp-validation-for can show the errors.
+            return View(form);
         }
 
         string savedName = await SaveFileAsync(form.Avatar!);
@@ -43,6 +57,7 @@ public class UploadController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // GET /Upload/Document - same pattern as Avatar. DocumentUploadForm is in Models/DocumentUploadForm.cs.
     [HttpGet]
     public IActionResult Document()
     {
@@ -51,6 +66,7 @@ public class UploadController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    // POST /Upload/Document - model binding creates DocumentUploadForm and fills Document + Note.
     public async Task<IActionResult> Document(DocumentUploadForm form)
     {
         if (!ModelState.IsValid)
