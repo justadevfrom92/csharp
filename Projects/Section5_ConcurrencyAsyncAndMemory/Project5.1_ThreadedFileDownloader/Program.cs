@@ -97,6 +97,98 @@ if (mutex.WaitOne(TimeSpan.Zero))
     mutex.ReleaseMutex();
 }
 
+// ---------- 5. Semaphore (no "Slim"): the older, heavier version ----------
+// Works like SemaphoreSlim (N slots), but it's a wrapper around an operating-system object.
+// Its only advantage: on Windows it can be NAMED and shared between separate programs (like Mutex).
+Console.WriteLine();
+Console.WriteLine("Semaphore with 2 slots, 5 threads:");
+using var twoSlotSemaphore = new Semaphore(initialCount: 2, maximumCount: 2);
+int insideSemaphoreNow = 0;
+int mostInsideSemaphore = 0;
+var semaphoreThreads = new List<Thread>();
+for (int workerNumber = 1; workerNumber <= 5; workerNumber++)
+{
+    int thisWorker = workerNumber; // copy, so each thread gets its own number
+    var thread = new Thread(() =>
+    {
+        twoSlotSemaphore.WaitOne(); // take a slot (waits if both are taken)
+        try
+        {
+            int insideNow = Interlocked.Increment(ref insideSemaphoreNow);
+            int highest = Volatile.Read(ref mostInsideSemaphore);
+            while (insideNow > highest && Interlocked.CompareExchange(ref mostInsideSemaphore, insideNow, highest) != highest)
+            {
+                highest = Volatile.Read(ref mostInsideSemaphore);
+            }
+            Console.WriteLine($"  worker {thisWorker} got a slot ({insideNow} inside)");
+            Thread.Sleep(200);
+        }
+        finally
+        {
+            Interlocked.Decrement(ref insideSemaphoreNow);
+            twoSlotSemaphore.Release(); // give the slot back, even if the work failed
+        }
+    });
+    semaphoreThreads.Add(thread);
+    thread.Start();
+}
+foreach (Thread thread in semaphoreThreads)
+{
+    thread.Join();
+}
+Console.WriteLine($"  most workers inside at once: {mostInsideSemaphore} (limit was 2)");
+
+// A NAMED semaphore is shared by every program on the machine that uses the same name.
+// .NET only supports this on Windows; on Linux/macOS it throws PlatformNotSupportedException.
+try
+{
+    using var namedSemaphore = new Semaphore(1, 1, "Roadmap-ThreadedFileDownloader-Semaphore");
+    Console.WriteLine("  named semaphore created: other programs using this name share its slots");
+}
+catch (PlatformNotSupportedException)
+{
+    Console.WriteLine("  named semaphore: not supported on this OS (Windows only) - use a named Mutex instead");
+}
+
+// ---------- 6. SemaphoreSlim.WaitAsync: limiting ASYNC work ----------
+// The downloader above uses Wait(), which BLOCKS a thread while it waits for a slot.
+// WaitAsync() waits WITHOUT holding a thread, so it's the right choice inside async methods
+// (e.g. limiting how many HttpClient calls run at once).
+Console.WriteLine();
+Console.WriteLine("SemaphoreSlim.WaitAsync with 2 slots, 6 async jobs:");
+using var asyncSlots = new SemaphoreSlim(2);
+int asyncInsideNow = 0;
+int mostAsyncInside = 0;
+var asyncJobs = new List<Task>();
+for (int jobNumber = 1; jobNumber <= 6; jobNumber++)
+{
+    asyncJobs.Add(RunLimitedJobAsync(jobNumber));
+}
+await Task.WhenAll(asyncJobs);
+Console.WriteLine($"  most jobs running at once: {mostAsyncInside} (limit was 2)");
+return;
+
+async Task RunLimitedJobAsync(int jobNumber)
+{
+    await asyncSlots.WaitAsync(); // no thread is blocked while waiting here
+    try
+    {
+        int runningNow = Interlocked.Increment(ref asyncInsideNow);
+        int highest = Volatile.Read(ref mostAsyncInside);
+        while (runningNow > highest && Interlocked.CompareExchange(ref mostAsyncInside, runningNow, highest) != highest)
+        {
+            highest = Volatile.Read(ref mostAsyncInside);
+        }
+        Console.WriteLine($"  job {jobNumber} started ({runningNow} running)");
+        await Task.Delay(150); // pretend to download something
+    }
+    finally
+    {
+        Interlocked.Decrement(ref asyncInsideNow);
+        asyncSlots.Release(); // always give the slot back
+    }
+}
+
 public class DownloadFinishedEventArgs : EventArgs
 {
     public DownloadFinishedEventArgs(string fileName, long sizeInBytes, int threadId)
