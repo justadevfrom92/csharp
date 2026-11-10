@@ -35,7 +35,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 7.1 | [Cookie Login & Roles](Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles) | MVC |
 | 7.2 | [XSS & CSRF](Section7_SecurityBackgroundTasksAndDeployment/Project7.2_FormSecurityXssCsrf) | MVC |
 | 7.3 | [Environment-Aware Email](Section7_SecurityBackgroundTasksAndDeployment/Project7.3_EnvironmentAwareEmail) | Web API + background services |
-| 7.4 | [Output Caching + Health Check](Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog) | MVC |
+| 7.4 | [Output Caching + Health Check + robots.txt](Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog) | MVC + tests |
 | 7.5 | [Feature Flags](Section7_SecurityBackgroundTasksAndDeployment/Project7.5_FeatureFlags) | MVC |
 | 7.6 | [GitHub Actions CI](Section7_SecurityBackgroundTasksAndDeployment/Project7.6_GitHubActionsCi) | Workflow file |
 | 7.7 | [Idempotent Migration Scripts](Section7_SecurityBackgroundTasksAndDeployment/Project7.7_IdempotentMigrationScripts) | Console + SQL script |

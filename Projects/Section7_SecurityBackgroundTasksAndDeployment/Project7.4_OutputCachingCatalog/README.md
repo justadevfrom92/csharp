@@ -1,9 +1,18 @@
-# Project 7.4 — Output Caching Catalog (+ Health Check)
+# Project 7.4 — Output Caching Catalog (+ Health Check, robots.txt with ShortCircuit)
 
 > New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)? Read [RAZOR_BASICS.md](../../RAZOR_BASICS.md) first.
 
+| Folder | What |
+|---|---|
+| `OutputCachingCatalog/` | The web app |
+| `OutputCachingCatalog.Tests/` | xUnit tests for `robots.txt` and `ShortCircuit` (the app runs in memory, no browser) |
+
 ```bash
-dotnet run -c Release
+dotnet run -c Release --project OutputCachingCatalog
+```
+
+```bash
+dotnet test OutputCachingCatalog.Tests
 ```
 
 | URL | What |
@@ -13,6 +22,7 @@ dotnet run -c Release
 | `POST /Catalog/ChangePrice` | Changes a price, then `EvictByTagAsync("catalog")` |
 | `/stats` | How many times the (fake, 100 ms) database was read |
 | `/health` | Health check with a custom `IHealthCheck` (`Healthy` / `Degraded` / `Unhealthy`) |
+| `/robots.txt` | Rules for search-engine crawlers, from `RobotsController`; the route uses `.ShortCircuit()` |
 
 ## Benchmark
 
@@ -32,6 +42,58 @@ Repeat it yourself:
 ```bash
 for i in $(seq 100); do curl -s -o /dev/null localhost:5000/Catalog/Index; done; curl localhost:5000/stats
 ```
+
+## robots.txt and `ShortCircuit()`
+
+```csharp
+app.MapControllerRoute(
+    name: "robots",
+    pattern: "robots.txt",
+    defaults: new { controller = "Robots", action = "Get" })
+   .ShortCircuit();
+```
+
+- **`pattern: "robots.txt"`** — a fixed URL, no `{controller}`/`{action}` placeholders.
+- **`defaults`** — which controller and action handle it: `RobotsController.Get()`
+  (`controller = "Robots"`, without the word `Controller`).
+- **`.ShortCircuit()`** — normally a request passes through every middleware in `Program.cs`.
+  With `ShortCircuit`, as soon as routing matches `/robots.txt` the action runs and the response is
+  sent; **every middleware after `UseRouting` is skipped** (here: the `X-Full-Pipeline` header and
+  output caching; in bigger apps also authentication and authorization).
+
+**Why an action and not a file in `wwwroot`:** the answer depends on the environment. Production says
+`Allow: /`. Every other environment says `Disallow: /`, so a test site never ends up in Google.
+
+**Why short-circuit it:** crawlers request `robots.txt` all the time, it's public, and it never needs a
+login, cookies or caching. Skipping the rest of the pipeline saves work on every one of those requests.
+Only do this for endpoints like that — a short-circuited endpoint also skips **authorization**, so never
+use it on anything that needs a login.
+
+**How you can see it:** `Program.cs` has a tiny middleware after `UseRouting` that adds an
+`X-Full-Pipeline: true` header. Check the headers:
+
+```bash
+curl -i localhost:5000/robots.txt
+```
+
+```bash
+curl -i localhost:5000/Catalog/Index
+```
+
+The first has no `X-Full-Pipeline` header (short-circuited); the second has it.
+
+**Note:** the default route `{controller}/{action}` also reaches the same action at `/Robots/Get`, and that
+URL is *not* short-circuited. Crawlers only ever ask for `/robots.txt`, so it doesn't matter here.
+
+## Tests (every behaviour has all three kinds)
+
+| Behaviour | PositivePositive | PositiveNegative | NegativeNegative |
+|---|---|---|---|
+| robots.txt content | Production → 200, `text/plain`, `Allow: /` | Development → 200 but `Disallow: /` (crawlers told to stay out) | `POST /robots.txt` → 405 Method Not Allowed |
+| ShortCircuit | `/robots.txt` has **no** `X-Full-Pipeline` header | `/Catalog/Index` (normal page) **does** have it | `/robots.txt/extra` → 404, went through the full pipeline |
+
+Checked that the tests really test something: with `.ShortCircuit()` removed, the ShortCircuit
+PositivePositive test fails.
 
 ## Why these choices
 

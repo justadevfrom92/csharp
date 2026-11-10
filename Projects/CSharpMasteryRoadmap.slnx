@@ -63,7 +63,8 @@
     <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.3_EnvironmentAwareEmail/EnvironmentAwareEmail.csproj" />
   </Folder>
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog/">
-    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog/OutputCachingCatalog.csproj" />
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog/OutputCachingCatalog.Tests/OutputCachingCatalog.Tests.csproj" />
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog/OutputCachingCatalog/OutputCachingCatalog.csproj" />
   </Folder>
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.5_FeatureFlags/">
     <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.5_FeatureFlags/FeatureFlags.csproj" />

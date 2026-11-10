@@ -20,7 +20,7 @@ build-and-unit-tests ────┤
 
 | Job | Steps | Why |
 |---|---|---|
-| `build-and-unit-tests` | `dotnet restore` → `dotnet build -c Release` (whole solution) → `dotnet test` Banking.Tests with coverage | Fast checks first. If the code doesn't even compile, don't spend minutes installing a browser. |
+| `build-and-unit-tests` | `dotnet restore` → `dotnet build -c Release` (whole solution) → `dotnet test` Banking.Tests (with coverage) and OutputCachingCatalog.Tests | Fast checks first. If the code doesn't even compile, don't spend minutes installing a browser. |
 | `e2e-tests` | build → install Chromium (`playwright.ps1 install --with-deps`) → `dotnet test` Playwright | Slow, so it only runs after stage 1 is green. Headless: CI machines have no screen. |
 | `nuget-package` | `dotnet pack` → `dotnet run` the consumer | Proves the package can really be installed and used, not just compiled. Runs in parallel with E2E. |
 
