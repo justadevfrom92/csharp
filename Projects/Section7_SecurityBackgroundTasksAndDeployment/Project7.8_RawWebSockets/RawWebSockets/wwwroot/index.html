@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><title>WebSocket Echo</title></head>
+<body style="font-family: sans-serif; padding: 16px;">
+    <h1>Raw WebSocket echo</h1>
+    <input id="message" value="hello" />
+    <button id="send">Send</button>
+    <pre id="log"></pre>
+    <script>
+        const log = text => document.getElementById("log").textContent += text + "\n";
+        const scheme = location.protocol === "https:" ? "wss://" : "ws://";
+        const socket = new WebSocket(scheme + location.host + "/ws/echo");
+        socket.onopen = () => log("connected");
+        socket.onmessage = event => log("received: " + event.data);
+        socket.onclose = event => log("closed: " + event.code + " " + event.reason);
+        document.getElementById("send").onclick = () => socket.send(document.getElementById("message").value);
+    </script>
+</body>
+</html>
