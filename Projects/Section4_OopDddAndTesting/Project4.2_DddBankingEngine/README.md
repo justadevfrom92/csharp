@@ -85,11 +85,46 @@ which names the bad argument straight away.
 The fakes are about 10 lines each and anyone can read them. A mocking library (like Moq or
 NSubstitute) is handy for big interfaces, but here it would just add a dependency and new syntax to learn.
 
-## DI lifetimes used in the demo
+## Dependency Injection: every kind of registration (`Banking.Demo`, Part 2)
 
-- `AddSingleton` — the repository: one store shared by everyone, or data would disappear.
-- `AddTransient` — the service: it holds no data, so a fresh one each time is cheap and safe.
-- `AddScoped` (not used here) — one per web request; that's what EF Core's `DbContext` uses in Section 6.
+```bash
+dotnet run --project Banking.Demo
+```
+
+| Registration | What DI does | Use it for |
+|---|---|---|
+| `AddSingleton<T>()` | Creates **one** object, hands the same one to everyone, forever | Shared, thread-safe things: in-memory stores, caches, settings |
+| `AddScoped<T>()` | One object **per scope**. In ASP.NET Core every web request is a scope | Things that belong to one request: EF Core's `DbContext` |
+| `AddTransient<T>()` | A **new** object every time it's asked for | Small classes that hold no data: `BankAccountService`, `ReportBuilder` |
+| `AddSingleton<T>(serviceProvider => new T(...))` | Calls **your** code to create it | When the constructor needs values DI can't guess |
+| `AddSingleton(existingObject)` | Hands out the object **you** already made | Settings objects, test doubles |
+| Same interface registered twice | `GetServices<T>()` returns **all** of them; `GetRequiredService<T>()` returns the **last** | Plug-ins, several event handlers |
+| `TryAddSingleton<T>()` | Registers only if **nothing** is registered for `T` yet | Libraries: give a default without overwriting the app's choice |
+| `AddKeyedSingleton<T>("key")` | Several implementations told apart by a **key** | See Project 7.3 (`"smtp"` / `"trap"` email senders) |
+| `AddHostedService<T>()` | A singleton that runs in the background for the app's whole life | See Project 7.3 |
+| `AddDbContext` / `AddDbContextPool` | Registers a `DbContext` as **scoped** (pooled: reused between requests) | See Project 6.1 |
+
+The demo prints object ids from two scopes, so you can **see** the lifetimes:
+
+```
+scope 1:  Singleton 598803 598803   Scoped ab1d33 ab1d33   Transient df982f 188e20
+scope 2:  Singleton 598803 598803   Scoped fd0a8f fd0a8f   Transient 49ea17 80ab53
+```
+
+Singleton: same id everywhere. Scoped: same inside a scope, different between scopes. Transient: new every time.
+
+**The classic mistake — "captive dependency":** a **singleton** that needs a **scoped** service. The singleton
+lives forever, so it keeps the first scoped object forever (for example one `DbContext` shared by every web
+request, which breaks). The demo builds the provider with `ValidateOnBuild = true` and `ValidateScopes = true`,
+so the mistake is caught at startup:
+`Cannot consume scoped service 'ScopedExample' from singleton 'SingletonThatNeedsScoped'.`
+(ASP.NET Core turns these checks on automatically in Development.)
+
+**Rule of thumb:** a service may only depend on services that live **as long or longer**:
+Transient → can use anything. Scoped → Scoped or Singleton. Singleton → Singleton only.
+
+**Lifetimes used in Part 1:** the repository and dispatcher are singletons (one shared store, or the data
+would disappear); `BankAccountService` is transient (it holds no data, so a fresh one is cheap and safe).
 
 ## Why these types
 
