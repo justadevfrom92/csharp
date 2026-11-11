@@ -1,0 +1,32 @@
+@*
+    A REUSABLE component: shows ONE to-do item. It doesn't own the list - it only reports what the user did
+    through EventCallbacks, and the parent (TodoPage) decides what to do.
+*@
+<li class="@(Item.IsDone ? "done" : "")">
+    <input type="checkbox" checked="@Item.IsDone" @onchange="ToggleAsync" />
+    <span>@Item.Title</span>
+    <button class="remove" @onclick="RemoveAsync">Remove</button>
+</li>
+
+@code {
+    // [Parameter]: set by the parent: <TodoItemComponent Item="item" OnToggled="..." OnRemoved="..." />
+    [Parameter, EditorRequired]
+    public TodoItemModel Item { get; set; } = null!;
+
+    // EventCallback: the child tells the parent "this happened"; the parent re-renders automatically.
+    [Parameter]
+    public EventCallback<TodoItemModel> OnToggled { get; set; }
+
+    [Parameter]
+    public EventCallback<TodoItemModel> OnRemoved { get; set; }
+
+    private Task ToggleAsync()
+    {
+        return OnToggled.InvokeAsync(Item);
+    }
+
+    private Task RemoveAsync()
+    {
+        return OnRemoved.InvokeAsync(Item);
+    }
+}

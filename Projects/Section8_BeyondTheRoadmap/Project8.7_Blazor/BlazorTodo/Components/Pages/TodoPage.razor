@@ -1,0 +1,76 @@
+@page "/todo"
+
+<PageTitle>To-do list</PageTitle>
+<h1>To-do list</h1>
+
+@*
+    EditForm + DataAnnotationsValidator: checks [Required] and [StringLength] on TodoItemModel.
+    OnValidSubmit only runs when every rule passes; otherwise the messages appear and nothing is added.
+*@
+<EditForm Model="newItem" OnValidSubmit="AddItem" FormName="add-todo">
+    <DataAnnotationsValidator />
+    <InputText @bind-Value="newItem.Title" placeholder="What needs doing?" id="new-title" />
+    <button type="submit" id="add-button">Add</button>
+    <ValidationMessage For="() => newItem.Title" />
+</EditForm>
+
+@if (items.Count == 0)
+{
+    <p id="empty-message">Nothing to do.</p>
+}
+else
+{
+    <p id="remaining">@RemainingCount of @items.Count left</p>
+    <ul>
+        @* @key tells Blazor which <li> belongs to which item, so removing one doesn't confuse the others. *@
+        @foreach (TodoItemModel item in items)
+        {
+            <TodoItemComponent @key="item.Id" Item="item" OnToggled="ToggleItem" OnRemoved="RemoveItem" />
+        }
+    </ul>
+    <button id="clear-completed" disabled="@(CompletedCount == 0)" @onclick="ClearCompleted">Clear completed</button>
+}
+
+@code {
+    // The page's STATE. Changing it and returning from an event handler makes Blazor re-render the page.
+    private readonly List<TodoItemModel> items = new();
+    private TodoItemModel newItem = new();
+
+    private int RemainingCount
+    {
+        get
+        {
+            return items.Count(item => !item.IsDone);
+        }
+    }
+
+    private int CompletedCount
+    {
+        get
+        {
+            return items.Count(item => item.IsDone);
+        }
+    }
+
+    private void AddItem()
+    {
+        newItem.Title = newItem.Title.Trim();
+        items.Add(newItem);
+        newItem = new TodoItemModel(); // empty the form for the next one
+    }
+
+    private void ToggleItem(TodoItemModel item)
+    {
+        item.IsDone = !item.IsDone;
+    }
+
+    private void RemoveItem(TodoItemModel item)
+    {
+        items.Remove(item);
+    }
+
+    private void ClearCompleted()
+    {
+        items.RemoveAll(item => item.IsDone);
+    }
+}

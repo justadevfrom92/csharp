@@ -1,0 +1,22 @@
+@* The root of the app: the HTML page that every Blazor page is rendered inside. *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <base href="/" />
+    <title>Blazor Todo</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 16px; }
+        .done span { text-decoration: line-through; color: #888; }
+        .validation-message { color: #b00020; }
+        li { margin: 4px 0; }
+    </style>
+    <HeadOutlet />
+</head>
+<body>
+    @* InteractiveServer: the page's C# runs ON THE SERVER, and every click is sent over a live connection
+       (SignalR). The server re-renders and sends back only what changed. *@
+    <Routes @rendermode="InteractiveServer" />
+    <script src="_framework/blazor.web.js"></script>
+</body>
+</html>
