@@ -1,0 +1,43 @@
+// The CONTRACT between server and clients. Both sides generate their C# code from this one file,
+// so they always agree on method names, fields and types - in any language (C#, Go, Python, Java...).
+syntax = "proto3";
+
+option csharp_namespace = "StockGrpc.Protos";
+
+package stock;
+
+service StockService {
+  // UNARY: one request -> one reply.
+  rpc GetStock (GetStockRequest) returns (StockReply);
+  rpc ReserveStock (ReserveStockRequest) returns (ReserveStockReply);
+
+  // SERVER STREAMING: one request -> a STREAM of replies, sent whenever the stock level changes.
+  rpc WatchStock (WatchStockRequest) returns (stream StockReply);
+}
+
+// The numbers (= 1, = 2) are the field IDs on the wire. Never reuse or change them once in use:
+// that's what lets old and new clients keep working together.
+message GetStockRequest {
+  string sku = 1;
+}
+
+message StockReply {
+  string sku = 1;
+  string name = 2;
+  int32 quantity = 3;
+}
+
+message ReserveStockRequest {
+  string sku = 1;
+  int32 quantity = 2;
+}
+
+message ReserveStockReply {
+  string sku = 1;
+  int32 reserved = 2;
+  int32 remaining = 3;
+}
+
+message WatchStockRequest {
+  string sku = 1;
+}

@@ -1,0 +1,78 @@
+# Project 8.9 — gRPC
+
+| Folder | What |
+|---|---|
+| `StockGrpc/` | A gRPC stock service: look up, reserve, and watch stock levels live |
+| `StockGrpc.Tests/` | Tests with a real generated gRPC client against the in-memory server |
+
+```bash
+dotnet run --project StockGrpc --urls http://localhost:5089
+```
+
+```bash
+dotnet test StockGrpc.Tests
+```
+
+To call it from another .NET app: add `Grpc.Net.Client`, `Google.Protobuf` and `Grpc.Tools`, include the same
+`.proto` file with `<Protobuf Include="path/to/stock.proto" GrpcServices="Client" />`, then:
+
+```csharp
+using var channel = GrpcChannel.ForAddress("http://localhost:5089");
+var client = new StockService.StockServiceClient(channel);
+StockReply reply = await client.GetStockAsync(new GetStockRequest { Sku = "KB-01" });
+```
+
+(Checked for real: a separate client generated only from the `.proto` called the running server over HTTP/2 —
+get, reserve, and a `FailedPrecondition` for reserving too many.)
+
+## gRPC vs a JSON API (Project 8.1)
+
+| | JSON API (Minimal APIs) | gRPC |
+|---|---|---|
+| Contract | OpenAPI document, generated from code | **`.proto` file first**; code generated from it on both sides |
+| Format | JSON text | **Protobuf** binary — smaller and faster to read/write |
+| Transport | HTTP/1.1 or HTTP/2 | **HTTP/2** required (multiplexing, streaming) |
+| Streaming | not built in | **built in**: server, client and two-way streams |
+| Browsers | work directly | need gRPC-Web |
+| Best for | public APIs, browsers | **service-to-service** calls inside a system, mobile apps, high volume |
+
+## The pieces
+
+| Piece | Where |
+|---|---|
+| The contract: messages, field numbers, `service StockService` with 3 methods | `Protos/stock.proto` |
+| Code generation (`Grpc.Tools`), `GrpcServices="Both"` | `StockGrpc.csproj` |
+| Implementation: `StockGrpcService : StockService.StockServiceBase` | `Services/StockGrpcService.cs` |
+| **Unary** calls: `GetStock`, `ReserveStock` | one request → one reply |
+| **Server streaming**: `WatchStock` | sends the current level, then a new message after every change, until the client cancels |
+| HTTP/2 without TLS for local runs | `appsettings.json` → `Kestrel:EndpointDefaults:Protocols = Http2` |
+
+**Field numbers** (`string sku = 1;`) are what's sent on the wire, not the names. Never change or reuse one once
+it's in use; add new fields with new numbers. That's how old and new clients keep working together.
+
+**Errors are gRPC status codes**, thrown as `RpcException`:
+
+| Situation | Status code | HTTP equivalent |
+|---|---|---|
+| Malformed SKU, quantity 0 | `InvalidArgument` | 400 |
+| SKU doesn't exist | `NotFound` | 404 |
+| Valid request, not enough stock | `FailedPrecondition` | 409 / 422 |
+| Client stopped waiting | `Cancelled` | — |
+
+**Streaming without leaks:** `WatchStock` subscribes to the store's `StockChanged` event and passes changes to the
+stream through a `Channel` (events fire on other threads). The `finally` always unsubscribes, so a finished or
+cancelled stream doesn't leave a handler behind forever.
+
+**Why `GrpcServices="Both"`:** the test project references the server project, so it reuses the client class
+generated there. Generating the messages twice (once per project) would create duplicate classes. A separate
+client app would include the `.proto` with `GrpcServices="Client"`.
+
+## Tests (every behaviour has all three kinds)
+
+| Behaviour | PositivePositive | PositiveNegative | NegativeNegative |
+|---|---|---|---|
+| `GetStock` | `KB-01` → Keyboard, 10 | `ZZ-99` (well-formed, doesn't exist) → `NotFound` | `""`, `kb-01`, `KEYBOARD` → `InvalidArgument` |
+| `ReserveStock` | reserve all 3 → 0 left, and `GetStock` agrees | reserve 4 of 3 → `FailedPrecondition` "Only 3", nothing changed | quantity 0 / -2, SKU `bad` → `InvalidArgument` |
+| `WatchStock` (stream) | 10 now → 6 after reserving 4 → 5 after reserving 1 | a change to a **different** product sends nothing | unknown SKU → `NotFound`; malformed → `InvalidArgument` |
+
+Each test starts a new app (fresh stock levels) and talks to it with the real generated client.
