@@ -10,3 +10,4 @@ logs/
 **/wwwroot/uploads/*
 !**/wwwroot/uploads/.gitkeep
 sent-emails/
+BenchmarkDotNet.Artifacts/
