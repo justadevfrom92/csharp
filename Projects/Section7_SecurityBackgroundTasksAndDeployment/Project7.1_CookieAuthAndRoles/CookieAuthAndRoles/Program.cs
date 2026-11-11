@@ -36,3 +36,8 @@ app.UseAuthentication(); // who are you? (reads the cookie)
 app.UseAuthorization();  // are you allowed? (checks [Authorize])
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 app.Run();
+
+// Lets the test project start this app in memory with WebApplicationFactory<Program>.
+public partial class Program
+{
+}

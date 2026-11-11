@@ -54,7 +54,8 @@
   </Folder>
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/" />
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/">
-    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/CookieAuthAndRoles.csproj" />
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/CookieAuthAndRoles.Tests/CookieAuthAndRoles.Tests.csproj" />
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/CookieAuthAndRoles/CookieAuthAndRoles.csproj" />
   </Folder>
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.2_FormSecurityXssCsrf/">
     <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.2_FormSecurityXssCsrf/FormSecurityXssCsrf.csproj" />

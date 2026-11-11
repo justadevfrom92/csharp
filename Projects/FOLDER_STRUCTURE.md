@@ -28,7 +28,8 @@ The same goes for every other folder: `ModelBinders/` → `...ModelBinder`, `Vie
 `BackgroundServices/` → `...BackgroundService`, `Queues/` → `...Queue`, `Messages/` → `...Message`,
 `Databases/` → `...Database`, `Factories/` → `...Factory`, `Repositories/` → `...Repository`,
 `Dispatchers/` → `...Dispatcher`, `ValueObjects/` → `...ValueObject`, `Aggregates/` → `...Aggregate`,
-`Generators/` → `...Generator`, `Shorteners/` → `...Shortener`, `Validators/` → `...Validator`.
+`Generators/` → `...Generator`, `Shorteners/` → `...Shortener`, `Validators/` → `...Validator`,
+`Middlewares/` → `...Middleware`, `Helpers/` → `...Helper`.
 
 Folder names are plural; the class name uses the singular (`Forms/` → `AvatarUploadForm`), except
 where the class name itself is naturally plural (`ShopSettings`, `SessionJsonExtensions`,

@@ -53,6 +53,12 @@ jobs:
           -c Release --no-build
           --logger trx --results-directory TestResults
 
+      - name: Authentication tests (xUnit, app runs in memory)
+        run: >
+          dotnet test Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/CookieAuthAndRoles.Tests
+          -c Release --no-build
+          --logger trx --results-directory TestResults
+
       - name: Upload unit test results
         if: always() # upload even when tests fail, so you can see WHICH failed
         uses: actions/upload-artifact@v4

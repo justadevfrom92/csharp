@@ -6,8 +6,17 @@
 dotnet dev-certs https --trust
 ```
 
+| Folder | What |
+|---|---|
+| `CookieAuthAndRoles/` | The web app |
+| `CookieAuthAndRoles.Tests/` | xUnit tests: login, return URLs, admin access, login-required, register, logout (app runs in memory) |
+
 ```bash
-dotnet run
+dotnet run --project CookieAuthAndRoles
+```
+
+```bash
+dotnet test CookieAuthAndRoles.Tests
 ```
 Open `https://localhost:7071` (HTTPS is required: the cookies are marked `Secure`).
 Demo users: `admin / Admin123!` (Admin role), `alice / Alice123!` (User role). You can also register.
@@ -27,6 +36,25 @@ Not logged in → sent to the login page. Logged in but wrong role → "Access d
 - `UseAuthentication()` then `UseAuthorization()`.
 - `[Authorize]`, `[Authorize(Roles = "...")]`, `[AllowAnonymous]`, plus a global `AuthorizeFilter`.
 - Password hashing with ASP.NET Core's `PasswordHasher<T>` (PBKDF2 with a random salt).
+
+## Tests (every behaviour has all three kinds)
+
+| Behaviour | PositivePositive | PositiveNegative | NegativeNegative |
+|---|---|---|---|
+| Login | correct password → auth cookie set, profile opens | wrong password → "Wrong user name or password.", no cookie | no anti-forgery token → 400 |
+| ReturnUrl after login | `/Admin` → redirected there | `https://evil.example.com/...` → ignored, goes to `/` | `javascript:alert(1)` → ignored, goes to `/` |
+| Admin page | admin → "Admin area" | logged in as normal user → Access denied | not logged in → login page with `ReturnUrl=%2FAdmin` |
+| Login required (global filter) | logged-in user → own profile | home page (`[AllowAnonymous]`) → open without login | forged auth cookie → treated as logged out |
+| Register | new user → created; an extra `role=Admin` form field is **ignored** (still not an admin) | name `alice` taken → refused | empty name / empty or short password → refused |
+| Logout | POST + token → logged out | `GET /Account/Logout` (e.g. an `<img>` on another site) → 405, still logged in | POST without token → 400, still logged in |
+
+**How the tests stay isolated:** every test creates its own `HttpClient`, which has its own empty cookie jar,
+so one test's login can never leak into another. The app runs in memory (`WebApplicationFactory<Program>`),
+over `https://localhost` because the cookies are `Secure`. Users are kept in a static list for the whole run,
+so the register test uses a random user name.
+
+**Checked that the tests catch real bugs:** removing the `Url.IsLocalUrl` check makes both ReturnUrl negative
+tests fail; removing `[Authorize(Roles = "Admin")]` makes the Admin-page and Register tests fail.
 
 ## Where the authorization boundaries are, and why
 
