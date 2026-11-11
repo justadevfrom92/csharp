@@ -69,7 +69,7 @@ login, cookies or caching. Skipping the rest of the pipeline saves work on every
 Only do this for endpoints like that — a short-circuited endpoint also skips **authorization**, so never
 use it on anything that needs a login.
 
-**How you can see it:** `Program.cs` has a tiny middleware after `UseRouting` that adds an
+**How you can see it:** the `FullPipelineHeaderMiddleware` class (after `UseRouting`) adds an
 `X-Full-Pipeline: true` header. Check the headers:
 
 ```bash
@@ -85,12 +85,36 @@ The first has no `X-Full-Pipeline` header (short-circuited); the second has it.
 **Note:** the default route `{controller}/{action}` also reaches the same action at `/Robots/Get`, and that
 URL is *not* short-circuited. Crawlers only ever ask for `/robots.txt`, so it doesn't matter here.
 
+## Custom middleware classes (`Middlewares/`)
+
+Registered in `Program.cs` right after `UseRouting`, in this order:
+
+```csharp
+app.UseMiddleware<RequestTimingMiddleware>();      // times every request
+app.UseMiddleware<FullPipelineHeaderMiddleware>(); // marks requests that ran the whole pipeline
+```
+
+| Class | Style | What it does |
+|---|---|---|
+| `FullPipelineHeaderMiddleware` | **Convention-based**: constructor takes `RequestDelegate next`, plus a `public Task InvokeAsync(HttpContext)`. No interface. Created **once** at startup. | Adds `X-Full-Pipeline: true` |
+| `RequestTimingMiddleware` | **`IMiddleware`**: implements the interface (`InvokeAsync(HttpContext, RequestDelegate next)`). Must be **registered in DI** (`AddTransient<RequestTimingMiddleware>()`); a new one is created **per request**. | Adds `X-Response-Time-Ms` and logs `GET /Catalog/Index -> 200 in 103 ms` |
+
+**How a middleware works:** code before `await next(context)` runs on the way **in**; code after it runs on
+the way **out**, once the rest of the pipeline (and the controller) has finished. Headers must be set before
+the response body starts, which is why the timing middleware uses `Response.OnStarting(...)`.
+
+**Which style to pick:** convention-based is the common one and slightly faster (one object for the app).
+`IMiddleware` is checked by the compiler and, because it's created per request, can take **scoped** services
+(like a `DbContext`) in its constructor — a convention-based middleware can't, it would be a captive
+dependency (see Project 4.2).
+
 ## Tests (every behaviour has all three kinds)
 
 | Behaviour | PositivePositive | PositiveNegative | NegativeNegative |
 |---|---|---|---|
 | robots.txt content | Production → 200, `text/plain`, `Allow: /` | Development → 200 but `Disallow: /` (crawlers told to stay out) | `POST /robots.txt` → 405 Method Not Allowed |
 | ShortCircuit | `/robots.txt` has **no** `X-Full-Pipeline` header | `/Catalog/Index` (normal page) **does** have it | `/robots.txt/extra` → 404, went through the full pipeline |
+| Request timing middleware | `/Catalog/Uncached` → `X-Response-Time-Ms` ≥ 100 (includes the 100 ms database read) | `/robots.txt` → **no** timing header (short-circuited) | unknown URL → 404, still timed |
 
 Checked that the tests really test something: with `.ShortCircuit()` removed, the ShortCircuit
 PositivePositive test fails.

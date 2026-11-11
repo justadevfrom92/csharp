@@ -1,3 +1,4 @@
+using OutputCachingCatalog.Middlewares;
 using OutputCachingCatalog.Databases;
 using OutputCachingCatalog.HealthChecks;
 
@@ -16,6 +17,9 @@ builder.Services.AddOutputCache(options =>
     });
 });
 
+// IMiddleware classes must be registered in DI (a new one is created per request).
+builder.Services.AddTransient<RequestTimingMiddleware>();
+
 builder.Services.AddHealthChecks()
     .AddCheck<CatalogDatabaseHealthCheck>("catalog-database");
 
@@ -23,20 +27,17 @@ var app = builder.Build();
 
 app.UseRouting();
 
-// Runs for every request that is NOT short-circuited. It only adds a header, so you (and the tests)
-// can see which requests went through the whole pipeline.
-app.Use(async (context, next) =>
-{
-    context.Response.Headers["X-Full-Pipeline"] = "true";
-    await next();
-});
+// Custom middleware classes (see the Middlewares folder). They run for every request that is NOT
+// short-circuited, in this order:
+app.UseMiddleware<RequestTimingMiddleware>();      // IMiddleware style: times the request
+app.UseMiddleware<FullPipelineHeaderMiddleware>(); // convention style: marks "went through the whole pipeline"
 
 app.UseOutputCache(); // must come after UseRouting so it knows which endpoint was hit
 app.MapHealthChecks("/health");
 
 // /robots.txt -> RobotsController.Get().
 // .ShortCircuit(): as soon as routing matches this URL, the endpoint runs and the response is sent.
-// Every middleware after UseRouting (the header above, output caching, and in a bigger app
+// Every middleware after UseRouting (the two middleware classes above, output caching, and in a bigger app
 // authentication/authorization) is SKIPPED. Crawlers ask for robots.txt constantly and it never needs
 // a login, so there's no point running the rest of the pipeline for it.
 app.MapControllerRoute(

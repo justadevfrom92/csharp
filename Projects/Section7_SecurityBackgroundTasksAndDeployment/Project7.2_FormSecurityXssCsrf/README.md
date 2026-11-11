@@ -27,6 +27,20 @@ Post `<script>alert('hacked')</script>` as a message: it appears as plain text a
 | 7 | **Content sniffing** | Browser guesses an uploaded text file is HTML and runs it. | `X-Content-Type-Options: nosniff`. |
 | 8 | **Huge input** | Very long messages to fill memory/disk. | `[StringLength]` limits on every field. |
 
+## The security-headers middleware class
+
+`Middlewares/SecurityHeadersMiddleware.cs` adds `Content-Security-Policy`, `X-Content-Type-Options` and
+`Referrer-Policy` to **every** response. It's registered in `Program.cs` with
+`app.UseMiddleware<SecurityHeadersMiddleware>()`.
+
+It's a **convention-based** middleware: no interface, ASP.NET Core recognises it by its shape — a constructor
+taking `RequestDelegate next` and a `public Task InvokeAsync(HttpContext context)`. Inside, code before
+`await next(context)` runs on the way **in**, code after it on the way **out**. It's created once at startup,
+so it must not store per-request data in fields. (Project 7.4 also shows the other style, `IMiddleware`.)
+
+**Why a class instead of an inline `app.Use(...)` lambda:** it has a name you can find, its own file, and
+`Program.cs` stays a short list of steps.
+
 ## Why these choices
 
 - **Encode on output, not on input.** We store exactly what was typed and encode when showing it.
@@ -51,3 +65,4 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `static List<GuestbookEntryModel>` + `lock` | Shared in-memory store across requests. | Same pattern and trade-offs as 3.1. |
 | `static bool IsSafeWebLink` | Pure check using only its input. | — |
 | `Uri.TryCreate(..., out Uri? uri)` | Parses properly instead of string tricks like `StartsWith("http")`, which `httpjavascript:...` could fool. | — |
+| `SecurityHeadersMiddleware` (convention-based class) | Same headers on every response, in one named, findable place. | An inline `app.Use(...)` lambda buries the rules in `Program.cs`. |
