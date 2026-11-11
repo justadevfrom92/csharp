@@ -18,7 +18,7 @@ dotnet run
 | `Interlocked.Increment/Add/Decrement/CompareExchange` | All counters |
 | `SemaphoreSlim` + `Wait()` | At most 3 downloads at once (Part 2) |
 | `Mutex` | Named lock that works across separate programs (Part 4) |
-| `Semaphore` (no "Slim") | 2 slots shared by 5 threads, plus a named one (Part 5) |
+| `Semaphore` (no "Slim") | 2 slots shared by 5 threads (Part 5) |
 | `SemaphoreSlim` + `WaitAsync()` | At most 2 of 6 async jobs at once (Part 6) |
 | `EventHandler<DownloadFinishedEventArgs>` | `DownloadFinished` event |
 | `Func`, `Action`, `Predicate` | Part 3 |
@@ -50,12 +50,9 @@ dotnet run
   memory each). The pool reuses a few threads for many short jobs.
 - **A dedicated thread for progress:** it runs for the whole download and mostly sleeps — a
   good fit for its own thread. It's a *background* thread so it can never keep the app open.
-- **`Semaphore` vs `SemaphoreSlim`:** both hand out N slots. `Semaphore` (Part 5) wraps an
-  operating-system object, so every `WaitOne`/`Release` is a slow call into the OS. Its one extra power:
-  on **Windows** it can be *named* and shared between separate programs. On Linux/macOS .NET doesn't
-  support named semaphores (Part 5 shows the `PlatformNotSupportedException` being caught) - use a
-  named `Mutex` there. `SemaphoreSlim` lives inside your program only, is much faster, and is what you
-  normally want.
+- **`Semaphore` vs `SemaphoreSlim`:** both are created with two numbers, `(initialCount, maximumCount)`,
+  and hand out that many slots. `Semaphore` (Part 5) is the older class; `SemaphoreSlim` is lighter and
+  faster, and it also has `WaitAsync()` for async code. Use `SemaphoreSlim` unless you have a reason not to.
 - **`Wait()` vs `WaitAsync()`:** the downloader (Part 2) calls `Wait()`, which **blocks a thread** until a
   slot is free - fine here, because those are thread-pool threads doing blocking work anyway. In `async`
   code, use `await WaitAsync()` (Part 6): it waits **without holding a thread**, so thousands of waiting
@@ -78,8 +75,8 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `List<string> log` + `lock` | List isn't thread-safe; the lock lets one thread add at a time. | `ConcurrentBag` has no order. `ConcurrentQueue` would also work, but the point here is learning `lock`. |
 | `GetLog()` returns `List<string>` copy | Copy made inside the lock; caller can't touch the shared list. | Returning the real list (or a lazy `IEnumerable`) lets callers read it without the lock. |
 | `object logLock` | Private, used only for locking. | `lock (this)` lets outside code take the same lock → deadlock risk. |
-| `SemaphoreSlim` | "At most 3 at once" is exactly what a semaphore counts. | `lock` allows only 1. `Semaphore` (no Slim) is slower; only worth it for a named, cross-program semaphore on Windows. |
-| `Semaphore` (Part 5, demo only) | Shows the OS-backed version and that named semaphores are Windows-only. | Not used for the real work: `SemaphoreSlim` is faster. |
+| `SemaphoreSlim` | "At most 3 at once" is exactly what a semaphore counts. | `lock` allows only 1. `Semaphore` (no Slim) is slower and has no `WaitAsync`. |
+| `Semaphore` (Part 5, demo only) | Shows the older class next to `SemaphoreSlim`. | Not used for the real work: `SemaphoreSlim` is faster and can `await`. |
 | `await WaitAsync()` (Part 6) | Waits for a slot without blocking a thread. | `Wait()` inside async code wastes a thread per waiting job. |
 | `class DownloadFinishedEventArgs : EventArgs` | The .NET convention for `EventHandler<T>`: data in a class with get-only properties. | A tuple or bare parameters don't fit the `EventHandler<T>` pattern. |
 | `event EventHandler<DownloadFinishedEventArgs>` | `event` lets outside code subscribe (`+=`) but not fire or clear the event. | A public `Action` field could be overwritten or invoked by anyone. |

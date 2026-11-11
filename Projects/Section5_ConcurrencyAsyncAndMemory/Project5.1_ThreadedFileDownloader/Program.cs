@@ -98,8 +98,8 @@ if (mutex.WaitOne(TimeSpan.Zero))
 }
 
 // ---------- 5. Semaphore (no "Slim"): the older, heavier version ----------
-// Works like SemaphoreSlim (N slots), but it's a wrapper around an operating-system object.
-// Its only advantage: on Windows it can be NAMED and shared between separate programs (like Mutex).
+// Same idea as SemaphoreSlim: new Semaphore(initialCount, maximumCount) = N slots.
+// Those two numbers are all you need; it works the same on Windows, Linux and macOS.
 Console.WriteLine();
 Console.WriteLine("Semaphore with 2 slots, 5 threads:");
 using var twoSlotSemaphore = new Semaphore(initialCount: 2, maximumCount: 2);
@@ -137,18 +137,6 @@ foreach (Thread thread in semaphoreThreads)
     thread.Join();
 }
 Console.WriteLine($"  most workers inside at once: {mostInsideSemaphore} (limit was 2)");
-
-// A NAMED semaphore is shared by every program on the machine that uses the same name.
-// .NET only supports this on Windows; on Linux/macOS it throws PlatformNotSupportedException.
-try
-{
-    using var namedSemaphore = new Semaphore(1, 1, "Roadmap-ThreadedFileDownloader-Semaphore");
-    Console.WriteLine("  named semaphore created: other programs using this name share its slots");
-}
-catch (PlatformNotSupportedException)
-{
-    Console.WriteLine("  named semaphore: not supported on this OS (Windows only) - use a named Mutex instead");
-}
 
 // ---------- 6. SemaphoreSlim.WaitAsync: limiting ASYNC work ----------
 // The downloader above uses Wait(), which BLOCKS a thread while it waits for a slot.
