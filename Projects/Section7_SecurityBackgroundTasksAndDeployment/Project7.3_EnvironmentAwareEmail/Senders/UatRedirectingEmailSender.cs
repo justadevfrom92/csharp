@@ -3,17 +3,21 @@ using EnvironmentAwareEmail.Settings;
 
 namespace EnvironmentAwareEmail.Senders;
 
-// UAT: uses the real SMTP sender, but EVERY email is sent to the test inbox instead of the real person.
+// DECORATOR: it IS an IEmailSender and it WRAPS another IEmailSender.
+// It changes the message (recipient -> UAT test inbox), then hands it to whatever sender it wraps.
+// It doesn't know or care whether that is SMTP, the trap, or another decorator.
 public class UatRedirectingEmailSender : IEmailSender
 {
-    private readonly SmtpEmailSender realSender;
     private readonly EmailSettings settings;
 
-    public UatRedirectingEmailSender(SmtpEmailSender realSender, EmailSettings settings)
+    public UatRedirectingEmailSender(IEmailSender inner, EmailSettings settings)
     {
-        this.realSender = realSender;
+        Inner = inner;
         this.settings = settings;
     }
+
+    // The sender this decorator wraps (shown by GET / so you can see the chain).
+    public IEmailSender Inner { get; }
 
     public Task SendAsync(EmailMessage message)
     {
@@ -21,6 +25,6 @@ public class UatRedirectingEmailSender : IEmailSender
             settings.UatTestInbox,
             $"[UAT - meant for {message.To}] {message.Subject}",
             message.Body);
-        return realSender.SendAsync(redirected);
+        return Inner.SendAsync(redirected);
     }
 }

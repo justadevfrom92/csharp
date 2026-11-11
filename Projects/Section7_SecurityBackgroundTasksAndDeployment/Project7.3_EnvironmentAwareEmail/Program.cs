@@ -1,4 +1,5 @@
 using EnvironmentAwareEmail.BackgroundServices;
+using EnvironmentAwareEmail.Constants;
 using EnvironmentAwareEmail.Queues;
 using EnvironmentAwareEmail.Senders;
 using EnvironmentAwareEmail.Settings;
@@ -8,26 +9,42 @@ var builder = WebApplication.CreateBuilder(args);
 var emailSettings = builder.Configuration.GetSection("Email").Get<EmailSettings>() ?? new EmailSettings();
 builder.Services.AddSingleton(emailSettings);
 
-// Pick the email sender based on the environment (ASPNETCORE_ENVIRONMENT).
+// ---------- KEYED registrations ----------
+// Two implementations of the SAME interface, told apart by a key.
+// Ask for one with [FromKeyedServices("trap")] or serviceProvider.GetRequiredKeyedService<IEmailSender>("trap").
+builder.Services.AddKeyedSingleton<IEmailSender, SmtpEmailSender>(EmailSenderKeyConstants.Smtp);
+builder.Services.AddKeyedSingleton<IEmailSender, FileTrapEmailSender>(EmailSenderKeyConstants.Trap);
+
+// ---------- The app's normal IEmailSender: a keyed sender wrapped in DECORATORS ----------
+// Picked by environment (ASPNETCORE_ENVIRONMENT):
+//   Production  : LoggingEmailSender -> SmtpEmailSender
+//   UAT         : LoggingEmailSender -> UatRedirectingEmailSender -> SmtpEmailSender
+//   anything else (Development, Staging, typos): LoggingEmailSender -> FileTrapEmailSender   (safe by default)
 IWebHostEnvironment environment = builder.Environment;
-if (environment.IsProduction())
+if (environment.IsEnvironment("UAT") && string.IsNullOrWhiteSpace(emailSettings.UatTestInbox))
 {
-    builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+    throw new InvalidOperationException("UAT needs Email:UatTestInbox, or real customers could get test emails.");
 }
-else if (environment.IsEnvironment("UAT"))
+
+// FACTORY registration: our code builds the chain, because DI can't guess which sender goes inside which decorator.
+builder.Services.AddSingleton<IEmailSender>(serviceProvider =>
 {
-    if (string.IsNullOrWhiteSpace(emailSettings.UatTestInbox))
+    IEmailSender realSender;
+    if (environment.IsProduction())
     {
-        throw new InvalidOperationException("UAT needs Email:UatTestInbox, or real customers could get test emails.");
+        realSender = serviceProvider.GetRequiredKeyedService<IEmailSender>(EmailSenderKeyConstants.Smtp);
     }
-    builder.Services.AddSingleton<SmtpEmailSender>();
-    builder.Services.AddSingleton<IEmailSender, UatRedirectingEmailSender>();
-}
-else
-{
-    // Development, Staging, Testing, anything unknown -> trap. Safe by default.
-    builder.Services.AddSingleton<IEmailSender, FileTrapEmailSender>();
-}
+    else if (environment.IsEnvironment("UAT"))
+    {
+        IEmailSender smtpSender = serviceProvider.GetRequiredKeyedService<IEmailSender>(EmailSenderKeyConstants.Smtp);
+        realSender = new UatRedirectingEmailSender(smtpSender, emailSettings);
+    }
+    else
+    {
+        realSender = serviceProvider.GetRequiredKeyedService<IEmailSender>(EmailSenderKeyConstants.Trap);
+    }
+    return new LoggingEmailSender(realSender, serviceProvider.GetRequiredService<ILogger<LoggingEmailSender>>());
+});
 
 builder.Services.AddSingleton<EmailQueue>();
 builder.Services.AddHostedService<EmailSendingBackgroundService>();

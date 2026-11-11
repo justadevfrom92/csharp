@@ -16,13 +16,64 @@ In Development the email is written to `sent-emails/*.eml` (open it in any mail 
 
 | Environment (`ASPNETCORE_ENVIRONMENT`) | Sender | What happens |
 |---|---|---|
-| `Development` | `FileTrapEmailSender` | Saved to a `.eml` file. Never leaves the machine. |
-| `UAT` | `UatRedirectingEmailSender` | Really sent, but **always** to `Email:UatTestInbox`. Subject shows who it was meant for. |
-| `Production` | `SmtpEmailSender` | Sent to the real recipient. |
-| Anything else (Staging, typo...) | `FileTrapEmailSender` | Trapped. |
+| `Development` | `LoggingEmailSender` → `FileTrapEmailSender` | Saved to a `.eml` file. Never leaves the machine. |
+| `UAT` | `LoggingEmailSender` → `UatRedirectingEmailSender` → `SmtpEmailSender` | Really sent, but **always** to `Email:UatTestInbox`. Subject shows who it was meant for. |
+| `Production` | `LoggingEmailSender` → `SmtpEmailSender` | Sent to the real recipient. |
+| Anything else (Staging, typo...) | `LoggingEmailSender` → `FileTrapEmailSender` | Trapped. |
 
 Also in this project: a `BackgroundService` that sends queued emails (so web requests don't wait for
 SMTP), and a second one using `PeriodicTimer` that queues a digest every 30 seconds.
+
+`GET /` shows the chain for the current environment, e.g.
+`{"environment":"UAT","emailSenderChain":"LoggingEmailSender -> UatRedirectingEmailSender -> SmtpEmailSender"}`.
+
+## Keyed DI registrations
+
+```csharp
+builder.Services.AddKeyedSingleton<IEmailSender, SmtpEmailSender>(EmailSenderKeyConstants.Smtp);   // key "smtp"
+builder.Services.AddKeyedSingleton<IEmailSender, FileTrapEmailSender>(EmailSenderKeyConstants.Trap); // key "trap"
+```
+
+Two implementations of the **same** interface, told apart by a **key**. Without keys, registering
+`IEmailSender` twice means "give me one" always returns the *last* one, and you can't pick.
+
+Two ways to ask for a keyed one:
+- In code: `serviceProvider.GetRequiredKeyedService<IEmailSender>("smtp")` (used in `Program.cs` to build the chain).
+- As a parameter: `[FromKeyedServices(EmailSenderKeyConstants.Trap)] IEmailSender trapSender` — used by
+  `POST /send-preview`, which **always** saves to the trap, even in Production, so someone can check what an
+  email looks like without anybody receiving it.
+
+```bash
+curl -X POST "localhost:5073/send-preview?to=real.customer@gmail.com"
+```
+
+The keys are `const` strings in `Constants/EmailSenderKeyConstants.cs`, because attributes like
+`[FromKeyedServices(...)]` only accept constants, and a typo in a constant is a compile error.
+
+## Decorators
+
+A **decorator** is a class that implements an interface **and wraps another object of the same interface**.
+It adds something before/after, then passes the call on. The caller can't tell the difference.
+
+```
+IEmailSender sender = new LoggingEmailSender(          <- logs "sending", time taken, failures
+                          new UatRedirectingEmailSender(   <- swaps the recipient for the UAT inbox
+                              smtpSender,                  <- really sends
+                              settings),
+                          logger);
+```
+
+| Decorator | Adds | Wraps |
+|---|---|---|
+| `LoggingEmailSender` | "Sending … / Sent in N ms / failed" log lines; rethrows errors so callers still see them | **any** `IEmailSender` |
+| `UatRedirectingEmailSender` | Changes the recipient to the UAT test inbox | **any** `IEmailSender` |
+
+**Why decorators instead of putting logging inside each sender:** every sender would need the same logging
+code (copied 3 times), and the UAT rule would have to be written into the SMTP sender. With decorators each
+class does one job, and you **stack** the jobs you want per environment, in `Program.cs`, in one place.
+
+**Why a factory registration (`AddSingleton<IEmailSender>(serviceProvider => ...)`) builds the chain:** DI
+can't guess which sender goes inside which decorator, so our code decides and returns the finished chain.
 
 ## Why these isolation rules
 
@@ -58,7 +109,7 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | Choice | Why | Why not the alternative |
 |---|---|---|
 | `interface IEmailSender` | **The** reason interfaces exist: 3 implementations (trap, SMTP, UAT redirect), one picked at startup. The rest of the app only knows the interface. | Using `SmtpEmailSender` directly would need `if (environment...)` everywhere. |
-| `UatRedirectingEmailSender` *wraps* `SmtpEmailSender` | It changes the recipient, then hands off to the real sender (composition). | Inheriting from `SmtpEmailSender` would tie it to SMTP details and make it easy to call the base send by mistake. |
+| `UatRedirectingEmailSender` and `LoggingEmailSender` wrap **any** `IEmailSender` (decorators) | Each adds one job and passes the call on, so they can be stacked in any order per environment. | Inheriting from `SmtpEmailSender` would tie them to SMTP and couldn't be combined. |
 | `record EmailMessage` | An email doesn't change once queued. The UAT sender makes a *new* one with the test inbox. | Changing the original's `To` could affect anyone else holding it. |
 | `class EmailSettings` | Bound from config with setters. | — |
 | `EmailQueue` wraps a `Channel<EmailMessage>` | Thread-safe hand-off between web requests (producers) and the background sender. | Injecting the raw `Channel` everywhere exposes its full API. |
@@ -67,3 +118,5 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `: BackgroundService` (an abstract class) | The framework's base class does the start/stop plumbing; we fill in only `ExecuteAsync`. | Implementing `IHostedService` directly means writing that plumbing ourselves. |
 | `PeriodicTimer` | `await timer.WaitForNextTickAsync()` — no overlapping runs, stops cleanly with the token. | `System.Threading.Timer` callbacks can overlap and don't support `await`. |
 | `readonly` injected fields | Set once in the constructor. | — |
+| `AddKeyedSingleton` + `const` keys | Two `IEmailSender`s that must be picked by name (`"smtp"`, `"trap"`). | Two plain registrations: only the last one could be asked for. |
+| `[FromKeyedServices]` on one parameter | Only `/send-preview` needs the trap; the rest of the controller uses the normal sender. | Injecting the trap in the constructor would give every action access to it. |
