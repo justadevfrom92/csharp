@@ -11,3 +11,5 @@ logs/
 !**/wwwroot/uploads/.gitkeep
 sent-emails/
 BenchmarkDotNet.Artifacts/
+publish/
+publish-*.log

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- Tells the compiler to WARN about code that wouldn't work after trimming / Native AOT,
+         so publishing with -p:PublishAot=true or -p:PublishTrimmed=true is safe. -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- Generates the endpoint code at COMPILE time instead of using reflection at runtime (needed for AOT). -->
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Settings for "dotnet publish /t:PublishContainer" (container image without a Dockerfile). -->
+    <ContainerRepository>roadmap/publish-demo</ContainerRepository>
+    <ContainerImageTag>1.0.0</ContainerImageTag>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- TRIMMING FIX: with PublishTrimmed=true, the trimmer removed a method Kestrel calls at startup
+         (X509Certificate2Collection.GetEnumerator) and the app crashed with a TypeLoadException.
+         "Root" = keep this whole assembly, never trim it. Costs ~3 MB; the app still shrinks from 97 MB to 22 MB.
+         (Native AOT does its own trimming and doesn't need this.) -->
+    <TrimmerRootAssembly Include="System.Security.Cryptography" />
+  </ItemGroup>
+</Project>

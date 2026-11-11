@@ -1,0 +1,24 @@
+# Build from the Projects/ folder:  docker build -f Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/Dockerfile.aot -t roadmap/publish-demo:aot .
+# Native AOT in a container: the result is ONE native executable on a minimal Linux base
+# ("chiseled" = no shell, no package manager, only what's needed to run).
+
+# ---------- Stage 1: build (the -aot SDK image includes clang and the native linker) ----------
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble-aot AS build
+WORKDIR /source
+# Build context = the Projects/ folder (see README), because every project gets its TargetFramework from
+# Projects/Directory.Build.props - without it, restore fails with "TargetFramework value '' was not recognized".
+COPY Directory.Build.props ./
+COPY Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/PublishDemo/PublishDemo.csproj PublishDemo/
+# PublishAot must be set at RESTORE time too: that is what downloads the native AOT compiler package.
+# Without it, the --no-restore publish below silently produces a normal (non-native) build.
+RUN dotnet restore PublishDemo/PublishDemo.csproj -r linux-x64 -p:PublishAot=true
+COPY Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/PublishDemo/ PublishDemo/
+RUN dotnet publish PublishDemo/PublishDemo.csproj -c Release -r linux-x64 -p:PublishAot=true -o /app --no-restore
+
+# ---------- Stage 2: run (no .NET runtime needed at all - the app IS native code) ----------
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled AS final
+WORKDIR /app
+COPY --from=build /app/PublishDemo .
+USER $APP_UID
+EXPOSE 8080
+ENTRYPOINT ["./PublishDemo"]
