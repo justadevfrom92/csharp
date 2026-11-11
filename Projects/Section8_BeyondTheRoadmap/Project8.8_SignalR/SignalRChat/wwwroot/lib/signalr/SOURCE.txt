@@ -1,0 +1,3 @@
+signalr.min.js - the official SignalR JavaScript client, @microsoft/signalr 10.0.11 from npm
+(https://www.npmjs.com/package/@microsoft/signalr), file dist/browser/signalr.min.js.
+Copyright (c) .NET Foundation. Licensed under the MIT license.

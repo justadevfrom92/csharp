@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><title>SignalR Chat</title></head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 16px;">
+    <h1>SignalR chat</h1>
+    <p>Name <input id="user" value="Alice" /> Room <input id="room" value="general" /> <button id="connect">Connect &amp; join</button></p>
+    <p><input id="text" placeholder="Message" /> <button id="send">Send</button></p>
+    <ul id="messages"></ul>
+    <script src="lib/signalr/signalr.min.js"></script>
+    <script>
+        const show = text => { const li = document.createElement("li"); li.textContent = text; document.getElementById("messages").appendChild(li); };
+        let connection;
+        document.getElementById("connect").onclick = async () => {
+            const user = encodeURIComponent(document.getElementById("user").value);
+            connection = new signalR.HubConnectionBuilder().withUrl("/hubs/chat?user=" + user).withAutomaticReconnect().build();
+            // The names match the IChatClient interface on the server.
+            connection.on("ReceiveMessage", (room, user, text) => show(`[${room}] ${user}: ${text}`));
+            connection.on("UserJoined", (room, user) => show(`[${room}] ${user} joined`));
+            connection.on("ReceiveAnnouncement", text => show(`ANNOUNCEMENT: ${text}`));
+            await connection.start();
+            await connection.invoke("JoinRoom", document.getElementById("room").value);
+        };
+        document.getElementById("send").onclick = async () => {
+            try {
+                await connection.invoke("SendMessage", document.getElementById("room").value, document.getElementById("text").value);
+            } catch (error) {
+                show("ERROR: " + error.message);
+            }
+        };
+    </script>
+</body>
+</html>
