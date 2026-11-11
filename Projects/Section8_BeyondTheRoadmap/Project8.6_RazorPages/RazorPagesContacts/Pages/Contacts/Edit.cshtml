@@ -1,0 +1,35 @@
+@page "{id:int}"
+@*
+    "{id:int}" adds a route value to this page's URL: /Contacts/Edit/1. "/Contacts/Edit/abc" doesn't match -> 404.
+*@
+@model ContactEditPageModel
+@{
+    ViewData["Title"] = "Edit contact";
+}
+
+<h1>Edit @Model.Contact.Name</h1>
+<form method="post">
+    <input type="hidden" asp-for="Contact.Id" />
+
+    <label asp-for="Contact.Name"></label>
+    <input asp-for="Contact.Name" />
+    <span asp-validation-for="Contact.Name" class="error"></span>
+
+    <label asp-for="Contact.Email"></label>
+    <input asp-for="Contact.Email" />
+    <span asp-validation-for="Contact.Email" class="error"></span>
+
+    <label asp-for="Contact.Phone"></label>
+    <input asp-for="Contact.Phone" />
+    <span asp-validation-for="Contact.Phone" class="error"></span>
+
+    <button type="submit" id="save-button">Save</button>
+</form>
+
+@*
+    A second form on the same page, sent to a NAMED HANDLER: asp-page-handler="Delete" -> runs OnPostDelete().
+    One page can have several POST actions this way (save, delete, archive...).
+*@
+<form method="post" asp-page-handler="Delete" asp-route-id="@Model.Contact.Id">
+    <button type="submit" id="delete-button">Delete this contact</button>
+</form>

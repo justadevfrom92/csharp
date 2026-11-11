@@ -1,0 +1,27 @@
+@page
+@model ContactCreatePageModel
+@{
+    ViewData["Title"] = "Add contact";
+}
+
+<h1>Add contact</h1>
+@*
+    method="post" -> runs OnPost() in Create.cshtml.cs. Razor Pages adds and CHECKS the anti-forgery token
+    automatically (no [ValidateAntiForgeryToken] needed).
+    asp-for="Contact.Name" -> name="Contact.Name", bound back into the [BindProperty] Contact property.
+*@
+<form method="post">
+    <label asp-for="Contact.Name"></label>
+    <input asp-for="Contact.Name" />
+    <span asp-validation-for="Contact.Name" class="error"></span>
+
+    <label asp-for="Contact.Email"></label>
+    <input asp-for="Contact.Email" />
+    <span asp-validation-for="Contact.Email" class="error"></span>
+
+    <label asp-for="Contact.Phone"></label>
+    <input asp-for="Contact.Phone" />
+    <span asp-validation-for="Contact.Phone" class="error"></span>
+
+    <button type="submit" id="save-button">Save</button>
+</form>
