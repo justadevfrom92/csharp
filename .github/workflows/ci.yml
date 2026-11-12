@@ -24,17 +24,6 @@ jobs:
   build-and-unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # A real Redis server next to the job, reachable at localhost:6379 (used by Project 7.9's tests).
-    services:
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
     defaults:
       run:
         working-directory: Projects
@@ -55,8 +44,6 @@ jobs:
       # automatically. It runs ALL of them even if one fails, so you see every failure, then fails the job.
       # (The Playwright browser tests have their own job below.)
       - name: All xUnit test projects
-        env:
-          REDIS_CONNECTION_STRING: localhost:6379 # turns on the real-Redis tests in Project 7.9
         run: |
           failed=0
           for project in $(find . -name '*.Tests.csproj' -not -path '*/obj/*' | sort); do

@@ -81,4 +81,4 @@ tests never see each other's data in the shared Redis.
 REDIS_CONNECTION_STRING=localhost:6379 dotnet test RedisDistributedCache.Tests
 ```
 
-The CI pipeline (7.6) starts a Redis container so these always run there.
+The CI pipeline (7.6) has no Redis server, so these show as **skipped** there; the other tests still run.

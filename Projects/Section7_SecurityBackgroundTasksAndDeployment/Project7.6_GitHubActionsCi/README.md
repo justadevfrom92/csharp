@@ -14,7 +14,7 @@ build-and-unit-tests ────┤
 
 | Job | Steps | Why |
 |---|---|---|
-| `build-and-unit-tests` | `dotnet restore` → `dotnet build -c Release` (whole solution) → `dotnet test` on **every** `*.Tests` project (found automatically, with coverage), with a **Redis service container** so Project 7.9's real-Redis tests run | Fast checks first. If the code doesn't even compile, don't spend minutes installing a browser. All test projects run even if one fails, so you see every failure. |
+| `build-and-unit-tests` | `dotnet restore` → `dotnet build -c Release` (whole solution) → `dotnet test` on **every** `*.Tests` project (found automatically, with coverage) | Fast checks first. If the code doesn't even compile, don't spend minutes installing a browser. All test projects run even if one fails, so you see every failure. |
 | `e2e-tests` | build → install Chromium (`playwright.ps1 install --with-deps`) → `dotnet test` Playwright | Slow, so it only runs after stage 1 is green. Headless: CI machines have no screen. |
 | `nuget-package` | `dotnet pack` → `dotnet run` the consumer | Proves the package can really be installed and used, not just compiled. Runs in parallel with E2E. |
 
