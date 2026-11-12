@@ -32,7 +32,7 @@ The same goes for every other folder: `ModelBinders/` → `...ModelBinder`, `Vie
 `Middlewares/` → `...Middleware`, `Helpers/` → `...Helper`, `Endpoints/` → `...Endpoints`, `Hubs/` → `...Hub`,
 `Clients/` → `...Client`, `Handlers/` → `...Handler`, `Requirements/` → `...Requirement`, `Seeders/` → `...Seeder`,
 `DbContexts/` → `...DbContext`, `SerializerContexts/` → `...SerializerContext`, `Classifiers/` → `...Classifier`,
-`Parsers/` → `...Parser`, `Builders/` → `...Builder`, `Benchmarks/` → `...Benchmark`, `Senders/` → `...Sender`.
+`Parsers/` → `...Parser`, `Outcomes/` → `...Outcome`, `Builders/` → `...Builder`, `Benchmarks/` → `...Benchmark`, `Senders/` → `...Sender`.
 
 Folder names are plural; the class name uses the singular (`Forms/` → `AvatarUploadForm`), except
 where the class name itself is naturally plural (`ShopSettings`, `SessionJsonExtensions`,

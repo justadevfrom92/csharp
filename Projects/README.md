@@ -34,6 +34,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 6.3 | [Shared Cache & Settings](Section6_DatabaseStateAndErrorHandling/Project6.3_SharedCacheAndSettings) | Web API |
 | 6.4 | [Session Shopping Cart](Section6_DatabaseStateAndErrorHandling/Project6.4_SessionShoppingCart) | MVC |
 | 6.5 | [Error Handling & Crash Recovery](Section6_DatabaseStateAndErrorHandling/Project6.5_ErrorHandlingAndCrashRecovery) | MVC + Serilog |
+| 6.6 | [EF Core Advanced Queries](Section6_DatabaseStateAndErrorHandling/Project6.6_EfCoreAdvancedQueries) | Console + SQLite + tests |
 | 7.1 | [Cookie Login & Roles](Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles) | MVC + tests |
 | 7.2 | [XSS & CSRF](Section7_SecurityBackgroundTasksAndDeployment/Project7.2_FormSecurityXssCsrf) | MVC |
 | 7.3 | [Environment-Aware Email](Section7_SecurityBackgroundTasksAndDeployment/Project7.3_EnvironmentAwareEmail) | Web API + background services |
