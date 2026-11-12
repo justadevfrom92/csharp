@@ -1,5 +1,5 @@
-# Copy this file to <repo root>/.github/workflows/ci.yml to switch it on.
-# GitHub only runs workflows from that folder.
+# The CI pipeline for everything in Projects/. Explained in
+# Projects/Section7_SecurityBackgroundTasksAndDeployment/Project7.6_GitHubActionsCi/README.md
 name: CI
 
 on:

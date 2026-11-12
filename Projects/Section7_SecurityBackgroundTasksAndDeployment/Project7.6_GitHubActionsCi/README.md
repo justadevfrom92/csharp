@@ -1,14 +1,8 @@
 # Project 7.6 — GitHub Actions CI Pipeline
 
-`ci.yml` builds and tests every project in `/Projects` on each push and pull request.
-
-## Switch it on
-
-GitHub only runs workflows from `.github/workflows/` at the **repo root**:
-
-```bash
-mkdir -p .github/workflows && cp Projects/Section7_SecurityBackgroundTasksAndDeployment/Project7.6_GitHubActionsCi/ci.yml .github/workflows/ci.yml
-```
+The workflow file is **`.github/workflows/ci.yml` at the repo root** — the only place GitHub looks for
+workflows. It builds and tests every project in `/Projects` on each push and pull request.
+Results: the repo's **Actions** tab on GitHub.
 
 ## Stages
 
