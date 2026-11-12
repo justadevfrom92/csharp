@@ -23,7 +23,18 @@ jobs:
   # ---------- Stage 1: restore, build everything, run unit tests ----------
   build-and-unit-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    # A real Redis server next to the job, reachable at localhost:6379 (used by Project 7.9's tests).
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     defaults:
       run:
         working-directory: Projects
@@ -40,24 +51,20 @@ jobs:
       - name: Build (Release)
         run: dotnet build CSharpMasteryRoadmap.slnx -c Release --no-restore
 
-      - name: Unit tests (xUnit)
-        run: >
-          dotnet test Section4_OopDddAndTesting/Project4.2_DddBankingEngine/Banking.Tests
-          -c Release --no-build
-          --logger trx --results-directory TestResults
-          --collect:"XPlat Code Coverage"
-
-      - name: Web app tests (xUnit, app runs in memory)
-        run: >
-          dotnet test Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog/OutputCachingCatalog.Tests
-          -c Release --no-build
-          --logger trx --results-directory TestResults
-
-      - name: Authentication tests (xUnit, app runs in memory)
-        run: >
-          dotnet test Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/CookieAuthAndRoles.Tests
-          -c Release --no-build
-          --logger trx --results-directory TestResults
+      # Every xUnit project in the repo (any folder ending in .Tests). New test projects are picked up
+      # automatically. It runs ALL of them even if one fails, so you see every failure, then fails the job.
+      # (The Playwright browser tests have their own job below.)
+      - name: All xUnit test projects
+        env:
+          REDIS_CONNECTION_STRING: localhost:6379 # turns on the real-Redis tests in Project 7.9
+        run: |
+          failed=0
+          for project in $(find . -name '*.Tests.csproj' -not -path '*/obj/*' | sort); do
+            echo "::group::$project"
+            dotnet test "$project" -c Release --no-build --logger trx --results-directory TestResults --collect:"XPlat Code Coverage" || failed=1
+            echo "::endgroup::"
+          done
+          exit $failed
 
       - name: Upload unit test results
         if: always() # upload even when tests fail, so you can see WHICH failed
@@ -124,3 +131,28 @@ jobs:
         with:
           name: nuget-package
           path: Projects/Section4_OopDddAndTesting/Project4.1_CustomNuGetPackage/LocalNuGetFeed/*.nupkg
+
+  # ---------- Stage 2 (in parallel): build both Docker images and check they really start ----------
+  docker-images:
+    needs: build-and-unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: Projects # build context = Projects/, so Directory.Build.props is included
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images (normal + Native AOT)
+        run: |
+          docker build -f Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/Dockerfile -t publish-demo:normal .
+          docker build -f Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/Dockerfile.aot -t publish-demo:aot .
+
+      - name: Start each image and call /info
+        run: |
+          docker run -d --name normal -p 8081:8080 publish-demo:normal
+          docker run -d --name aot -p 8082:8080 publish-demo:aot
+          sleep 5
+          curl --fail -s localhost:8081/info | grep '"isRunningInContainer":true'
+          curl --fail -s localhost:8082/info | grep '"isNativeAot":true'
+          docker images publish-demo

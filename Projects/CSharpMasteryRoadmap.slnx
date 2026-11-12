@@ -3,6 +3,10 @@
   <Folder Name="/Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/">
     <Project Path="Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/SimpleLoanAndDateCalculator.csproj" />
   </Folder>
+  <Folder Name="/Section1_CoreFundamentals/Project1.2_PatternMatching/">
+    <Project Path="Section1_CoreFundamentals/Project1.2_PatternMatching/PatternMatching.Tests/PatternMatching.Tests.csproj" />
+    <Project Path="Section1_CoreFundamentals/Project1.2_PatternMatching/PatternMatching/PatternMatching.csproj" />
+  </Folder>
   <Folder Name="/Section2_CollectionsAndLinq/" />
   <Folder Name="/Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/">
     <Project Path="Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/InventoryAnalytics.csproj" />
@@ -35,6 +39,10 @@
   </Folder>
   <Folder Name="/Section5_ConcurrencyAsyncAndMemory/Project5.2_ChannelLogPipeline/">
     <Project Path="Section5_ConcurrencyAsyncAndMemory/Project5.2_ChannelLogPipeline/ChannelLogPipeline.csproj" />
+  </Folder>
+  <Folder Name="/Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks/">
+    <Project Path="Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks/Benchmarks.Tests/Benchmarks.Tests.csproj" />
+    <Project Path="Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks/Benchmarks/Benchmarks.csproj" />
   </Folder>
   <Folder Name="/Section6_DatabaseStateAndErrorHandling/" />
   <Folder Name="/Section6_DatabaseStateAndErrorHandling/Project6.1_EfCoreQueryLogging/">
@@ -72,5 +80,50 @@
   </Folder>
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.7_IdempotentMigrationScripts/">
     <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.7_IdempotentMigrationScripts/IdempotentMigrationScripts.csproj" />
+  </Folder>
+  <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.8_RawWebSockets/">
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.8_RawWebSockets/RawWebSockets.Tests/RawWebSockets.Tests.csproj" />
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.8_RawWebSockets/RawWebSockets/RawWebSockets.csproj" />
+  </Folder>
+  <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.9_RedisDistributedCache/">
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.9_RedisDistributedCache/RedisDistributedCache.Tests/RedisDistributedCache.Tests.csproj" />
+    <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.9_RedisDistributedCache/RedisDistributedCache/RedisDistributedCache.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/" />
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.1_MinimalApiOpenApi/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.1_MinimalApiOpenApi/MinimalApiOpenApi.Tests/MinimalApiOpenApi.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.1_MinimalApiOpenApi/MinimalApiOpenApi/MinimalApiOpenApi.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.2_IdentityJwtPolicies/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.2_IdentityJwtPolicies/IdentityJwtPolicies.Tests/IdentityJwtPolicies.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.2_IdentityJwtPolicies/IdentityJwtPolicies/IdentityJwtPolicies.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.3_HttpClientResilience/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.3_HttpClientResilience/HttpClientResilience.Tests/HttpClientResilience.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.3_HttpClientResilience/HttpClientResilience/HttpClientResilience.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.4_RateLimiting/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.4_RateLimiting/RateLimiting.Tests/RateLimiting.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.4_RateLimiting/RateLimiting/RateLimiting.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/PublishDemo.Tests/PublishDemo.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/PublishDemo/PublishDemo.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.6_RazorPages/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.6_RazorPages/RazorPagesContacts.Tests/RazorPagesContacts.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.6_RazorPages/RazorPagesContacts/RazorPagesContacts.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.7_Blazor/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.7_Blazor/BlazorTodo.Tests/BlazorTodo.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.7_Blazor/BlazorTodo/BlazorTodo.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.8_SignalR/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.8_SignalR/SignalRChat.Tests/SignalRChat.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.8_SignalR/SignalRChat/SignalRChat.csproj" />
+  </Folder>
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.9_Grpc/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.9_Grpc/StockGrpc.Tests/StockGrpc.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.9_Grpc/StockGrpc/StockGrpc.csproj" />
   </Folder>
 </Solution>

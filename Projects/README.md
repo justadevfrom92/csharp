@@ -18,6 +18,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | # | Project | Type |
 |---|---|---|
 | 1.1 | [Loan & Date Calculator](Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator) | Console |
+| 1.2 | [Pattern Matching](Section1_CoreFundamentals/Project1.2_PatternMatching) | Console + tests |
 | 2.1 | [Warehouse Inventory & Orders](Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics) | Console |
 | 3.1 | [MVC Product Catalog](Section3_AspNetCoreMvc/Project3.1_ProductCatalog) | MVC |
 | 3.2 | [Sidebar View Component & ISO Date Binder](Section3_AspNetCoreMvc/Project3.2_SidebarAndDateBinder) | MVC |
@@ -27,6 +28,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 4.3 | [Playwright Browser Tests](Section4_OopDddAndTesting/Project4.3_PlaywrightBrowserTests) | Tests (for 3.1) |
 | 5.1 | [Threaded File Downloader](Section5_ConcurrencyAsyncAndMemory/Project5.1_ThreadedFileDownloader) | Console |
 | 5.2 | [Channel Log Pipeline](Section5_ConcurrencyAsyncAndMemory/Project5.2_ChannelLogPipeline) | Console |
+| 5.3 | [Benchmarks (BenchmarkDotNet)](Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks) | Console + tests |
 | 6.1 | [EF Core Query Logging](Section6_DatabaseStateAndErrorHandling/Project6.1_EfCoreQueryLogging) | MVC + SQLite |
 | 6.2 | [Transactional Checkout & Soft Deletes](Section6_DatabaseStateAndErrorHandling/Project6.2_TransactionalCheckout) | Console + SQLite |
 | 6.3 | [Shared Cache & Settings](Section6_DatabaseStateAndErrorHandling/Project6.3_SharedCacheAndSettings) | Web API |
@@ -39,6 +41,24 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 7.5 | [Feature Flags](Section7_SecurityBackgroundTasksAndDeployment/Project7.5_FeatureFlags) | MVC |
 | 7.6 | [GitHub Actions CI](Section7_SecurityBackgroundTasksAndDeployment/Project7.6_GitHubActionsCi) | Workflow file |
 | 7.7 | [Idempotent Migration Scripts](Section7_SecurityBackgroundTasksAndDeployment/Project7.7_IdempotentMigrationScripts) | Console + SQL script |
+| 7.8 | [Raw WebSockets](Section7_SecurityBackgroundTasksAndDeployment/Project7.8_RawWebSockets) | Web + tests |
+| 7.9 | [Redis Distributed Cache](Section7_SecurityBackgroundTasksAndDeployment/Project7.9_RedisDistributedCache) | Web API + tests |
 
 `Section4.../Project4.1.../ConsumerApp` is left out of the solution on purpose: it needs the package
 packed first (see its README).
+
+## Section 8 — Beyond the Roadmap
+
+Not in the original roadmap spec, but big parts of Microsoft's .NET 10 / ASP.NET Core documentation.
+
+| # | Project | Type |
+|---|---|---|
+| 8.1 | [Minimal APIs + OpenAPI](Section8_BeyondTheRoadmap/Project8.1_MinimalApiOpenApi) | Web API + tests |
+| 8.2 | [Identity + JWT + Policies](Section8_BeyondTheRoadmap/Project8.2_IdentityJwtPolicies) | Web API + tests |
+| 8.3 | [HttpClientFactory + Resilience](Section8_BeyondTheRoadmap/Project8.3_HttpClientResilience) | Web API + tests |
+| 8.4 | [Rate Limiting](Section8_BeyondTheRoadmap/Project8.4_RateLimiting) | Web API + tests |
+| 8.5 | [`dotnet publish` (every mode) + Docker](Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker) | Web API + tests + Dockerfiles |
+| 8.6 | [Razor Pages](Section8_BeyondTheRoadmap/Project8.6_RazorPages) | Razor Pages + tests |
+| 8.7 | [Blazor](Section8_BeyondTheRoadmap/Project8.7_Blazor) | Blazor + bUnit tests |
+| 8.8 | [SignalR](Section8_BeyondTheRoadmap/Project8.8_SignalR) | Real-time + tests |
+| 8.9 | [gRPC](Section8_BeyondTheRoadmap/Project8.9_Grpc) | gRPC + tests |

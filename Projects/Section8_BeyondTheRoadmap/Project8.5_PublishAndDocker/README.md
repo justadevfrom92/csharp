@@ -117,7 +117,7 @@ dotnet publish -c Release -r linux-x64 /t:PublishContainer -p:ContainerArchiveOu
 **Native AOT's limits:** no runtime code generation, so no reflection-heavy libraries, no `dynamic`, no loading
 plugins at runtime. This app is AOT-ready because of three settings:
 `IsAotCompatible` (the compiler warns about anything that would break), `EnableRequestDelegateGenerator`
-(endpoint code generated at compile time), and source-generated JSON (`Serialization/AppJsonSerializerContext.cs`).
+(endpoint code generated at compile time), and source-generated JSON (`SerializerContexts/AppJsonSerializerContext.cs`).
 `WebApplication.CreateSlimBuilder` starts with fewer features to keep it small.
 
 ## Problems found while building this — and the fixes
