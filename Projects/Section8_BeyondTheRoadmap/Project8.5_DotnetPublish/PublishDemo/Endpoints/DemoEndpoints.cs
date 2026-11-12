@@ -16,7 +16,6 @@ public static class DemoEndpoints
             OperatingSystem: RuntimeInformation.OSDescription,
             ProcessArchitecture: RuntimeInformation.ProcessArchitecture.ToString(),
             IsNativeAot: !RuntimeFeature.IsDynamicCodeSupported, // Native AOT can't generate code at runtime
-            IsRunningInContainer: Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true",
             ExecutablePath: Environment.ProcessPath ?? "unknown")));
 
         // GET /greet?name=Ada

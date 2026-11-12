@@ -131,28 +131,3 @@ jobs:
         with:
           name: nuget-package
           path: Projects/Section4_OopDddAndTesting/Project4.1_CustomNuGetPackage/LocalNuGetFeed/*.nupkg
-
-  # ---------- Stage 2 (in parallel): build both Docker images and check they really start ----------
-  docker-images:
-    needs: build-and-unit-tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: Projects # build context = Projects/, so Directory.Build.props is included
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build images (normal + Native AOT)
-        run: |
-          docker build -f Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/Dockerfile -t publish-demo:normal .
-          docker build -f Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/Dockerfile.aot -t publish-demo:aot .
-
-      - name: Start each image and call /info
-        run: |
-          docker run -d --name normal -p 8081:8080 publish-demo:normal
-          docker run -d --name aot -p 8082:8080 publish-demo:aot
-          sleep 5
-          curl --fail -s localhost:8081/info | grep '"isRunningInContainer":true'
-          curl --fail -s localhost:8082/info | grep '"isNativeAot":true'
-          docker images publish-demo

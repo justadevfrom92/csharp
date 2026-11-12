@@ -58,13 +58,12 @@ public class DemoEndpointsTest : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task Info_PositiveNegative_InTests_IsNeitherNativeAotNorContainer()
+    public async Task Info_PositiveNegative_InTests_IsNotNativeAot()
     {
-        // Tests run with the normal JIT on the host, so both answers must honestly be "no".
+        // Tests run with the normal JIT, so the answer must honestly be "no".
         RuntimeInfoModel? info = await client.GetFromJsonAsync<RuntimeInfoModel>("/info");
 
         Assert.False(info!.IsNativeAot);
-        Assert.Equal(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true", info.IsRunningInContainer);
     }
 
     [Fact]

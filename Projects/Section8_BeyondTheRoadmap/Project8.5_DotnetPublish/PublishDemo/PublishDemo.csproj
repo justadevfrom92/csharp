@@ -6,9 +6,6 @@
     <!-- Generates the endpoint code at COMPILE time instead of using reflection at runtime (needed for AOT). -->
     <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <!-- Settings for "dotnet publish /t:PublishContainer" (container image without a Dockerfile). -->
-    <ContainerRepository>roadmap/publish-demo</ContainerRepository>
-    <ContainerImageTag>1.0.0</ContainerImageTag>
   </PropertyGroup>
   <ItemGroup>
     <!-- TRIMMING FIX: with PublishTrimmed=true, the trimmer removed a method Kestrel calls at startup

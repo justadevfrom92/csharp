@@ -7,14 +7,10 @@
 
 ## Run
 
-Start Redis (any one of these):
+Start Redis:
 
 ```bash
 redis-server
-```
-
-```bash
-docker run -d -p 6379:6379 redis:7
 ```
 
 ```bash

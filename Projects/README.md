@@ -57,7 +57,7 @@ Not in the original roadmap spec, but big parts of Microsoft's .NET 10 / ASP.NET
 | 8.2 | [Identity + JWT + Policies](Section8_BeyondTheRoadmap/Project8.2_IdentityJwtPolicies) | Web API + tests |
 | 8.3 | [HttpClientFactory + Resilience](Section8_BeyondTheRoadmap/Project8.3_HttpClientResilience) | Web API + tests |
 | 8.4 | [Rate Limiting](Section8_BeyondTheRoadmap/Project8.4_RateLimiting) | Web API + tests |
-| 8.5 | [`dotnet publish` (every mode) + Docker](Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker) | Web API + tests + Dockerfiles |
+| 8.5 | [`dotnet publish` (every mode)](Section8_BeyondTheRoadmap/Project8.5_DotnetPublish) | Web API + tests + publish script |
 | 8.6 | [Razor Pages](Section8_BeyondTheRoadmap/Project8.6_RazorPages) | Razor Pages + tests |
 | 8.7 | [Blazor](Section8_BeyondTheRoadmap/Project8.7_Blazor) | Blazor + bUnit tests |
 | 8.8 | [SignalR](Section8_BeyondTheRoadmap/Project8.8_SignalR) | Real-time + tests |

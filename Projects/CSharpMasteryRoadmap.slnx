@@ -106,9 +106,9 @@
     <Project Path="Section8_BeyondTheRoadmap/Project8.4_RateLimiting/RateLimiting.Tests/RateLimiting.Tests.csproj" />
     <Project Path="Section8_BeyondTheRoadmap/Project8.4_RateLimiting/RateLimiting/RateLimiting.csproj" />
   </Folder>
-  <Folder Name="/Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/">
-    <Project Path="Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/PublishDemo.Tests/PublishDemo.Tests.csproj" />
-    <Project Path="Section8_BeyondTheRoadmap/Project8.5_PublishAndDocker/PublishDemo/PublishDemo.csproj" />
+  <Folder Name="/Section8_BeyondTheRoadmap/Project8.5_DotnetPublish/">
+    <Project Path="Section8_BeyondTheRoadmap/Project8.5_DotnetPublish/PublishDemo.Tests/PublishDemo.Tests.csproj" />
+    <Project Path="Section8_BeyondTheRoadmap/Project8.5_DotnetPublish/PublishDemo/PublishDemo.csproj" />
   </Folder>
   <Folder Name="/Section8_BeyondTheRoadmap/Project8.6_RazorPages/">
     <Project Path="Section8_BeyondTheRoadmap/Project8.6_RazorPages/RazorPagesContacts.Tests/RazorPagesContacts.Tests.csproj" />

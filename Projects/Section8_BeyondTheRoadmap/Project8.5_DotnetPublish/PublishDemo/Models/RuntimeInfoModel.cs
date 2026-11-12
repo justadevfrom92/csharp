@@ -6,5 +6,4 @@ public record RuntimeInfoModel(
     string OperatingSystem,
     string ProcessArchitecture,
     bool IsNativeAot,
-    bool IsRunningInContainer,
     string ExecutablePath);
