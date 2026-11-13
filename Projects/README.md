@@ -9,6 +9,9 @@ The general rules are in [WHY_THESE_TYPES.md](WHY_THESE_TYPES.md), and every pro
 **Where does each file go?** A class's name ends in its folder's name (`Forms/` → `...Form`, `Models/` → `...Model`).
 See [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
 
+**Need code to copy?** The [cheat sheets](CheatSheets/README.md) have short snippets for every topic (one page per
+section, plus the `dotnet` CLI), and every project README has a **Code snippets** section with the key lines from that project.
+
 **New to `.cshtml` files (`@model`, `@foreach`, `ViewBag`, layouts)?** Read [RAZOR_BASICS.md](RAZOR_BASICS.md) first.
 
 ```bash

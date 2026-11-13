@@ -142,6 +142,91 @@ action would be on a separate, uncached page with `[Authorize(Roles = "Admin")]`
 **Multiple servers:** the default output cache store is in-memory per server. With several servers, use
 the Redis output cache store so an eviction clears every server.
 
+## Code snippets
+
+**An output cache policy**, from `OutputCachingCatalog/Program.cs`
+
+```csharp
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("Catalog", policy =>
+    {
+        policy.Expire(TimeSpan.FromSeconds(60)); // never older than 60 s
+        policy.Tag("catalog");                   // lets us clear all catalog pages at once
+        policy.SetVaryByQuery("page");           // ?page=1 and ?page=2 are cached separately
+    });
+});
+
+app.UseRouting();
+app.UseOutputCache(); // after UseRouting
+```
+
+**Cache a page, and clear it when the data changes**, from `Controllers/CatalogController.cs`
+
+```csharp
+[OutputCache(PolicyName = "Catalog")]
+public async Task<IActionResult> Index()
+{
+    return View(await database.LoadAllProductsAsync());
+}
+
+[HttpPost]
+public async Task<IActionResult> ChangePrice(int productId, decimal newPrice)
+{
+    database.ChangePrice(productId, newPrice);
+    await outputCache.EvictByTagAsync("catalog", HttpContext.RequestAborted);
+    return RedirectToAction(nameof(Index));
+}
+```
+
+**A route that skips the rest of the pipeline (`ShortCircuit`)**
+
+```csharp
+app.MapControllerRoute(
+    name: "robots",
+    pattern: "robots.txt",
+    defaults: new { controller = "Robots", action = "Get" })
+   .ShortCircuit();
+```
+
+**A health check**, from `HealthChecks/CatalogDatabaseHealthCheck.cs`
+
+```csharp
+public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+{
+    List<CatalogProductModel> products = await database.LoadAllProductsAsync();
+    if (products.Count == 0)
+    {
+        return HealthCheckResult.Unhealthy("Catalog is empty.");
+    }
+    return HealthCheckResult.Healthy($"{products.Count} products");
+}
+
+builder.Services.AddHealthChecks().AddCheck<CatalogDatabaseHealthCheck>("catalog-database");
+app.MapHealthChecks("/health");
+```
+
+**`IMiddleware`-style middleware (created by DI, so it must be registered)**, from `Middlewares/RequestTimingMiddleware.cs`
+
+```csharp
+public class RequestTimingMiddleware : IMiddleware
+{
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    {
+        var timer = Stopwatch.StartNew();
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["X-Response-Time-Ms"] = timer.ElapsedMilliseconds.ToString();
+            return Task.CompletedTask;
+        });
+        await next(context);
+    }
+}
+
+builder.Services.AddTransient<RequestTimingMiddleware>();
+app.UseMiddleware<RequestTimingMiddleware>();
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

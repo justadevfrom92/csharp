@@ -38,6 +38,86 @@ and use a GUID, so a file can never overwrite another file or land outside `uplo
 **Limits of this demo.** The extension check trusts the file name. A real site should also
 check the file's first bytes (e.g. PNG files start with `89 50 4E 47`) and maybe scan for viruses.
 
+## Code snippets
+
+**A custom validation attribute**, from `Attributes/MaximumFileSizeValidationAttribute.cs`
+
+```csharp
+public class MaximumFileSizeValidationAttribute : ValidationAttribute
+{
+    private readonly int maximumMegabytes;
+
+    public MaximumFileSizeValidationAttribute(int maximumMegabytes)
+    {
+        this.maximumMegabytes = maximumMegabytes;
+    }
+
+    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    {
+        if (value is IFormFile file && file.Length > maximumMegabytes * 1024L * 1024L)
+        {
+            return new ValidationResult($"File must be {maximumMegabytes} MB or smaller.");
+        }
+        return ValidationResult.Success;
+    }
+}
+```
+
+**A form class using the attributes**, from `Forms/AvatarUploadForm.cs`
+
+```csharp
+public class AvatarUploadForm
+{
+    [Required(ErrorMessage = "Choose an image.")]
+    [MaximumFileSizeValidation(1)]
+    [ValidatePermittedFileExtension(".jpg", ".jpeg", ".png")]
+    public IFormFile? Avatar { get; set; }
+}
+```
+
+**The upload form: `enctype="multipart/form-data"` is required to send files**, from `Views/Upload/Avatar.cshtml`
+
+```cshtml
+<form asp-action="Avatar" method="post" enctype="multipart/form-data">
+    <input asp-for="Avatar" type="file" accept=".jpg,.jpeg,.png" />
+    <span asp-validation-for="Avatar" class="error"></span>
+    <button type="submit">Upload</button>
+</form>
+```
+
+**Receiving the file and saving it under a safe, random name**, from `Controllers/UploadController.cs`
+
+```csharp
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Avatar(AvatarUploadForm form)
+{
+    if (!ModelState.IsValid)
+    {
+        return View(form);
+    }
+    string savedName = await SaveFileAsync(form.Avatar!);
+    TempData["Message"] = $"Avatar saved as {savedName}";
+    return RedirectToAction(nameof(Index));
+}
+
+private async Task<string> SaveFileAsync(IFormFile file)
+{
+    // Never trust the user's file name (it could be "../../Program.cs").
+    string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+    string savedName = Guid.NewGuid().ToString("N") + extension;
+    await using FileStream fileStream = System.IO.File.Create(Path.Combine(uploadFolder, savedName));
+    await file.CopyToAsync(fileStream);
+    return savedName;
+}
+```
+
+**`ViewBag` for a small extra value**
+
+```csharp
+ViewBag.SavedFiles = Directory.GetFiles(uploadFolder).Select(Path.GetFileName).ToList();
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

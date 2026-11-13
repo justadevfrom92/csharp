@@ -33,6 +33,65 @@ May 11th or November 5th depending on where the server runs. The custom binder o
 **Why the binder is put on the parameter and not registered globally.** Only this one action
 needs it. Applying it with an attribute keeps the rest of the app's binding normal.
 
+## Code snippets
+
+**A view component: a piece of a page that loads its own data**, from `ViewComponents/RecentActivitySidebarViewComponent.cs`
+
+```csharp
+public class RecentActivitySidebarViewComponent : ViewComponent
+{
+    public Task<IViewComponentResult> InvokeAsync(int count)
+    {
+        List<ActivityEntryModel> newestEntries = ActivityLogStore.GetNewest(count);
+        IViewComponentResult result = View(newestEntries); // Views/Shared/Components/RecentActivitySidebar/Default.cshtml
+        return Task.FromResult(result);
+    }
+}
+```
+
+Used in `Views/Shared/_Layout.cshtml` (class name in kebab-case, without `ViewComponent`):
+
+```cshtml
+<vc:recent-activity-sidebar count="5" />
+```
+
+**A custom model binder: read a date in one exact format**, from `ModelBinders/CustomIsoDateFormatModelBinder.cs`
+
+```csharp
+public Task BindModelAsync(ModelBindingContext bindingContext)
+{
+    string? text = bindingContext.ValueProvider.GetValue(bindingContext.ModelName).FirstValue;
+    if (string.IsNullOrWhiteSpace(text))
+    {
+        return Task.CompletedTask; // nothing sent: the action picks a default
+    }
+    if (DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+    {
+        bindingContext.Result = ModelBindingResult.Success(date);
+    }
+    else
+    {
+        bindingContext.ModelState.AddModelError(bindingContext.ModelName, $"'{text}' is not a date in yyyy-MM-dd format.");
+    }
+    return Task.CompletedTask;
+}
+```
+
+**Using the binder on one parameter**, from `Controllers/ActivityController.cs`
+
+```csharp
+// GET /Activity/Day?day=2026-11-05
+public IActionResult Day([ModelBinder(typeof(CustomIsoDateFormatModelBinder))] DateOnly? day)
+{
+    if (!ModelState.IsValid)
+    {
+        ViewBag.Error = ModelState["day"]?.Errors.FirstOrDefault()?.ErrorMessage;
+    }
+    DateOnly chosenDay = day ?? DateOnly.FromDateTime(DateTime.Today);
+    return View(ActivityLogStore.GetForDay(chosenDay));
+}
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

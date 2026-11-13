@@ -53,6 +53,115 @@ million lines, which the garbage collector then has to clean up. A `ReadOnlySpan
 a "window" onto the existing string: slicing it creates nothing. Same result, ~5x faster, 0 MB.
 Spans can't be used across `await` (they live on the stack), which is why `Memory<T>` exists.
 
+## Code snippets
+
+The key lines from `Program.cs`.
+
+**A bounded `Channel`: the producer waits when 100 lines are queued (backpressure)**
+
+```csharp
+Channel<string> logLines = Channel.CreateBounded<string>(new BoundedChannelOptions(100)
+{
+    FullMode = BoundedChannelFullMode.Wait,
+    SingleWriter = true,
+});
+```
+
+**Producer: write, then `Complete()` so consumers know to stop**
+
+```csharp
+try
+{
+    while (!stopToken.IsCancellationRequested)
+    {
+        await logLines.Writer.WriteAsync(line, stopToken);
+    }
+}
+catch (OperationCanceledException)
+{
+    // Normal way to stop.
+}
+finally
+{
+    logLines.Writer.Complete(); // "no more lines are coming"
+}
+```
+
+**Consumers: `await foreach` until the channel is empty and complete**
+
+```csharp
+await foreach (string line in logLines.Reader.ReadAllAsync())
+{
+    LogLineParser.ParseAndCount(line, totals);
+}
+
+Task[] consumers = new Task[3];
+for (int i = 0; i < consumers.Length; i++)
+{
+    consumers[i] = ConsumeLogLinesAsync();
+}
+await Task.WhenAll(consumers);
+```
+
+**Stopping cleanly: `CancellationTokenSource` with a timeout and Ctrl+C**
+
+```csharp
+using var stopSource = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+Console.CancelKeyPress += (sender, eventArgs) =>
+{
+    eventArgs.Cancel = true; // don't kill the app, let it shut down cleanly
+    stopSource.Cancel();
+};
+```
+
+**`Span<T>`: read part of a string without creating new strings**
+
+```csharp
+ReadOnlySpan<char> rest = line.AsSpan();
+int space = rest.IndexOf(' ');
+ReadOnlySpan<char> word = space < 0 ? rest : rest.Slice(0, space);
+if (word.SequenceEqual("ERROR")) { ... }
+int milliseconds = int.Parse(word); // int.Parse accepts a span directly
+```
+
+**`ValueTask`: no allocation when the answer is already cached**
+
+```csharp
+public ValueTask<string> GetSettingAsync(string name)
+{
+    if (cachedValues.TryGetValue(name, out string? cachedValue))
+    {
+        return ValueTask.FromResult(cachedValue);
+    }
+    return new ValueTask<string>(LoadSlowlyAsync(name));
+}
+```
+
+**`ArrayPool`: borrow a buffer instead of creating one**
+
+```csharp
+byte[] buffer = ArrayPool<byte>.Shared.Rent(4096);
+try
+{
+    Span<byte> usablePart = buffer.AsSpan(0, 4096); // Rent may give a bigger array
+    usablePart.Fill(1);
+}
+finally
+{
+    ArrayPool<byte>.Shared.Return(buffer); // always give it back
+}
+```
+
+**`Memory<T>` across an `await`, and `ConfigureAwait(false)`**
+
+```csharp
+static async Task FillLaterAsync(Memory<byte> memory)
+{
+    await Task.Delay(10).ConfigureAwait(false); // library-style code
+    memory.Span.Fill(7);                        // a Span can't live across await; Memory can
+}
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

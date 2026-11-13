@@ -57,3 +57,62 @@ endpoint does any work.
 | Concurrency | two reports one after another → both 200 | second report while the first is running → 429 | `seconds=abc` → 400, and the slot is **released** (next report → 200) |
 
 Every test starts a new app, so every limiter starts with a full quota.
+
+## Code snippets
+
+**A rate limit per client: 5 requests per 10 seconds for each `X-Client-Id`**, from `RateLimiting/Program.cs`
+
+```csharp
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(RateLimitPolicyConstants.PerClientFixedWindow, context =>
+    {
+        string? clientId = context.Request.Headers[RateLimitPolicyConstants.ClientIdHeader];
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            return RateLimitPartition.GetNoLimiter("no-client-id");
+        }
+        return RateLimitPartition.GetFixedWindowLimiter(clientId, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromSeconds(10),
+            QueueLimit = 0, // over the limit -> rejected straight away
+        });
+    });
+});
+
+app.UseRateLimiter(); // before the endpoints it protects
+```
+
+**Tell the client when to try again (`Retry-After` header)**
+
+```csharp
+options.OnRejected = (context, cancellationToken) =>
+{
+    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+    {
+        context.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+    }
+    return ValueTask.CompletedTask;
+};
+```
+
+**A concurrency limit: only one at a time, for everyone**
+
+```csharp
+options.AddConcurrencyLimiter(RateLimitPolicyConstants.OneReportAtATime, limiter =>
+{
+    limiter.PermitLimit = 1;
+    limiter.QueueLimit = 0;
+});
+```
+
+**Attach a policy to an endpoint, or switch limiting off**, from `Endpoints/ApiEndpoints.cs`
+
+```csharp
+app.MapGet("/api/quotes", ...).RequireRateLimiting(RateLimitPolicyConstants.PerClientFixedWindow);
+app.MapGet("/api/report", ...).RequireRateLimiting(RateLimitPolicyConstants.OneReportAtATime);
+app.MapGet("/health", () => Results.Ok("Healthy")).DisableRateLimiting();
+```

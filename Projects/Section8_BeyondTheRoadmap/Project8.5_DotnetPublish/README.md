@@ -112,3 +112,50 @@ plugins at runtime. This app is AOT-ready because of three settings:
 | `/info` | reports .NET 10, OS, executable path | in tests: honestly says **not** Native AOT | `POST /info` → 405, `/information` → 404 |
 
 The publish modes themselves are checked by `scripts/publish-every-mode.sh` (each output must start and answer).
+
+## Code snippets
+
+**Every publish mode**, from `scripts/publish-every-mode.sh` (`linux-x64` can be `win-x64`, `osx-arm64`, `linux-arm64`, ...)
+
+```bash
+dotnet publish PublishDemo/PublishDemo.csproj -c Release -o publish/framework-dependent
+dotnet publish PublishDemo/PublishDemo.csproj -c Release -o publish/self-contained -r linux-x64 --self-contained
+dotnet publish PublishDemo/PublishDemo.csproj -c Release -o publish/single-file    -r linux-x64 --self-contained -p:PublishSingleFile=true
+dotnet publish PublishDemo/PublishDemo.csproj -c Release -o publish/trimmed        -r linux-x64 --self-contained -p:PublishSingleFile=true -p:PublishTrimmed=true
+dotnet publish PublishDemo/PublishDemo.csproj -c Release -o publish/ready-to-run   -r linux-x64 --self-contained -p:PublishReadyToRun=true
+dotnet publish PublishDemo/PublishDemo.csproj -c Release -o publish/native-aot     -r linux-x64 -p:PublishAot=true
+```
+
+**Run what was published**
+
+```bash
+dotnet publish/framework-dependent/PublishDemo.dll --urls http://localhost:5900   # needs .NET installed
+./publish/native-aot/PublishDemo --urls http://localhost:5900                      # runs on its own
+```
+
+**Make the project safe to trim and AOT-compile**, from `PublishDemo/PublishDemo.csproj`
+
+```xml
+<IsAotCompatible>true</IsAotCompatible>                                 <!-- warn about code that would break -->
+<EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>   <!-- endpoint code made at compile time -->
+<InvariantGlobalization>true</InvariantGlobalization>
+
+<TrimmerRootAssembly Include="System.Security.Cryptography" />          <!-- "never trim this" -->
+```
+
+**A smaller host and source-generated JSON (no reflection)**, from `PublishDemo/Program.cs` and `SerializerContexts/AppJsonSerializerContext.cs`
+
+```csharp
+var builder = WebApplication.CreateSlimBuilder(args);
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+});
+
+[JsonSerializable(typeof(RuntimeInfoModel))]
+[JsonSerializable(typeof(GreetingModel))]
+[JsonSerializable(typeof(ProblemDetails))]
+public partial class AppJsonSerializerContext : JsonSerializerContext
+{
+}
+```

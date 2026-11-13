@@ -42,3 +42,76 @@ build-and-unit-tests ────┤
   (10.0.100 or any newer feature band).
 - **Release configuration** in CI — that's what ships, and some bugs only appear with optimisations on.
 - **`--no-build` / `--no-restore`** after the first build, so nothing is compiled twice.
+
+## Code snippets
+
+From `.github/workflows/ci.yml` at the repo root.
+
+**When it runs, and cancelling older runs**
+
+```yaml
+on:
+  push:
+    branches: [main]
+    paths: ["Projects/**", ".github/workflows/ci.yml"]
+  pull_request:
+    paths: ["Projects/**", ".github/workflows/ci.yml"]
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+**A job: check out, install .NET, restore, build**
+
+```yaml
+build-and-unit-tests:
+  runs-on: ubuntu-latest
+  defaults:
+    run:
+      working-directory: Projects
+  steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore NuGet packages
+      run: dotnet restore CSharpMasteryRoadmap.slnx
+
+    - name: Build (Release)
+      run: dotnet build CSharpMasteryRoadmap.slnx -c Release --no-restore
+```
+
+**Run every test project, even if one fails, then fail the job**
+
+```yaml
+- name: All xUnit test projects
+  run: |
+    failed=0
+    for project in $(find . -name '*.Tests.csproj' -not -path '*/obj/*' | sort); do
+      dotnet test "$project" -c Release --no-build --logger trx --results-directory TestResults || failed=1
+    done
+    exit $failed
+```
+
+**Keep the results, even when tests fail**
+
+```yaml
+- name: Upload unit test results
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: unit-test-results
+    path: Projects/TestResults
+```
+
+**A job that only starts after another passes**
+
+```yaml
+e2e-tests:
+  needs: build-and-unit-tests
+  runs-on: ubuntu-latest
+```

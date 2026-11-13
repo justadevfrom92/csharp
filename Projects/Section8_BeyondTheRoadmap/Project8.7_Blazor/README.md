@@ -67,3 +67,96 @@ clear completed → "1 of 1 left".
 | Complete item (child → parent callback) | tick → "1 of 2 left", `done` class | tick twice → back to not done | nothing completed → "Clear completed" is **disabled** |
 | Remove / clear | removes only that item | removing the last item → "Nothing to do." | clear completed keeps the not-done items |
 | `TodoItemComponent` alone | shows the title, raises both callbacks with the right item | a done item renders checked with `done` | no callbacks given → clicking doesn't crash and doesn't change the item |
+
+## Code snippets
+
+**Interactive Server Blazor**, from `BlazorTodo/Program.cs` and `Components/App.razor`
+
+```csharp
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
+app.MapStaticAssets(); // also serves _framework/blazor.web.js
+app.UseAntiforgery();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+```
+
+```razor
+<Routes @rendermode="InteractiveServer" />
+```
+
+**A page: route, form with validation, a loop, and `@code` state**, from `Components/Pages/TodoPage.razor`
+
+```razor
+@page "/todo"
+
+<EditForm Model="newItem" OnValidSubmit="AddItem" FormName="add-todo">
+    <DataAnnotationsValidator />
+    <InputText @bind-Value="newItem.Title" placeholder="What needs doing?" />
+    <button type="submit">Add</button>
+    <ValidationMessage For="() => newItem.Title" />
+</EditForm>
+
+@foreach (TodoItemModel item in items)
+{
+    <TodoItemComponent @key="item.Id" Item="item" OnToggled="ToggleItem" OnRemoved="RemoveItem" />
+}
+<button disabled="@(CompletedCount == 0)" @onclick="ClearCompleted">Clear completed</button>
+
+@code {
+    private readonly List<TodoItemModel> items = new();
+    private TodoItemModel newItem = new();
+
+    private void AddItem()
+    {
+        items.Add(newItem);
+        newItem = new TodoItemModel(); // empty the form
+    }
+}
+```
+
+**A reusable component: `[Parameter]` in, `EventCallback` out**, from `Components/TodoItemComponent.razor`
+
+```razor
+<li class="@(Item.IsDone ? "done" : "")">
+    <input type="checkbox" checked="@Item.IsDone" @onchange="ToggleAsync" />
+    <span>@Item.Title</span>
+    <button class="remove" @onclick="RemoveAsync">Remove</button>
+</li>
+
+@code {
+    [Parameter, EditorRequired]
+    public TodoItemModel Item { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<TodoItemModel> OnToggled { get; set; }
+
+    private Task ToggleAsync()
+    {
+        return OnToggled.InvokeAsync(Item);
+    }
+}
+```
+
+**Testing a component with bUnit**, from `BlazorTodo.Tests/TodoItemComponentTest.cs`
+
+```csharp
+public class TodoItemComponentTest : BunitContext
+{
+    [Fact]
+    public void TodoItem_PositivePositive_RendersTitleAndRaisesCallbacks()
+    {
+        var item = new TodoItemModel { Title = "Buy milk" };
+        TodoItemModel? toggled = null;
+
+        IRenderedComponent<TodoItemComponent> component = Render<TodoItemComponent>(parameters => parameters
+            .Add(child => child.Item, item)
+            .Add(child => child.OnToggled, (TodoItemModel changed) => toggled = changed));
+        component.Find("input[type=checkbox]").Change(true);
+
+        Assert.Equal("Buy milk", component.Find("span").TextContent);
+        Assert.Same(item, toggled);
+    }
+}
+```

@@ -42,6 +42,84 @@ restart. In-memory session is lost when the app restarts and isn't shared betwee
 **Session vs login:** session is for temporary state like a cart. Who the user *is* belongs in an
 authentication cookie (Project 7.1).
 
+## Code snippets
+
+**Turn on session, with a safe cookie**, from `Program.cs`
+
+```csharp
+builder.Services.AddDistributedMemoryCache(); // where session data is kept (server memory)
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(20);
+    options.Cookie.Name = ".Roadmap.Cart";
+    options.Cookie.HttpOnly = true;                           // JavaScript can't read it
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  // only sent over HTTPS
+    options.Cookie.SameSite = SameSiteMode.Lax;               // not sent on cross-site POSTs
+    options.Cookie.IsEssential = true;
+});
+
+app.UseSession(); // before the controllers
+```
+
+**Extension methods: store any object in session as JSON**, from `Extensions/SessionJsonExtensions.cs`
+
+```csharp
+public static class SessionJsonExtensions
+{
+    public static void SetObjectAsJson<T>(this ISession session, string key, T value)
+    {
+        session.SetString(key, JsonSerializer.Serialize(value));
+    }
+
+    public static T? GetObjectFromJson<T>(this ISession session, string key)
+    {
+        string? json = session.GetString(key);
+        if (json == null)
+        {
+            return default;
+        }
+        return JsonSerializer.Deserialize<T>(json);
+    }
+}
+```
+
+**Load, change, save the cart**, from `Controllers/CartController.cs`
+
+```csharp
+private ShoppingCartModel LoadCart()
+{
+    return HttpContext.Session.GetObjectFromJson<ShoppingCartModel>(CartSessionKey) ?? new ShoppingCartModel();
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult Add(int itemId)
+{
+    ShopItemModel? item = itemsForSale.FirstOrDefault(existing => existing.Id == itemId);
+    if (item != null)
+    {
+        ShoppingCartModel cart = LoadCart();
+        cart.AddItem(item); // price comes from the SERVER list, never from the form
+        HttpContext.Session.SetObjectAsJson(CartSessionKey, cart);
+    }
+    return RedirectToAction(nameof(Index));
+}
+
+HttpContext.Session.Clear(); // empty the cart
+```
+
+**A calculated property (not stored, worked out each time)**, from `Models/ShoppingCartModel.cs`
+
+```csharp
+public decimal Total
+{
+    get
+    {
+        return Lines.Sum(line => line.Price * line.Quantity);
+    }
+}
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

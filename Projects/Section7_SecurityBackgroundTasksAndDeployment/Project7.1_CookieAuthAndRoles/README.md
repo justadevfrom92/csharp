@@ -80,6 +80,96 @@ tests fail; removing `[Authorize(Roles = "Admin")]` makes the Admin-page and Reg
 - **Real apps** should use ASP.NET Core Identity with a database (lockout after failed tries, email
   confirmation, 2FA). This project builds the core by hand to show how it works.
 
+## Code snippets
+
+**Cookie login, and "every page needs a login" by default**, from `CookieAuthAndRoles/Program.cs`
+
+```csharp
+builder.Services.AddControllersWithViews(options =>
+{
+    AuthorizationPolicy loggedInUsersOnly = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    options.Filters.Add(new AuthorizeFilter(loggedInUsersOnly));
+});
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(1);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+    });
+
+app.UseAuthentication(); // who are you? (reads the cookie)
+app.UseAuthorization();  // are you allowed? (checks [Authorize])
+```
+
+**Logging in: build claims, sign in, only follow local return URLs**, from `Controllers/AccountController.cs`
+
+```csharp
+var claims = new List<Claim>
+{
+    new Claim(ClaimTypes.Name, user.UserName),
+    new Claim(ClaimTypes.Role, user.Role),
+};
+var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+if (Url.IsLocalUrl(returnUrl))
+{
+    return Redirect(returnUrl);
+}
+return RedirectToAction("Index", "Home");
+```
+
+**Logging out**
+
+```csharp
+await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+```
+
+**Roles and anonymous pages**
+
+```csharp
+[Authorize(Roles = "Admin")] // on the class: every action is admin-only
+public class AdminController : Controller
+
+[AllowAnonymous]             // on the login page: must work when NOT logged in
+public IActionResult Login(string? returnUrl)
+```
+
+**Hashing passwords (never store plain text)**, from `Stores/UserStore.cs`
+
+```csharp
+private static readonly PasswordHasher<AppUserModel> passwordHasher = new();
+
+newUser.PasswordHash = passwordHasher.HashPassword(newUser, password);
+
+PasswordVerificationResult result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+return result == PasswordVerificationResult.Failed ? null : user;
+```
+
+**Integration test: start the app in memory and check where it redirects**, from `CookieAuthAndRoles.Tests/`
+
+```csharp
+public class AuthorizationTest : IClassFixture<WebApplicationFactory<Program>>
+
+HttpClient client = factory.CreateClient(new WebApplicationFactoryClientOptions
+{
+    BaseAddress = new Uri("https://localhost"),
+    AllowAutoRedirect = false,
+    HandleCookies = true,
+});
+
+HttpResponseMessage response = await client.GetAsync("/Admin");
+Assert.Equal(302, (int)response.StatusCode);
+```
+
+The app's `Program.cs` ends with `public partial class Program { }` so `WebApplicationFactory<Program>` can find it.
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

@@ -47,6 +47,72 @@ last week's orders must still show what the customer actually paid.
 **Why `EnsureCreated` here and migrations in 6.1:** this demo throws the database away every run,
 so migrations add nothing. Real apps that keep data should use migrations (6.1, 7.7).
 
+## Code snippets
+
+**A transaction: several `SaveChanges` calls that succeed or fail together**, from `Program.cs`
+
+```csharp
+using var database = new ShopDbContext();
+using var transaction = database.Database.BeginTransaction();
+try
+{
+    database.Orders.Add(order);
+    database.SaveChanges();          // step 1: order
+
+    customer.WalletBalance -= total;
+    database.SaveChanges();          // step 2: money
+
+    if (product.Stock < quantity)
+    {
+        throw new InvalidOperationException($"Only {product.Stock} {product.Name} in stock");
+    }
+    product.Stock -= quantity;
+    database.SaveChanges();          // step 3: stock
+
+    transaction.Commit();
+}
+catch (InvalidOperationException exception)
+{
+    transaction.Rollback();          // undo steps 1 and 2 as well
+}
+```
+
+**Soft delete: turn `Remove` into "mark as deleted"**, from `DbContexts/ShopDbContext.cs`
+
+```csharp
+public override int SaveChanges()
+{
+    foreach (var entry in ChangeTracker.Entries<ProductModel>().Where(entry => entry.State == EntityState.Deleted))
+    {
+        entry.State = EntityState.Modified;
+        entry.Entity.IsDeleted = true;
+        entry.Entity.DeletedAtUtc = DateTime.UtcNow;
+    }
+    return base.SaveChanges();
+}
+```
+
+**A global query filter hides deleted rows from every query; `IgnoreQueryFilters` shows them again**
+
+```csharp
+modelBuilder.Entity<ProductModel>().HasQueryFilter(product => !product.IsDeleted);
+
+database.Products.IgnoreQueryFilters().Where(product => product.IsDeleted);
+```
+
+**Storing `decimal` in SQLite exactly (as text)**
+
+```csharp
+modelBuilder.Entity<ProductModel>().Property(product => product.Price).HasConversion<string>();
+```
+
+**A fresh database every run (demos and tests only)**
+
+```csharp
+database.Database.EnsureDeleted();
+database.Database.EnsureCreated(); // creates tables + seed data (HasData)
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

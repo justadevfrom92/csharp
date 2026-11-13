@@ -89,3 +89,115 @@ who you are, but you're not allowed".
 
 Every test gets its own app and its own SQLite file (deleted afterwards), so users and lockouts never leak
 between tests. Checked: with `ValidateLifetime = false`, the expired-token test fails.
+
+## Code snippets
+
+**ASP.NET Core Identity: password rules and lockout**, from `IdentityJwtPolicies/Program.cs`
+
+```csharp
+builder.Services.AddIdentityCore<IdentityUser>(options =>
+    {
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.User.RequireUniqueEmail = true;
+        options.Lockout.MaxFailedAccessAttempts = 3;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    })
+    .AddRoles<IdentityRole>()
+    .AddSignInManager()
+    .AddEntityFrameworkStores<AppIdentityDbContext>();
+```
+
+**Register a user, give a role and claims**, from `Endpoints/AccountEndpoints.cs`
+
+```csharp
+var user = new IdentityUser { UserName = request.Email, Email = request.Email };
+IdentityResult result = await userManager.CreateAsync(user, request.Password);
+await userManager.AddToRoleAsync(user, "User");
+```
+
+**Check a password (with lockout)**
+
+```csharp
+SignInResult result = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+if (result.IsLockedOut)
+{
+    return TypedResults.Problem(statusCode: StatusCodes.Status423Locked, title: "Too many failed attempts. Try again later.");
+}
+```
+
+**Create a JWT**, from `Services/JwtTokenService.cs`
+
+```csharp
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey));
+var descriptor = new SecurityTokenDescriptor
+{
+    Issuer = settings.Issuer,
+    Audience = settings.Audience,
+    Subject = new ClaimsIdentity(claims),
+    Expires = DateTime.UtcNow.AddMinutes(settings.ExpiryMinutes),
+    SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256),
+};
+string token = new JsonWebTokenHandler().CreateToken(descriptor);
+```
+
+**Check every incoming token**, from `Program.cs`
+
+```csharp
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SigningKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+```
+
+**Policies: role, claim, and a custom requirement**
+
+```csharp
+builder.Services.AddSingleton<IAuthorizationHandler, MinimumAgeAuthorizationHandler>();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(PolicyNameConstants.AdminOnly, policy => policy.RequireRole("Admin"))
+    .AddPolicy(PolicyNameConstants.FinanceDepartment, policy => policy.RequireClaim(AppClaimTypeConstants.Department, "finance"))
+    .AddPolicy(PolicyNameConstants.AtLeast18, policy => policy.AddRequirements(new MinimumAgeRequirement(18)));
+```
+
+**The custom requirement's handler**, from `Handlers/MinimumAgeAuthorizationHandler.cs`
+
+```csharp
+protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinimumAgeRequirement requirement)
+{
+    string? birthYearText = context.User.FindFirst(AppClaimTypeConstants.BirthYear)?.Value;
+    if (int.TryParse(birthYearText, out int birthYear))
+    {
+        int age = timeProvider.GetUtcNow().Year - birthYear;
+        if (age >= requirement.MinimumAge)
+        {
+            context.Succeed(requirement);
+        }
+    }
+    return Task.CompletedTask; // not calling Succeed = not allowed
+}
+```
+
+**Protect endpoints** (simplified from `Endpoints/ProtectedEndpoints.cs`)
+
+```csharp
+app.MapGet("/me", (ClaimsPrincipal user) => TypedResults.Ok(user.Identity!.Name)).RequireAuthorization();
+app.MapGet("/admin/dashboard", () => TypedResults.Ok("Admin dashboard")).RequireAuthorization(PolicyNameConstants.AdminOnly);
+```
+
+**Call it with the token**
+
+```bash
+curl http://localhost:5000/me -H "Authorization: Bearer <token>"
+```

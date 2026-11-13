@@ -77,6 +77,59 @@ the whole test class. With a database (Section 6) you'd reset or use a fresh dat
 No separate process to start, wait for and kill, no fixed port, and when the tests end the server
 is guaranteed to stop. It's the same app code — just hosted by the test.
 
+## Code snippets
+
+**Start the real website on a free port, plus one headless browser**, from `Fixtures/ProductCatalogWebsiteFixture.cs`
+
+```csharp
+public class ProductCatalogWebsiteFixture : IAsyncLifetime
+{
+    public async Task InitializeAsync()
+    {
+        factory = new WebApplicationFactory<Program>();
+        factory.UseKestrel(0); // real HTTP server on a free port, so a real browser can reach it
+        factory.StartServer();
+        BaseUrl = factory.ClientOptions.BaseAddress.ToString().TrimEnd('/');
+
+        playwright = await Playwright.CreateAsync();
+        Browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+    }
+}
+```
+
+**Share the fixture across a test class; a fresh browser context per test**, from `ProductCatalogBrowserTest.cs`
+
+```csharp
+public class ProductCatalogBrowserTest : IClassFixture<ProductCatalogWebsiteFixture>, IAsyncLifetime
+{
+    public async Task InitializeAsync()
+    {
+        context = await website.Browser.NewContextAsync();
+        page = await context.NewPageAsync();
+    }
+}
+```
+
+**Fill a form, click, and check the result like a user would**
+
+```csharp
+await page.GotoAsync(website.BaseUrl + "/Products/Create");
+await page.FillAsync("#Name", productName);
+await page.SelectOptionAsync("#Category", "Lighting");
+await page.FillAsync("#Price", "19.99");
+await page.ClickAsync("#save-button");
+
+await page.WaitForURLAsync(website.BaseUrl + "/");
+Assert.Contains(productName, await page.Locator("#success-alert").InnerTextAsync());
+```
+
+**Check a status code without a page (e.g. 404)**
+
+```csharp
+IAPIResponse response = await page.APIRequest.GetAsync(website.BaseUrl + "/product/9999");
+Assert.Equal(404, response.Status);
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

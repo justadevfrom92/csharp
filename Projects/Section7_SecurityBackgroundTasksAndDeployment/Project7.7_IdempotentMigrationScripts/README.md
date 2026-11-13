@@ -73,6 +73,59 @@ A rename is done as add-new → copy data → (next release) drop-old, never as 
 
 `Migrate()` at startup is fine for local development and single-instance demos — that's why Project 6.1 uses it.
 
+## Code snippets
+
+**Generate the idempotent SQL script** (safe to run any number of times), from `generate-migration-script.sh`
+
+```bash
+dotnet tool restore
+dotnet ef migrations script --idempotent --output migrations.sql
+```
+
+**What "idempotent" looks like in the script**: every step checks whether it already ran, from `migrations.sql`
+
+```sql
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261106065446_InitialCreate'
+)
+BEGIN
+    ...
+END;
+```
+
+**Let `dotnet ef` build the `DbContext` without running the app**, from `Factories/DesignTimeDbContextFactory.cs`
+
+```csharp
+public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<OrdersDbContext>
+{
+    public OrdersDbContext CreateDbContext(string[] args)
+    {
+        var options = new DbContextOptionsBuilder<OrdersDbContext>()
+            .UseSqlServer("Server=localhost;Database=Orders;Trusted_Connection=True;TrustServerCertificate=True")
+            .Options;
+        return new OrdersDbContext(options);
+    }
+}
+```
+
+**The app never changes the schema; it refuses to start if the database is behind**, from `Program.cs`
+
+```csharp
+List<string> pendingMigrations = database.Database.GetPendingMigrations().ToList();
+if (pendingMigrations.Count > 0)
+{
+    Console.WriteLine($"STOP: the database is missing {pendingMigrations.Count} migration(s)");
+    return 1; // non-zero exit = deployment fails loudly
+}
+```
+
+**Money columns in SQL Server**, from `DbContexts/OrdersDbContext.cs`
+
+```csharp
+modelBuilder.Entity<OrderModel>().Property(order => order.Total).HasPrecision(18, 2); // decimal(18,2)
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

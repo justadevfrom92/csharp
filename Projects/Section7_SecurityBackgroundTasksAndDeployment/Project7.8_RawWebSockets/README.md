@@ -50,3 +50,66 @@ chunks and collect them; the size check is on the collected total.
 
 Also checked by hand with a real browser: headless Chromium opened the page, sent "hi from chromium" over a
 real `ws://` connection to Kestrel, and got `ECHO: HI FROM CHROMIUM` back.
+
+## Code snippets
+
+**Turn on WebSockets and map an address to a handler**, from `RawWebSockets/Program.cs`
+
+```csharp
+builder.Services.AddSingleton<EchoWebSocketHandler>();
+
+app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
+app.Map("/ws/echo", async (HttpContext context, EchoWebSocketHandler handler) =>
+{
+    await handler.HandleAsync(context);
+});
+```
+
+**Accept the connection (only real WebSocket requests)**, from `Handlers/EchoWebSocketHandler.cs`
+
+```csharp
+if (!context.WebSockets.IsWebSocketRequest)
+{
+    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+    return;
+}
+using WebSocket socket = await context.WebSockets.AcceptWebSocketAsync();
+```
+
+**The receive loop: join frames into one message, handle close, limit size, reply**
+
+```csharp
+byte[] frameBuffer = new byte[1024];
+using var messageBuffer = new MemoryStream();
+while (socket.State == WebSocketState.Open)
+{
+    WebSocketReceiveResult frame = await socket.ReceiveAsync(frameBuffer, stopToken);
+    if (frame.MessageType == WebSocketMessageType.Close)
+    {
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Bye", stopToken);
+        return;
+    }
+    messageBuffer.Write(frameBuffer, 0, frame.Count);
+    if (messageBuffer.Length > MaximumMessageBytes)
+    {
+        await socket.CloseAsync(WebSocketCloseStatus.MessageTooBig, "Too big.", stopToken);
+        return;
+    }
+    if (!frame.EndOfMessage)
+    {
+        continue; // more frames of this message are coming
+    }
+    string message = Encoding.UTF8.GetString(messageBuffer.GetBuffer(), 0, (int)messageBuffer.Length);
+    messageBuffer.SetLength(0);
+    byte[] reply = Encoding.UTF8.GetBytes("ECHO: " + message.ToUpperInvariant());
+    await socket.SendAsync(reply, WebSocketMessageType.Text, endOfMessage: true, stopToken);
+}
+```
+
+**The browser side**, from `wwwroot/index.html`
+
+```js
+const socket = new WebSocket(scheme + location.host + "/ws/echo");
+socket.onmessage = event => log("received: " + event.data);
+socket.send("hello");
+```

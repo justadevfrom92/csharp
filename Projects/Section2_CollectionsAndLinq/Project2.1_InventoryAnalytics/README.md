@@ -43,6 +43,82 @@ snapshot or will loop over the result many times.
 **Why `Product` is a class but `Order` is a record.** Product stock changes, so it needs a
 settable property. Orders and sales never change after they're made, so a one-line `record` is enough.
 
+## Code snippets
+
+The key lines from `Program.cs`.
+
+**`Dictionary`: find by key instantly, `TryGetValue` for "might not exist"**
+
+```csharp
+var stockByProductCode = new Dictionary<string, Product>
+{
+    ["KB-01"] = new Product("KB-01", "Keyboard", "Computers", 25.00m, 40),
+    ["MS-01"] = new Product("MS-01", "Mouse", "Computers", 12.50m, 3),
+};
+
+if (!stockByProductCode.TryGetValue(order.ProductCode, out Product? product))
+{
+    Console.WriteLine($"Order {order.OrderNumber}: REJECTED - unknown product {order.ProductCode}");
+}
+```
+
+**`HashSet`: no duplicates (here ignoring upper/lower case)**
+
+```csharp
+var categories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+categories.Add("Computers");
+bool addedAgain = categories.Add("computers"); // false: already there
+```
+
+**`Queue` (first in, first out) and `Stack` (last in, first out)**
+
+```csharp
+var waitingOrders = new Queue<Order>();
+waitingOrders.Enqueue(new Order(1, "KB-01", 5));
+Order order = waitingOrders.Dequeue();
+
+var undoHistory = new Stack<Order>();
+undoHistory.Push(order);
+Order lastOrder = undoHistory.Pop(); // undo the most recent one
+```
+
+**LINQ: `Sum`, `Where`, `OrderBy`, `GroupBy` + `Select`**
+
+```csharp
+decimal totalStockValue = allProducts.Sum(product => product.Price * product.QuantityInStock);
+
+var valueByCategory = allProducts
+    .GroupBy(product => product.Category)
+    .Select(group => new { Category = group.Key, Value = group.Sum(product => product.Price * product.QuantityInStock) })
+    .OrderByDescending(row => row.Value);
+
+foreach (Product product in allProducts.Where(product => product.QuantityInStock <= 5).OrderBy(product => product.QuantityInStock))
+{
+    Console.WriteLine($"{product.Name} {product.QuantityInStock} left");
+}
+```
+
+**Deferred vs immediate: a LINQ query runs when you loop over it, `ToList()` runs it now**
+
+```csharp
+IEnumerable<Product> outOfStockLater = allProducts.Where(product => product.QuantityInStock == 0); // nothing runs yet
+List<Product> outOfStockNow = allProducts.Where(product => product.QuantityInStock == 0).ToList(); // runs right now
+
+stockByProductCode["CH-01"].QuantityInStock = 0;
+outOfStockLater.Count(); // sees the change
+outOfStockNow.Count;     // does not
+```
+
+**Timing code with `Stopwatch`**
+
+```csharp
+var timer = Stopwatch.StartNew();
+list.Contains(lastCode);              // O(n): checks every item
+long listTime = timer.ElapsedMilliseconds;
+timer.Restart();
+dictionary.ContainsKey(lastCode);     // O(1): jumps straight to it
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

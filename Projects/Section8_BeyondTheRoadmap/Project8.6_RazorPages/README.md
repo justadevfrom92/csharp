@@ -52,3 +52,71 @@ classes are named `Contact...PageModel`.
 | Create | valid → 302 to `/Contacts`, listed | 1-letter name, bad email, bad phone → same page with all 3 errors, nothing added | no anti-forgery token → 400, nothing added |
 | Edit | valid change → saved | `/Contacts/Edit/9999` → 404; hidden id changed to 1 → contact 1 untouched | `/Contacts/Edit/abc` → 404 |
 | Delete (named handler) | POST `?handler=Delete` → removed | already deleted → 404 | a GET to the delete handler → nothing deleted |
+
+## Code snippets
+
+**Razor Pages instead of controllers**, from `RazorPagesContacts/Program.cs`
+
+```csharp
+builder.Services.AddRazorPages();
+app.MapRazorPages(); // every .cshtml under Pages/ with "@page" becomes a URL
+```
+
+**The page class: `[BindProperty]`, `OnGet`, `OnPost`**, from `Pages/Contacts/Create.cshtml.cs`
+
+```csharp
+public class ContactCreatePageModel : PageModel
+{
+    [BindProperty]
+    public ContactModel Contact { get; set; } = new();
+
+    public void OnGet()
+    {
+    }
+
+    public IActionResult OnPost()
+    {
+        if (!ModelState.IsValid)
+        {
+            return Page(); // same page again, with the error messages
+        }
+        store.Add(Contact);
+        TempData["Message"] = $"Added {Contact.Name}.";
+        return RedirectToPage("./Index");
+    }
+}
+```
+
+**The page markup**, from `Pages/Contacts/Create.cshtml`
+
+```cshtml
+@page
+@model ContactCreatePageModel
+
+<form method="post">
+    <label asp-for="Contact.Name"></label>
+    <input asp-for="Contact.Name" />
+    <span asp-validation-for="Contact.Name" class="error"></span>
+    <button type="submit">Save</button>
+</form>
+```
+
+**A route value in the page, and a named handler for a second form**, from `Pages/Contacts/Edit.cshtml(.cs)`
+
+```cshtml
+@page "{id:int}"
+
+<form method="post" asp-page-handler="Delete" asp-route-id="@Model.Contact.Id">
+```
+
+```csharp
+public IActionResult OnGet(int id)          // GET  /Contacts/Edit/1
+public IActionResult OnPost(int id)         // POST /Contacts/Edit/1
+public IActionResult OnPostDelete(int id)   // POST /Contacts/Edit/1?handler=Delete
+```
+
+**Link to a page**, from `Pages/Contacts/Index.cshtml`
+
+```cshtml
+<a asp-page="/Contacts/Edit" asp-route-id="@contact.Id">Edit</a>
+```

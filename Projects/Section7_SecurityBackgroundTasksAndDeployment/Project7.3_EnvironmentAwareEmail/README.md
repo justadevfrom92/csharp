@@ -102,6 +102,118 @@ slow mail server would make the whole site slow. The request just adds the email
 `Channel` and returns `202 Accepted`. (In-memory means queued emails are lost on restart — a real
 system would use a database table or a message queue.)
 
+## Code snippets
+
+**Keyed services: two implementations of one interface, told apart by a key**, from `Program.cs`
+
+```csharp
+builder.Services.AddKeyedSingleton<IEmailSender, SmtpEmailSender>(EmailSenderKeyConstants.Smtp);
+builder.Services.AddKeyedSingleton<IEmailSender, FileTrapEmailSender>(EmailSenderKeyConstants.Trap);
+
+// Ask for one by key in a controller action:
+public async Task<IActionResult> SendPreview(string to, [FromKeyedServices(EmailSenderKeyConstants.Trap)] IEmailSender trapSender)
+```
+
+**Factory registration: pick the sender by environment and wrap it in decorators**
+
+```csharp
+builder.Services.AddSingleton<IEmailSender>(serviceProvider =>
+{
+    IEmailSender realSender;
+    if (environment.IsProduction())
+    {
+        realSender = serviceProvider.GetRequiredKeyedService<IEmailSender>(EmailSenderKeyConstants.Smtp);
+    }
+    else if (environment.IsEnvironment("UAT"))
+    {
+        IEmailSender smtpSender = serviceProvider.GetRequiredKeyedService<IEmailSender>(EmailSenderKeyConstants.Smtp);
+        realSender = new UatRedirectingEmailSender(smtpSender, emailSettings);
+    }
+    else
+    {
+        realSender = serviceProvider.GetRequiredKeyedService<IEmailSender>(EmailSenderKeyConstants.Trap);
+    }
+    return new LoggingEmailSender(realSender, serviceProvider.GetRequiredService<ILogger<LoggingEmailSender>>());
+});
+```
+
+**A decorator: IS an `IEmailSender` and WRAPS another one**, from `Senders/UatRedirectingEmailSender.cs`
+
+```csharp
+public class UatRedirectingEmailSender : IEmailSender
+{
+    public UatRedirectingEmailSender(IEmailSender inner, EmailSettings settings)
+    {
+        Inner = inner;
+        this.settings = settings;
+    }
+
+    public IEmailSender Inner { get; }
+
+    public Task SendAsync(EmailMessage message)
+    {
+        var redirected = new EmailMessage(settings.UatTestInbox, $"[UAT - meant for {message.To}] {message.Subject}", message.Body);
+        return Inner.SendAsync(redirected);
+    }
+}
+```
+
+**A settings file per environment**: `appsettings.UAT.json` is loaded on top of `appsettings.json` when `ASPNETCORE_ENVIRONMENT=UAT`
+
+```json
+{
+  "Email": {
+    "SmtpHost": "smtp.uat.roadmap-shop.example",
+    "UatTestInbox": "uat-inbox@roadmap-shop.example"
+  }
+}
+```
+
+**Background queue: the controller returns at once, a `BackgroundService` sends**, from `Queues/EmailQueue.cs` and `BackgroundServices/EmailSendingBackgroundService.cs`
+
+```csharp
+private readonly Channel<EmailMessage> channel = Channel.CreateBounded<EmailMessage>(1000);
+
+public ValueTask AddAsync(EmailMessage message)
+{
+    return channel.Writer.WriteAsync(message);
+}
+
+protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+{
+    await foreach (EmailMessage message in queue.ReadAllAsync(stoppingToken))
+    {
+        try
+        {
+            await sender.SendAsync(message);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Could not send email to {To}", message.To); // one bad email must not stop the service
+        }
+    }
+}
+
+builder.Services.AddSingleton<EmailQueue>();
+builder.Services.AddHostedService<EmailSendingBackgroundService>();
+```
+
+**A job that runs on a timer**, from `BackgroundServices/DailyDigestBackgroundService.cs`
+
+```csharp
+using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+while (await timer.WaitForNextTickAsync(stoppingToken))
+{
+    await queue.AddAsync(new EmailMessage("team@client-company.com", "Digest", $"Status at {DateTime.Now:t}: all good."));
+}
+```
+
+**Run in a chosen environment**
+
+```bash
+ASPNETCORE_ENVIRONMENT=UAT dotnet run
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

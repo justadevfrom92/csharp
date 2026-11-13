@@ -57,6 +57,89 @@ With flags they are separate steps:
 - **Flags are not security.** A hidden link is still reachable if someone guesses the URL — that's why
   `Reviews` is also protected by the attribute on the server.
 
+## Code snippets
+
+**Flags in `appsettings.json`**
+
+```json
+"FeatureFlags": {
+  "HolidayBanner": true,
+  "NewCheckout": false,
+  "ProductReviews": false
+}
+```
+
+**Bind them to a class**, from `Program.cs` and `Settings/FeatureFlagSettings.cs`
+
+```csharp
+public class FeatureFlagSettings : Dictionary<string, bool>
+{
+}
+
+builder.Services.Configure<FeatureFlagSettings>(builder.Configuration.GetSection("FeatureFlags"));
+builder.Services.AddSingleton<FeatureFlagService>();
+```
+
+**`IOptionsMonitor`: always the latest values, no restart needed**, from `Services/FeatureFlagService.cs`
+
+```csharp
+public FeatureFlagService(IOptionsMonitor<FeatureFlagSettings> flags)
+{
+    this.flags = flags;
+}
+
+public bool IsEnabled(string featureName)
+{
+    return flags.CurrentValue.TryGetValue(featureName, out bool isEnabled) && isEnabled; // missing = OFF
+}
+```
+
+**One URL, two behaviours**, from `Controllers/ShopController.cs`
+
+```csharp
+if (featureFlags.IsEnabled(FeatureNameConstants.NewCheckout))
+{
+    return Content("NEW one-page checkout");
+}
+return Content("Old three-step checkout");
+```
+
+**An action filter attribute: the page only exists while the flag is on**, from `Attributes/RequireFeatureFlagAttribute.cs`
+
+```csharp
+public class RequireFeatureFlagAttribute : ActionFilterAttribute
+{
+    public override void OnActionExecuting(ActionExecutingContext context)
+    {
+        var featureFlags = context.HttpContext.RequestServices.GetRequiredService<FeatureFlagService>();
+        if (!featureFlags.IsEnabled(featureName))
+        {
+            context.Result = new NotFoundResult(); // stops the action from running
+        }
+    }
+}
+
+[RequireFeatureFlag(FeatureNameConstants.ProductReviews)]
+public IActionResult Reviews()
+```
+
+**Use a service in a view with `@inject`**, from `Views/_ViewImports.cshtml` and `Views/Shop/Index.cshtml`
+
+```cshtml
+@inject FeatureFlagService FeatureFlags
+
+@if (FeatureFlags.IsEnabled(FeatureNameConstants.HolidayBanner))
+{
+    <div class="banner">...</div>
+}
+```
+
+**Override a flag from the command line (environment variable; `__` = `:`)**
+
+```bash
+FeatureFlags__NewCheckout=true dotnet run
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

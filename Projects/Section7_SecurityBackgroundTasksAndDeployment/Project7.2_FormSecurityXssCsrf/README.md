@@ -53,6 +53,81 @@ so it must not store per-request data in fields. (Project 7.4 also shows the oth
   tag helper adds it for us.
 - **CSP is the backup, not the plan.** Encoding stops XSS; CSP limits the damage if encoding is ever missed.
 
+## Code snippets
+
+**CSRF: check the anti-forgery token on every POST, for every controller**, from `Program.cs`
+
+```csharp
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+```
+
+**XSS: Razor encodes `@value` automatically; `Html.Raw` does not**, from `Views/Guestbook/Index.cshtml`
+
+```cshtml
+@* SAFE: "<script>" is shown as text, not run. *@
+<p><b>@entry.Name</b> wrote: @entry.Message</p>
+
+@* NEVER do this with user input:  @Html.Raw(entry.Message) *@
+```
+
+**Only allow `http://` and `https://` links (blocks `javascript:...`)**, from `Controllers/GuestbookController.cs`
+
+```csharp
+private static bool IsSafeWebLink(string link)
+{
+    return Uri.TryCreate(link, UriKind.Absolute, out Uri? uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+}
+
+if (!string.IsNullOrEmpty(entry.Website) && !IsSafeWebLink(entry.Website))
+{
+    ModelState.AddModelError(nameof(entry.Website), "Only http:// and https:// links are allowed.");
+}
+```
+
+**A custom middleware class that adds security headers**, from `Middlewares/SecurityHeadersMiddleware.cs`
+
+```csharp
+public class SecurityHeadersMiddleware
+{
+    private readonly RequestDelegate next;
+
+    public SecurityHeadersMiddleware(RequestDelegate next)
+    {
+        this.next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["Referrer-Policy"] = "no-referrer";
+        await next(context); // the rest of the pipeline
+    }
+}
+
+app.UseMiddleware<SecurityHeadersMiddleware>(); // in Program.cs
+```
+
+**HTTPS everywhere**
+
+```csharp
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+app.UseHttpsRedirection();
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

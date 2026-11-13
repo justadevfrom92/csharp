@@ -63,6 +63,112 @@ dotnet run
 - **Real code would use `async`/`await`** with `HttpClient` for downloads, because a thread waiting
   for the network is a wasted thread. This project uses threads on purpose to learn the basics.
 
+## Code snippets
+
+The key lines from `Program.cs`.
+
+**Race condition vs `Interlocked`**
+
+```csharp
+unsafeCounter++;                                // read, add, write: two threads can overlap and lose updates
+Interlocked.Increment(ref interlockedCounter);  // one atomic step: never loses updates
+```
+
+**Creating threads and waiting for them**
+
+```csharp
+var thread = new Thread(() =>
+{
+    // work
+});
+thread.IsBackground = true; // won't keep the app alive on its own
+thread.Start();
+thread.Join();              // wait for it to finish
+```
+
+**`ThreadPool` + `CountdownEvent`: run many jobs, wait for all of them**
+
+```csharp
+using var allDone = new CountdownEvent(fileNames.Length);
+foreach (string fileName in fileNames)
+{
+    ThreadPool.QueueUserWorkItem(_ =>
+    {
+        downloader.Download(fileName);
+        allDone.Signal();
+    });
+}
+allDone.Wait();
+```
+
+**`SemaphoreSlim`: at most 3 at once, and `lock` around a shared `List`**, from `FileDownloader.Download`
+
+```csharp
+downloadSlots.Wait(); // wait here if 3 downloads are already running
+try
+{
+    // ... download ...
+    lock (logLock) // List<T> is not thread-safe, so only one thread may add at a time
+    {
+        log.Add($"{DateTime.Now:HH:mm:ss.fff} {fileName} {data.Length} bytes");
+    }
+    DownloadFinished?.Invoke(this, new DownloadFinishedEventArgs(fileName, data.Length, Environment.CurrentManagedThreadId));
+}
+finally
+{
+    downloadSlots.Release(); // ALWAYS give the slot back, even if the download failed
+}
+```
+
+**`SemaphoreSlim.WaitAsync`: limit async work without blocking a thread**
+
+```csharp
+using var asyncSlots = new SemaphoreSlim(2);
+
+async Task RunLimitedJobAsync(int jobNumber)
+{
+    await asyncSlots.WaitAsync(); // no thread is blocked while waiting here
+    try
+    {
+        await Task.Delay(150);
+    }
+    finally
+    {
+        asyncSlots.Release();
+    }
+}
+```
+
+**`Semaphore` (no "Slim") and `Mutex`**
+
+```csharp
+using var twoSlotSemaphore = new Semaphore(initialCount: 2, maximumCount: 2);
+twoSlotSemaphore.WaitOne();
+twoSlotSemaphore.Release();
+
+using var mutex = new Mutex(false, "Global-Roadmap-ThreadedFileDownloader"); // works between PROGRAMS
+if (mutex.WaitOne(TimeSpan.Zero))
+{
+    Console.WriteLine("No other copy of this program is running.");
+    mutex.ReleaseMutex();
+}
+```
+
+**Events and delegates: `event`, `Func`, `Action`, `Predicate`**
+
+```csharp
+public event EventHandler<DownloadFinishedEventArgs>? DownloadFinished;
+
+downloader.DownloadFinished += (sender, eventArgs) =>
+{
+    Console.WriteLine($"{eventArgs.FileName} done: {eventArgs.SizeInBytes:N0} bytes");
+};
+
+Func<long, string> formatSize = bytes => $"{bytes / 1024.0:0.0} KB";
+Predicate<string> isEvenFile = name => int.Parse(name.Substring(4, 2)) % 2 == 0;
+Action<string> printLine = text => Console.WriteLine("  " + text);
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

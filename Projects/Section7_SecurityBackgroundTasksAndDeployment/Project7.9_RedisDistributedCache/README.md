@@ -82,3 +82,72 @@ REDIS_CONNECTION_STRING=localhost:6379 dotnet test RedisDistributedCache.Tests
 ```
 
 The CI pipeline (7.6) has no Redis server, so these show as **skipped** there; the other tests still run.
+
+## Code snippets
+
+**Use Redis when configured, otherwise an in-memory cache with the same interface**, from `RedisDistributedCache/Program.cs`
+
+```csharp
+string? redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConnectionString))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnectionString;
+        options.InstanceName = "roadmap:"; // prefix for every key
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+```
+
+**Cache-aside: try the cache, else read the database and save to the cache**, from `Services/ProductPriceCacheService.cs`
+
+```csharp
+private static readonly DistributedCacheEntryOptions cacheTimes = new()
+{
+    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+    SlidingExpiration = TimeSpan.FromMinutes(1),
+};
+
+string? cachedJson = await cache.GetStringAsync(CacheKeyFor(productId));
+if (cachedJson != null)
+{
+    return JsonSerializer.Deserialize<ProductPriceModel>(cachedJson);
+}
+
+ProductPriceModel? product = await database.FindAsync(productId);
+if (product == null)
+{
+    return null;
+}
+await cache.SetStringAsync(CacheKeyFor(productId), JsonSerializer.Serialize(product), cacheTimes);
+return product;
+```
+
+**Invalidation: delete the cached copy when the data changes**
+
+```csharp
+await cache.RemoveAsync(CacheKeyFor(productId)); // one Remove fixes the cache for every server
+```
+
+**A test that only runs when Redis is available**, from `RedisDistributedCache.Tests/Attributes/RedisFactAttribute.cs`
+
+```csharp
+public class RedisFactAttribute : FactAttribute
+{
+    public RedisFactAttribute()
+    {
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")))
+        {
+            Skip = "Set REDIS_CONNECTION_STRING to run tests against a real Redis server.";
+        }
+    }
+}
+```
+
+```bash
+REDIS_CONNECTION_STRING=localhost:6379 dotnet test RedisDistributedCache.Tests
+```

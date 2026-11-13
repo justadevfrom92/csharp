@@ -72,3 +72,59 @@ answers in order and **counts every call** — so "1 try + 3 retries" is checked
 | Input | valid → 92.00 EUR, **1** call | amount 0 → 400, **0** calls | `US`, `123`, missing `from`, `amount=ten` → 400, **0** calls |
 | Retry | 503, 500, then OK → 200 after **3** calls | always 503 → gives up after **4** calls (1 + 3 retries) → 503; unknown pair 404 → **not** retried → 404 | service answers 400 → **not** retried (1 call) → 503 |
 | Timeout per attempt | 50 ms answer → used | one 5 s answer → cut off at 300 ms and retried → 200 in < 3 s | always 5 s → 4 attempts, all cut off → 503 |
+
+## Code snippets
+
+**A typed client registered with `IHttpClientFactory`, plus retry and timeout**, from `HttpClientResilience/Program.cs`
+
+```csharp
+builder.Services.AddHttpClient<ExchangeRateClient>(client =>
+    {
+        client.BaseAddress = new Uri(rateSettings.BaseAddress);
+    })
+    .AddResilienceHandler("exchange-rates", pipeline =>
+    {
+        pipeline.AddRetry(new HttpRetryStrategyOptions
+        {
+            MaxRetryAttempts = rateSettings.MaxRetryAttempts,
+            BackoffType = DelayBackoffType.Exponential, // 200 ms, 400 ms, 800 ms...
+            UseJitter = true,                           // plus a little randomness
+            Delay = TimeSpan.FromMilliseconds(rateSettings.FirstRetryDelayMilliseconds),
+        });
+        pipeline.AddTimeout(TimeSpan.FromMilliseconds(rateSettings.AttemptTimeoutMilliseconds)); // per attempt
+    });
+```
+
+**The typed client: a normal class that gets a ready-made `HttpClient`**, from `Clients/ExchangeRateClient.cs`
+
+```csharp
+public class ExchangeRateClient
+{
+    private readonly HttpClient httpClient;
+
+    public ExchangeRateClient(HttpClient httpClient)
+    {
+        this.httpClient = httpClient;
+    }
+
+    public async Task<ExchangeRateModel?> GetRateAsync(string from, string to, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await httpClient.GetAsync($"rates/{from}/{to}", cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        response.EnsureSuccessStatusCode(); // other errors -> HttpRequestException
+        return await response.Content.ReadFromJsonAsync<ExchangeRateModel>(cancellationToken);
+    }
+}
+```
+
+**When it still fails after every retry: answer 503, don't crash**, from `Endpoints/ConvertEndpoints.cs`
+
+```csharp
+catch (Exception exception) when (exception is HttpRequestException or TimeoutRejectedException)
+{
+    return TypedResults.Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "The exchange-rate service is unavailable. Try again later.");
+}
+```

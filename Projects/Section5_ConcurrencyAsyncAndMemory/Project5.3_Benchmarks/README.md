@@ -97,3 +97,57 @@ Dictionary-vs-List argument in Project 2.1.
 
 **Why test benchmark code at all:** a "faster" version that gives a different answer isn't faster, it's wrong.
 The tests make sure every benchmark compares versions that really do the same job.
+
+## Code snippets
+
+**Run benchmarks (always in Release)**, from `Benchmarks/Program.cs`
+
+```csharp
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+```
+
+```bash
+dotnet run -c Release -- --filter "*Lookup*"
+```
+
+**A benchmark class**, from `Benchmarks/Benchmarks/LookupBenchmark.cs`
+
+```csharp
+[MemoryDiagnoser] // also measure memory allocated
+public class LookupBenchmark
+{
+    [Params(100, 100_000)] // run everything once per size
+    public int ItemCount { get; set; }
+
+    [GlobalSetup] // runs once before measuring; not counted
+    public void FillCollections()
+    {
+        list = Enumerable.Range(0, ItemCount).Select(number => "SKU-" + number).ToList();
+        hashSet = new HashSet<string>(list);
+        dictionary = list.ToDictionary(code => code, code => code.Length);
+        lastCode = "SKU-" + (ItemCount - 1);
+    }
+
+    [Benchmark(Baseline = true)] // other results are shown relative to this one
+    public bool ListContains()
+    {
+        return list.Contains(lastCode);
+    }
+
+    [Benchmark]
+    public bool HashSetContains()
+    {
+        return hashSet.Contains(lastCode);
+    }
+}
+```
+
+**The code being measured: three ways to join strings**, from `Benchmarks/Builders/CsvLineBuilder.cs`
+
+```csharp
+line += (i == 0 ? "" : ",") + values[i]; // a brand-new string every time round the loop
+
+builder.Append(values[i]);               // StringBuilder: adds to one growing buffer
+
+return string.Join(',', values);         // works out the final length first, copies once
+```

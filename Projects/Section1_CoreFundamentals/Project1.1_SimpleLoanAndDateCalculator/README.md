@@ -65,6 +65,79 @@ another reason it's used for money here.)
 This is a small program. Splitting it into many classes would just make it harder to read.
 The two helpers (`AskForDecimal`, `AskForDate`) exist only because they're used more than once.
 
+## Code snippets
+
+The key lines from `Program.cs`, so you can see the important ideas without reading the whole file.
+
+**`checked` vs `unchecked`: what happens when an `int` goes past its maximum**
+
+```csharp
+int biggestInt = int.MaxValue;
+Console.WriteLine(unchecked(biggestInt + 1)); // -2147483648: wraps around silently
+
+try
+{
+    Console.WriteLine(checked(biggestInt + 1));
+}
+catch (OverflowException)
+{
+    Console.WriteLine("checked caught the problem");
+}
+```
+
+**`decimal` for money, `double` for measurements**
+
+```csharp
+Console.WriteLine($"{0.1 + 0.2:R}"); // 0.30000000000000004
+Console.WriteLine(0.1m + 0.2m);      // 0.3
+```
+
+**Null handling: `?.`, `??=` and `??`**
+
+```csharp
+string? customerName = ReadAnswer("Your name (optional): ")?.Trim(); // Trim() only if not null
+customerName ??= "Customer";                                          // default only if still null
+
+int? extraMonthsOfGrace = null;
+Console.WriteLine(extraMonthsOfGrace ?? 0);                           // 0
+```
+
+**Reading a number safely with `TryParse` (no exception on bad input)**
+
+```csharp
+if (!decimal.TryParse(answer, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal number))
+{
+    Console.WriteLine("  Not a number, try again.");
+}
+```
+
+**Dates: `DateOnly`, `TimeOnly`, `DateTimeOffset`, time zones**
+
+```csharp
+DateOnly paymentDate = firstPaymentDate.AddMonths(monthNumber - 1);
+
+DateTimeOffset receiptPrintedAt = DateTimeOffset.UtcNow;
+DateTimeOffset localTime = TimeZoneInfo.ConvertTime(receiptPrintedAt, TimeZoneInfo.FindSystemTimeZoneById("Asia/Tokyo"));
+TimeOnly localClock = TimeOnly.FromDateTime(localTime.DateTime);
+```
+
+**The same value written for different countries (`CultureInfo`)**
+
+```csharp
+CultureInfo culture = CultureInfo.GetCultureInfo("de-DE");
+Console.WriteLine(firstPaymentDate.ToString("d", culture)); // 15.01.2027
+Console.WriteLine(monthlyPayment.ToString("N2", culture));  // 1.234,56
+```
+
+**Building a long text with `StringBuilder` and aligned columns**
+
+```csharp
+var receipt = new StringBuilder();
+receipt.AppendLine($"{"#",4} {"Date",-12} {"Payment",12}"); // ,4 = right-align in 4 chars, ,-12 = left-align
+receipt.AppendLine($"{monthNumber,4} {paymentDate:yyyy-MM-dd}   {paymentThisMonth,12:N2}");
+Console.Write(receipt.ToString());
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

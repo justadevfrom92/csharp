@@ -76,3 +76,81 @@ client app would include the `.proto` with `GrpcServices="Client"`.
 | `WatchStock` (stream) | 10 now → 6 after reserving 4 → 5 after reserving 1 | a change to a **different** product sends nothing | unknown SKU → `NotFound`; malformed → `InvalidArgument` |
 
 Each test starts a new app (fresh stock levels) and talks to it with the real generated client.
+
+## Code snippets
+
+**The contract: a `.proto` file**, from `StockGrpc/Protos/stock.proto`
+
+```proto
+syntax = "proto3";
+option csharp_namespace = "StockGrpc.Protos";
+
+service StockService {
+  rpc GetStock (GetStockRequest) returns (StockReply);                // one request -> one reply
+  rpc WatchStock (WatchStockRequest) returns (stream StockReply);     // one request -> a stream of replies
+}
+
+message StockReply {
+  string sku = 1;   // field numbers: never reuse or change them
+  string name = 2;
+  int32 quantity = 3;
+}
+```
+
+**Generate C# from it**, from `StockGrpc/StockGrpc.csproj`
+
+```xml
+<Protobuf Include="Protos/stock.proto" GrpcServices="Both" />
+```
+
+**Host the service**, from `Program.cs`
+
+```csharp
+builder.Services.AddGrpc();
+app.MapGrpcService<StockGrpcService>();
+```
+
+**Implement it: override the generated base class; errors are gRPC status codes** (simplified from `Services/StockGrpcService.cs`)
+
+```csharp
+public class StockGrpcService : StockService.StockServiceBase
+{
+    public override Task<StockReply> GetStock(GetStockRequest request, ServerCallContext context)
+    {
+        var item = store.Find(request.Sku);
+        if (item == null)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, $"No product with SKU '{request.Sku}'."));
+        }
+        return Task.FromResult(new StockReply { Sku = request.Sku, Name = item.Value.Name, Quantity = item.Value.Quantity });
+    }
+}
+```
+
+**Server streaming: keep writing until the client cancels**
+
+```csharp
+public override async Task WatchStock(WatchStockRequest request, IServerStreamWriter<StockReply> responseStream, ServerCallContext context)
+{
+    await responseStream.WriteAsync(CurrentStock(request.Sku));
+    await foreach (string _ in changes.Reader.ReadAllAsync(context.CancellationToken))
+    {
+        await responseStream.WriteAsync(CurrentStock(request.Sku));
+    }
+}
+```
+
+**A C# client (here, in the tests)**, from `StockGrpc.Tests/`
+
+```csharp
+GrpcChannel channel = GrpcChannel.ForAddress(factory.Server.BaseAddress, new GrpcChannelOptions
+{
+    HttpHandler = factory.Server.CreateHandler(),
+});
+var client = new StockService.StockServiceClient(channel);
+
+StockReply reply = await client.GetStockAsync(new GetStockRequest { Sku = "KB-01" });
+
+RpcException error = await Assert.ThrowsAsync<RpcException>(() => client.GetStockAsync(new GetStockRequest { Sku = "ZZ-99" }).ResponseAsync);
+Assert.Equal(StatusCode.NotFound, error.StatusCode);
+```

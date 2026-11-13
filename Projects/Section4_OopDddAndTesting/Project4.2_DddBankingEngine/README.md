@@ -126,6 +126,132 @@ Transient → can use anything. Scoped → Scoped or Singleton. Singleton → Si
 **Lifetimes used in Part 1:** the repository and dispatcher are singletons (one shared store, or the data
 would disappear); `BankAccountService` is transient (it holds no data, so a fresh one is cheap and safe).
 
+## Code snippets
+
+**Value object: a `record` that checks itself and never changes**, from `Banking.Domain/ValueObjects/MoneyValueObject.cs`
+
+```csharp
+public record MoneyValueObject
+{
+    public decimal Amount { get; }
+    public string Currency { get; }
+
+    public MoneyValueObject(decimal amount, string currency)
+    {
+        if (amount < 0)
+        {
+            throw new ArgumentException("Money cannot be negative.", nameof(amount));
+        }
+        if (string.IsNullOrWhiteSpace(currency) || currency.Length != 3)
+        {
+            throw new ArgumentException("Currency must be a 3-letter code like USD.", nameof(currency));
+        }
+        Amount = decimal.Round(amount, 2);
+        Currency = currency.ToUpperInvariant();
+    }
+
+    // Returns a NEW MoneyValueObject. The original is never changed.
+    public MoneyValueObject Add(MoneyValueObject other)
+    {
+        CheckSameCurrency(other);
+        return new MoneyValueObject(Amount + other.Amount, Currency);
+    }
+}
+```
+
+**Aggregate: private setters + a factory method, so the rules can't be skipped**, from `Banking.Domain/Aggregates/BankAccountAggregate.cs`
+
+```csharp
+public MoneyValueObject Balance { get; private set; }
+
+private BankAccountAggregate(Guid id, string ownerName, string currency) { ... }
+
+public static BankAccountAggregate Open(string ownerName, string currency)
+{
+    var account = new BankAccountAggregate(Guid.NewGuid(), ownerName.Trim(), currency);
+    account.pendingEvents.Add(new AccountOpenedEvent(account.Id, account.OwnerName, DateTimeOffset.UtcNow));
+    return account;
+}
+
+public void Withdraw(MoneyValueObject amount)
+{
+    CheckIsOpen();
+    CheckAmountIsPositive(amount);
+    if (Balance.IsLessThan(amount))
+    {
+        throw new InsufficientFundsException(Balance, amount);
+    }
+    Balance = Balance.Subtract(amount);
+    pendingEvents.Add(new MoneyWithdrawnEvent(Id, amount, Balance, DateTimeOffset.UtcNow));
+}
+```
+
+**Domain event: a past-tense fact, one line**, from `Banking.Domain/Events/`
+
+```csharp
+public interface IDomainEvent
+{
+    DateTimeOffset HappenedAt { get; }
+}
+
+public record MoneyDepositedEvent(Guid AccountId, MoneyValueObject Amount, MoneyValueObject NewBalance, DateTimeOffset HappenedAt) : IDomainEvent;
+```
+
+**Custom exception that carries the details**, from `Banking.Domain/Exceptions/InsufficientFundsException.cs`
+
+```csharp
+public class InsufficientFundsException : Exception
+{
+    public InsufficientFundsException(MoneyValueObject balance, MoneyValueObject requested)
+        : base($"Cannot withdraw {requested}. Balance is only {balance}.")
+    {
+        Balance = balance;
+        Requested = requested;
+    }
+
+    public MoneyValueObject Balance { get; }
+    public MoneyValueObject Requested { get; }
+}
+```
+
+**Repository interface: the domain says WHAT it needs, not HOW**, from `Banking.Domain/Repositories/IBankAccountRepository.cs`
+
+```csharp
+public interface IBankAccountRepository
+{
+    BankAccountAggregate? FindById(Guid id);
+    void Save(BankAccountAggregate account);
+}
+```
+
+**Testing with a hand-written fake**, from `Banking.Tests/Fakes/AccountRepositoryFake.cs` and `Banking.Tests/BankAccountServiceTest.cs`
+
+```csharp
+public class AccountRepositoryFake : IBankAccountRepository
+{
+    public Dictionary<Guid, BankAccountAggregate> SavedAccounts { get; } = new();
+
+    public BankAccountAggregate? FindById(Guid id)
+    {
+        return SavedAccounts.GetValueOrDefault(id);
+    }
+
+    public void Save(BankAccountAggregate account)
+    {
+        SavedAccounts[account.Id] = account;
+    }
+}
+
+[Fact]
+public void OpenAccount_PositiveNegative_WhitespaceOwner_IsRefusedAndNothingSaved()
+{
+    Assert.Throws<ArgumentException>(() => service.OpenAccount("   ", "USD"));
+
+    Assert.Empty(repository.SavedAccounts);
+    Assert.Empty(dispatcher.SentEvents);
+}
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

@@ -60,6 +60,77 @@ should be cached for seconds, or not at all.
 - `IMemoryCache` lives in *one* server's memory. With several servers each has its own copy and
   clearing it on one doesn't clear the others — that's when you move to Redis (`IDistributedCache`).
 
+## Code snippets
+
+**A settings section in `appsettings.json`**
+
+```json
+"Shop": {
+  "ShopName": "Roadmap Store",
+  "SupportEmail": "support@example.com",
+  "CategoryCacheMinutes": 5,
+  "MaximumCachedItems": 100
+}
+```
+
+**The matching class, with validation rules**, from `Settings/ShopSettings.cs`
+
+```csharp
+public class ShopSettings
+{
+    [Required]
+    public string ShopName { get; set; } = "";
+
+    [EmailAddress]
+    public string SupportEmail { get; set; } = "";
+
+    [Range(1, 60)]
+    public int CategoryCacheMinutes { get; set; }
+}
+```
+
+**Bind, validate, and refuse to start if the settings are wrong**, from `Program.cs`
+
+```csharp
+builder.Services.AddOptions<ShopSettings>()
+    .Bind(builder.Configuration.GetSection("Shop"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+**Read the settings anywhere with `IOptions<T>`**, from `Controllers/ShopController.cs`
+
+```csharp
+public ShopController(CategoryService categoryService, IOptions<ShopSettings> settings)
+{
+    this.categoryService = categoryService;
+    this.settings = settings.Value;
+}
+```
+
+**A size-limited memory cache, registered once, used by a singleton service**
+
+```csharp
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = maximumCachedItems;
+});
+builder.Services.AddSingleton<CategoryService>();
+```
+
+**`GetOrCreateAsync`: load once, then serve from memory until it expires**, from `Services/CategoryService.cs`
+
+```csharp
+List<string>? categories = await cache.GetOrCreateAsync(CategoriesCacheKey, async cacheEntry =>
+{
+    cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(settings.CategoryCacheMinutes);
+    cacheEntry.Size = 1; // counts toward SizeLimit
+    return await LoadCategoriesFromDatabaseAsync();
+});
+
+cache.Remove(CategoriesCacheKey); // when the data changes
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

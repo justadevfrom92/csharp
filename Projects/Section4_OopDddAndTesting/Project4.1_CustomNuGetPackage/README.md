@@ -52,6 +52,68 @@ repo. A package has a version number, so many apps can use it and upgrade when t
 **Why `ConsumerApp` is not in the solution file.** It can't restore until the package has been
 packed. Leaving it out keeps `dotnet build` of the whole solution working on a fresh clone.
 
+## Code snippets
+
+**Package info in the library's `.csproj`**, from `SimpleHelpers/SimpleHelpers.csproj`
+
+```xml
+<PackageId>Roadmap.SimpleHelpers</PackageId>
+<Version>2.0.0</Version>
+<Description>Small text and validation helpers.</Description>
+<GenerateDocumentationFile>true</GenerateDocumentationFile> <!-- /// comments show up in the user's editor -->
+<PackageOutputPath>../LocalNuGetFeed</PackageOutputPath>
+```
+
+**Pack it into a `.nupkg`**
+
+```bash
+dotnet pack SimpleHelpers -c Release
+```
+
+**Tell the consumer where to find it**, from `ConsumerApp/nuget.config`
+
+```xml
+<packageSources>
+  <add key="LocalFeed" value="../LocalNuGetFeed" />
+  <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+</packageSources>
+```
+
+**Use it as a package, not a project**, from `ConsumerApp/ConsumerApp.csproj`
+
+```xml
+<PackageReference Include="Roadmap.SimpleHelpers" Version="2.0.0" />
+```
+
+**A static helper with XML doc comments**, from `SimpleHelpers/Generators/UrlSlugGenerator.cs`
+
+```csharp
+/// <summary>Turns titles into URL-friendly text.</summary>
+public static class UrlSlugGenerator
+{
+    /// <summary>"Hello, World! 2026" becomes "hello-world-2026".</summary>
+    public static string MakeUrlSlug(string title)
+    {
+        var slug = new StringBuilder();
+        bool lastWasDash = false;
+        foreach (char character in title.ToLowerInvariant())
+        {
+            if (char.IsAsciiLetterOrDigit(character))
+            {
+                slug.Append(character);
+                lastWasDash = false;
+            }
+            else if (!lastWasDash && slug.Length > 0)
+            {
+                slug.Append('-');
+                lastWasDash = true;
+            }
+        }
+        return slug.ToString().TrimEnd('-');
+    }
+}
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

@@ -70,3 +70,84 @@ Now bad JSON is a 400 in every environment (checked in Development by the test a
 | OpenAPI document | lists `/books/{id}` with summary, 200 **and** 404 | doesn't list `/authors`, a `PUT`, or a 409 on GET | `/openapi/v2.json` → 404 |
 
 Each test creates a **new** app, so the in-memory book list starts fresh and tests can't affect each other.
+
+## Code snippets
+
+**OpenAPI, automatic validation, ProblemDetails errors**, from `MinimalApiOpenApi/Program.cs`
+
+```csharp
+builder.Services.AddOpenApi();        // OpenAPI description of every endpoint
+builder.Services.AddValidation();     // .NET 10: checks [Required], [Range]... automatically
+builder.Services.AddProblemDetails(); // errors as standard "application/problem+json"
+
+app.UseExceptionHandler(new ExceptionHandlerOptions
+{
+    StatusCodeSelector = exception => exception is BadHttpRequestException badRequest
+        ? badRequest.StatusCode
+        : StatusCodes.Status500InternalServerError,
+});
+app.UseStatusCodePages();
+app.MapOpenApi();       // GET /openapi/v1.json
+app.MapBookEndpoints();
+```
+
+**Group endpoints under one prefix, in their own file**, from `Endpoints/BookEndpoints.cs`
+
+```csharp
+public static RouteGroupBuilder MapBookEndpoints(this IEndpointRouteBuilder app)
+{
+    RouteGroupBuilder books = app.MapGroup("/books").WithTags("Books");
+    books.MapGet("/", GetAllBooks).WithSummary("List all books");
+    books.MapGet("/{id:int}", GetBookById).WithSummary("Get one book by its id");
+    books.MapPost("/", CreateBook).AddEndpointFilter<ApiKeyEndpointFilter>();
+    return books;
+}
+```
+
+**Typed results: the return type lists every possible answer**
+
+```csharp
+private static Results<Ok<BookModel>, NotFound> GetBookById(int id, BookStore store)
+{
+    BookModel? book = store.FindById(id);
+    if (book == null)
+    {
+        return TypedResults.NotFound();
+    }
+    return TypedResults.Ok(book);
+}
+
+return TypedResults.Created($"/books/{book.Id}", book);
+```
+
+**Validation attributes on a record**, from `Models/SaveBookRequestModel.cs`
+
+```csharp
+public record SaveBookRequestModel(
+    [property: Required, StringLength(200, MinimumLength = 1)] string Title,
+    [property: Required, StringLength(100, MinimumLength = 1)] string Author,
+    [property: Range(1450, 2100)] int Year);
+```
+
+**An endpoint filter: check an API key before the endpoint runs**, from `Filters/ApiKeyEndpointFilter.cs`
+
+```csharp
+public class ApiKeyEndpointFilter : IEndpointFilter
+{
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        string? sentKey = context.HttpContext.Request.Headers[HeaderName];
+        if (sentKey != expectedApiKey)
+        {
+            return TypedResults.Problem(statusCode: StatusCodes.Status401Unauthorized, title: $"Missing or wrong {HeaderName} header.");
+        }
+        return await next(context);
+    }
+}
+```
+
+**Call it**
+
+```bash
+curl -X POST http://localhost:5000/books -H "X-Api-Key: <key from appsettings.json>" -H "Content-Type: application/json" -d '{"title":"Dune","author":"Frank Herbert","year":1965}'
+```

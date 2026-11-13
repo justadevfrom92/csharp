@@ -59,3 +59,74 @@ for the user and wasteful for the server. The check moved into `RequireChatUserN
 
 Also checked in a real browser (two headless Chromium pages): Bob saw Alice's message, Alice got a clear error for
 an empty message, and an HTTP announcement reached both.
+
+## Code snippets
+
+**Register and map the hub**, from `SignalRChat/Program.cs`
+
+```csharp
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = false; // only HubException messages reach the client
+});
+
+app.MapHub<ChatHub>("/hubs/chat");
+```
+
+**A strongly-typed hub: methods clients call, and methods it calls on clients**, from `Hubs/ChatHub.cs` and `Clients/IChatClient.cs`
+
+```csharp
+public interface IChatClient
+{
+    Task ReceiveMessage(string room, string user, string text);
+    Task UserJoined(string room, string user);
+}
+
+public class ChatHub : Hub<IChatClient>
+{
+    public async Task JoinRoom(string room)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, room);
+        await Clients.Group(room).UserJoined(room, UserName);
+    }
+
+    public async Task SendMessage(string room, string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new HubException("Empty messages can't be sent."); // this message reaches the client
+        }
+        await Clients.Group(room).ReceiveMessage(room, UserName, text.Trim());
+    }
+}
+```
+
+**Per-connection data**
+
+```csharp
+public override Task OnConnectedAsync()
+{
+    Context.Items["user"] = Context.GetHttpContext()!.Request.Query["user"].ToString().Trim();
+    return base.OnConnectedAsync();
+}
+```
+
+**Push to clients from outside the hub (an endpoint, a background service)** (simplified from `Endpoints/AnnouncementEndpoints.cs`)
+
+```csharp
+app.MapPost("/announce", async (string? text, IHubContext<ChatHub, IChatClient> chatHub) =>
+{
+    await chatHub.Clients.All.ReceiveAnnouncement(text!.Trim());
+    return Results.Accepted();
+});
+```
+
+**The JavaScript client**, from `wwwroot/index.html`
+
+```js
+connection = new signalR.HubConnectionBuilder().withUrl("/hubs/chat?user=" + user).withAutomaticReconnect().build();
+connection.on("ReceiveMessage", (room, user, text) => show(`[${room}] ${user}: ${text}`)); // names match IChatClient
+await connection.start();
+await connection.invoke("JoinRoom", "general");
+await connection.invoke("SendMessage", "general", "hello");
+```

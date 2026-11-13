@@ -54,6 +54,74 @@ and filtered by field in tools like Seq, Elastic or Azure, instead of grepping t
 **Why `UseExceptionHandler` first in the pipeline:** middleware only catches errors from things that run
 after it, so it must wrap everything else.
 
+## Code snippets
+
+**Create the logger first, so even a startup crash is logged**, from `Program.cs`
+
+```csharp
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File(new CompactJsonFormatter(), "logs/errors-.json", rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning)
+    .CreateLogger();
+
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Host.UseSerilog();
+    // ...
+    app.Run();
+}
+catch (Exception exception)
+{
+    Log.Fatal(exception, "The app failed to start");
+}
+finally
+{
+    Log.CloseAndFlush(); // write any logs still in memory before the process ends
+}
+```
+
+**Developer error page vs friendly error page, plus nice 404 pages**
+
+```csharp
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage(); // full stack trace: ONLY on your own machine
+}
+else
+{
+    app.UseExceptionHandler("/Error/ServerError");
+    app.UseHsts();
+}
+app.UseStatusCodePagesWithReExecute("/Error/Status/{0}"); // e.g. /Error/Status/404
+```
+
+**The error page: full details to the log, only an id to the user**, from `Controllers/ErrorController.cs`
+
+```csharp
+[Route("/Error/ServerError")]
+public IActionResult ServerError()
+{
+    IExceptionHandlerPathFeature? errorDetails = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+    string errorId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+
+    logger.LogError(errorDetails?.Error, "Unhandled error {ErrorId} on {Path}", errorId, errorDetails?.Path);
+
+    Response.StatusCode = StatusCodes.Status500InternalServerError;
+    ViewBag.ErrorId = errorId;
+    return View();
+}
+```
+
+**Structured logging: `{Name}` placeholders become searchable fields, not just text**
+
+```csharp
+logger.LogWarning("Status {StatusCode} for {Path}", statusCode, reExecuteDetails?.OriginalPath);
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

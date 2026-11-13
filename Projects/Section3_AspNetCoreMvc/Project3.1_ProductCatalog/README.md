@@ -38,6 +38,100 @@ ask the browser to send the form again and add the product twice. Redirecting av
 The list has a `lock` because web requests run at the same time on different threads.
 Databases come in Section 6.
 
+## Code snippets
+
+**Conventional routing**, from `Program.cs`
+
+```csharp
+builder.Services.AddControllersWithViews();
+var app = builder.Build();
+app.UseStaticFiles();
+app.UseRouting();
+app.MapControllerRoute("default", "{controller=Products}/{action=Index}/{id?}"); // "/" -> Products/Index
+app.Run();
+```
+
+**Attribute routing + `NotFound()`**, from `Controllers/ProductsController.cs`
+
+```csharp
+[HttpGet("/product/{id:int}")] // GET /product/5
+public IActionResult Details(int id)
+{
+    ProductModel? product = ProductStore.FindById(id);
+    if (product == null)
+    {
+        return NotFound();
+    }
+    return View(product);
+}
+```
+
+**POST: validate, then redirect with a `TempData` message (Post/Redirect/Get)**
+
+```csharp
+[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult Create(ProductModel product)
+{
+    if (!ModelState.IsValid)
+    {
+        ViewBag.Categories = ProductStore.Categories;
+        return View(product); // show the form again with the error messages
+    }
+    ProductStore.Add(product);
+    TempData["SuccessMessage"] = $"Product '{product.Name}' was added.";
+    return RedirectToAction(nameof(Index));
+}
+```
+
+**Validation attributes on the model**, from `Models/ProductModel.cs`
+
+```csharp
+[Required(ErrorMessage = "Name is required.")]
+[StringLength(50, MinimumLength = 2, ErrorMessage = "Name must be 2 to 50 characters.")]
+public string Name { get; set; } = "";
+
+[Range(0.01, 100000, ErrorMessage = "Price must be between 0.01 and 100,000.")]
+public decimal Price { get; set; }
+```
+
+**A form with tag helpers and a partial**, from `Views/Products/Create.cshtml` and `_ProductFormFields.cshtml`
+
+```cshtml
+<form asp-action="Create" method="post">
+    <partial name="_ProductFormFields" model="Model" />
+    <button type="submit">Save</button>
+</form>
+
+<div asp-validation-summary="ModelOnly"></div>
+<label asp-for="Name"></label>
+<input asp-for="Name" />
+<span asp-validation-for="Name"></span>
+```
+
+**Reading `TempData` once, in the layout**, from `Views/Shared/_Layout.cshtml`
+
+```cshtml
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="success-alert">@successMessage</div>
+}
+```
+
+**Thread-safe in-memory store: copy inside the `lock`**, from `Stores/ProductStore.cs`
+
+```csharp
+private static readonly object listLock = new();
+
+public static List<ProductModel> GetAll()
+{
+    lock (listLock)
+    {
+        return products.ToList();
+    }
+}
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

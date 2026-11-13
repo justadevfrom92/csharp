@@ -70,6 +70,97 @@ already says. One clear source is easier to read.
 **Why the levels live in appsettings and not in code:** you can turn on Debug logging on a live server
 by changing config, without rebuilding the app.
 
+## Code snippets
+
+**Register the `DbContext` (pooled) with the SQLite connection string and the interceptor**, from `Program.cs`
+
+```csharp
+builder.Services.AddSingleton<SqlQueryLoggingInterceptor>();
+builder.Services.AddDbContextPool<LibraryDbContext>((serviceProvider, options) =>
+{
+    options.UseSqlite(builder.Configuration.GetConnectionString("Library"));
+    options.AddInterceptors(serviceProvider.GetRequiredService<SqlQueryLoggingInterceptor>());
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableSensitiveDataLogging(); // real parameter values in logs: NEVER in production
+    }
+});
+```
+
+**Serilog, reading its settings from `appsettings*.json`**
+
+```csharp
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+});
+app.UseSerilogRequestLogging(); // one tidy log line per HTTP request
+```
+
+**Relationships: one-to-one and many-to-many**, from `DbContexts/LibraryDbContext.cs`
+
+```csharp
+modelBuilder.Entity<AuthorModel>()
+    .HasOne(author => author.Profile)
+    .WithOne(profile => profile.Author)
+    .HasForeignKey<AuthorProfileModel>(profile => profile.AuthorId);
+
+modelBuilder.Entity<BookModel>()
+    .HasMany(book => book.Tags)
+    .WithMany(tag => tag.Books)
+    .UsingEntity(join => join.ToTable("BookTag"));
+
+modelBuilder.Entity<TagModel>().HasIndex(tag => tag.Name).IsUnique();
+modelBuilder.Entity<BookModel>().HasData(new BookModel { Id = 1, Title = "Frankenstein", PublishedYear = 1818, AuthorId = 1 });
+```
+
+**Loading related data: `Include`, `ThenInclude`, `AsNoTracking`**, from `Controllers/BooksController.cs`
+
+```csharp
+List<BookModel> books = await database.Books
+    .Include(book => book.Author)
+    .ThenInclude(author => author.Profile)
+    .Include(book => book.Tags)
+    .AsNoTracking() // read-only page: no need for EF to track changes
+    .OrderBy(book => book.Title)
+    .ToListAsync();
+```
+
+**Adding a row with related rows, then saving**
+
+```csharp
+List<TagModel> tags = await database.Tags.Where(tag => tagIds.Contains(tag.Id)).ToListAsync();
+database.Books.Add(new BookModel { Title = title.Trim(), PublishedYear = publishedYear, Author = author, Tags = tags });
+await database.SaveChangesAsync();
+```
+
+**An interceptor that sees every SQL command**, from `Interceptors/SqlQueryLoggingInterceptor.cs`
+
+```csharp
+public class SqlQueryLoggingInterceptor : DbCommandInterceptor
+{
+    public override ValueTask<DbDataReader> ReaderExecutedAsync(DbCommand command, CommandExecutedEventData eventData, DbDataReader result, CancellationToken cancellationToken = default)
+    {
+        LogCommand(command, eventData.Duration);
+        return ValueTask.FromResult(result);
+    }
+}
+```
+
+**Migrations**
+
+```bash
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+```
+
+```csharp
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<LibraryDbContext>().Database.Migrate();
+}
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

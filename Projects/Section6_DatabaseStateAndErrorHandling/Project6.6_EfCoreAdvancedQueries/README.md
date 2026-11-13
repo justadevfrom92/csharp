@@ -76,6 +76,87 @@ makes an open edit screen get a conflict.
 (SQL Server has a built-in `rowversion` column that changes itself — `[Timestamp] byte[]`. SQLite has
 none, so here the code bumps `Version` by hand.)
 
+## Code snippets
+
+**Raw SQL query, safe from injection**, from `Services/ProductQueryService.cs`
+
+```csharp
+return database.Products
+    .FromSql($"SELECT * FROM Products WHERE Name LIKE {pattern}") // {pattern} becomes @p0
+    .OrderBy(product => product.Name)
+    .AsNoTracking()
+    .ToListAsync();
+```
+
+**Raw SQL command**
+
+```csharp
+return database.Database.ExecuteSqlAsync(
+    $"UPDATE Products SET Stock = Stock + {extraUnits}, Version = Version + 1 WHERE Category = {category} AND IsDiscontinued = 0");
+```
+
+**Bulk update and bulk delete: one statement, no loading**
+
+```csharp
+return database.Products
+    .Where(product => product.Category == category && !product.IsDiscontinued)
+    .ExecuteUpdateAsync(setters => setters
+        .SetProperty(product => product.PriceInCents, product => product.PriceInCents * (100 + percent) / 100)
+        .SetProperty(product => product.Version, product => product.Version + 1));
+
+return database.Products
+    .Where(product => product.Category == category && product.IsDiscontinued)
+    .ExecuteDeleteAsync();
+```
+
+**Compiled query: translated to SQL once**
+
+```csharp
+private static readonly Func<ShopDbContext, int, Task<ProductModel?>> findByIdCompiled =
+    EF.CompileAsyncQuery((ShopDbContext context, int id) => context.Products.AsNoTracking().FirstOrDefault(product => product.Id == id));
+
+return findByIdCompiled(database, id);
+```
+
+**Concurrency token: refuse to overwrite someone else's change**
+
+```csharp
+product.Property(p => p.Version).IsConcurrencyToken(); // in ShopDbContext.OnModelCreating
+
+database.Entry(product).Property(existing => existing.Version).OriginalValue = versionTheUserSaw;
+product.PriceInCents = newPriceInCents;
+product.Version = versionTheUserSaw + 1;
+try
+{
+    await database.SaveChangesAsync();
+    return PriceUpdateOutcome.Updated;
+}
+catch (DbUpdateConcurrencyException)
+{
+    database.ChangeTracker.Clear();
+    return PriceUpdateOutcome.ConflictSomeoneElseChangedIt;
+}
+```
+
+**Print every SQL statement EF sends** (simplified from `Program.cs`, which also tidies each line)
+
+```csharp
+.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information)
+```
+
+**Testing against a real in-memory SQLite database**, from `EfCoreAdvancedQueries.Tests/Helpers/TestDatabaseHelper.cs`
+
+```csharp
+connection = new SqliteConnection("Data Source=:memory:");
+connection.Open(); // the database lives as long as this connection is open
+
+DbContextOptions<ShopDbContext> options = new DbContextOptionsBuilder<ShopDbContext>()
+    .UseSqlite(connection)
+    .Options;
+using ShopDbContext context = new ShopDbContext(options);
+context.Database.EnsureCreated();
+```
+
 ## Why these types
 
 | Choice | Why |

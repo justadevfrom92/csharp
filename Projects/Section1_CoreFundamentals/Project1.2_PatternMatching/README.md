@@ -72,3 +72,72 @@ The tests check both versions give the same answer for every edge.
 | Needs approval | card > 1000, cash > 5000 → true | exactly 1000 / 5000 → false | `null`, an `int` → false |
 | Usable card digits (`not`) | "4242" → true | "0000" → false | "42", "", `null` → false |
 | Bank command | help, balance, deposit 25.50, withdraw 10 | `deposit -5`, `withdraw 0`, `deposit abc` → refused | `null`, empty, unknown command, `deposit` with no amount → rejected |
+
+## Code snippets
+
+**Switch expression with relational (`<`, `>=`) and logical (`and`, `or`) patterns**, from `Classifiers/CreditScoreClassifier.cs`
+
+```csharp
+return creditScore switch
+{
+    < LowestScore or > HighestScore => throw new ArgumentOutOfRangeException(nameof(creditScore)),
+    < 580 => "Poor",
+    >= 580 and < 670 => "Fair",
+    < 740 => "Good",
+    < 800 => "Very good",
+    _ => "Excellent", // "_" = anything else
+};
+```
+
+**Property patterns: look inside an object**, from `Classifiers/ShippingCostClassifier.cs`
+
+```csharp
+return parcel switch
+{
+    null => throw new ArgumentNullException(nameof(parcel)),
+    { WeightKilograms: <= 0 } => throw new ArgumentException("Weight must be more than 0 kg.", nameof(parcel)),
+    { CountryCode: "US", IsExpress: true } => 15.00m,
+    { CountryCode: "US", WeightKilograms: <= 1 } => 5.00m,
+    { CountryCode: "US" } => 9.00m,
+    { IsExpress: true } => 40.00m,
+    _ => 25.00m,
+};
+```
+
+**Type patterns with a `when` guard**, from `Classifiers/PaymentClassifier.cs`
+
+```csharp
+return payment switch
+{
+    CardPaymentModel card when card.Amount > 1000 => $"Large card payment {card.Amount:0.00} - needs approval",
+    CardPaymentModel card => $"Card payment {card.Amount:0.00}",
+    CashPaymentModel cash => $"Cash payment {cash.Amount:0.00}",
+    _ => throw new NotSupportedException($"Unknown payment type: {payment.GetType().Name}"),
+};
+```
+
+**`is` with a pattern (a yes/no check), and `not`**
+
+```csharp
+return payment is CardPaymentModel { Amount: > 1000 } or CashPaymentModel { Amount: > 5000 };
+
+return card is { LastFourDigits: { Length: 4 } and not "0000" };
+```
+
+**List patterns: match the shape of an array**, from `Parsers/BankCommandParser.cs`
+
+```csharp
+return words switch
+{
+    [] => throw new ArgumentException("No command given."),
+    ["balance"] => "Showing balance",
+    ["deposit", var amountText] => $"Depositing {decimal.Parse(amountText, CultureInfo.InvariantCulture):0.00}",
+    [var unknownCommand, ..] => throw new ArgumentException($"Unknown command '{unknownCommand}'."), // ".." = any number of items
+};
+```
+
+**Records: one line for a data class**, from `Models/`
+
+```csharp
+public record CardPaymentModel(decimal Amount, string LastFourDigits);
+```
