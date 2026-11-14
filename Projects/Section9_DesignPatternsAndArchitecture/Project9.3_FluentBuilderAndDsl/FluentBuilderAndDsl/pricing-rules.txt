@@ -1,0 +1,7 @@
+# Pricing rules - edit this file, no code changes or rebuild needed.
+# WHEN <total|items|country> <operator> <value> THEN discount <N>%  |  shipping <amount>
+
+WHEN total > 100 THEN discount 10%
+WHEN items >= 5 THEN discount 5%
+WHEN total >= 150 THEN shipping 0
+WHEN country = CA THEN shipping 4.99

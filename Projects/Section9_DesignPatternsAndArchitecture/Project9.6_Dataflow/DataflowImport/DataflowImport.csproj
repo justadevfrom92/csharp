@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <!-- No package needed: TPL Dataflow (System.Threading.Tasks.Dataflow) is part of .NET itself. -->
+</Project>

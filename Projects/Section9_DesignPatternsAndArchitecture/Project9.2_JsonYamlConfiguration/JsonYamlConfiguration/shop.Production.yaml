@@ -1,0 +1,11 @@
+# YAML: the same tree as JSON, written with INDENTATION instead of { } and [ ].
+# Loaded AFTER shop.json, so every value here REPLACES the JSON value with the same path.
+Shop:
+  Name: Roadmap Store (Production)
+  Shipping:
+    FreeShippingFrom: 75.0
+    Countries:          # a list: one "- item" per line. NOTE: lists MERGE by position, see README
+      - US
+      - CA
+  DiscountCodes:
+    VIP25: 20           # changes one key; WELCOME10 still comes from shop.json

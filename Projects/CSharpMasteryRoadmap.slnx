@@ -130,4 +130,37 @@
     <Project Path="Section8_BeyondTheRoadmap/Project8.9_Grpc/StockGrpc.Tests/StockGrpc.Tests.csproj" />
     <Project Path="Section8_BeyondTheRoadmap/Project8.9_Grpc/StockGrpc/StockGrpc.csproj" />
   </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/" />
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.1_OperatorsAndLambdas/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.1_OperatorsAndLambdas/OperatorsAndLambdas.Tests/OperatorsAndLambdas.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.1_OperatorsAndLambdas/OperatorsAndLambdas/OperatorsAndLambdas.csproj" />
+  </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.2_JsonYamlConfiguration/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.2_JsonYamlConfiguration/JsonYamlConfiguration.Tests/JsonYamlConfiguration.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.2_JsonYamlConfiguration/JsonYamlConfiguration/JsonYamlConfiguration.csproj" />
+  </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.3_FluentBuilderAndDsl/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.3_FluentBuilderAndDsl/FluentBuilderAndDsl.Tests/FluentBuilderAndDsl.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.3_FluentBuilderAndDsl/FluentBuilderAndDsl/FluentBuilderAndDsl.csproj" />
+  </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.4_BehavioralPatterns/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.4_BehavioralPatterns/BehavioralPatterns.Tests/BehavioralPatterns.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.4_BehavioralPatterns/BehavioralPatterns/BehavioralPatterns.csproj" />
+  </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.5_PipelinePatterns/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.5_PipelinePatterns/PipelinePatterns.Tests/PipelinePatterns.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.5_PipelinePatterns/PipelinePatterns/PipelinePatterns.csproj" />
+  </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.6_Dataflow/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.6_Dataflow/DataflowImport.Tests/DataflowImport.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.6_Dataflow/DataflowImport/DataflowImport.csproj" />
+  </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine/WorkflowEngine.Tests/WorkflowEngine.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine/WorkflowEngine/WorkflowEngine.csproj" />
+  </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions/ReactiveExtensions.Tests/ReactiveExtensions.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions/ReactiveExtensions/ReactiveExtensions.csproj" />
+  </Folder>
 </Solution>

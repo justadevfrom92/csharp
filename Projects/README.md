@@ -9,6 +9,8 @@ The general rules are in [WHY_THESE_TYPES.md](WHY_THESE_TYPES.md), and every pro
 **Where does each file go?** A class's name ends in its folder's name (`Forms/` → `...Form`, `Models/` → `...Model`).
 See [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
 
+**Which design pattern is where?** Strategy, Mediator, Decorator, DSL, Rx and more: [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md).
+
 **Need code to copy?** The [cheat sheets](CheatSheets/README.md) have short snippets for every topic (one page per
 section, plus the `dotnet` CLI), and every project README has a **Code snippets** section with the key lines from that project.
 
@@ -66,3 +68,19 @@ Not in the original roadmap spec, but big parts of Microsoft's .NET 10 / ASP.NET
 | 8.7 | [Blazor](Section8_BeyondTheRoadmap/Project8.7_Blazor) | Blazor + bUnit tests |
 | 8.8 | [SignalR](Section8_BeyondTheRoadmap/Project8.8_SignalR) | Real-time + tests |
 | 8.9 | [gRPC](Section8_BeyondTheRoadmap/Project8.9_Grpc) | gRPC + tests |
+
+## Section 9 — Design Patterns & Architecture
+
+Patterns and techniques for structuring code. **Every one of them, and where else it appears in this repo:
+[DESIGN_PATTERNS.md](DESIGN_PATTERNS.md).**
+
+| # | Project | Type |
+|---|---|---|
+| 9.1 | [Operator Overloading & Lambda Expressions](Section9_DesignPatternsAndArchitecture/Project9.1_OperatorsAndLambdas) | Console + tests |
+| 9.2 | [JSON & YAML Configuration](Section9_DesignPatternsAndArchitecture/Project9.2_JsonYamlConfiguration) | Console + tests |
+| 9.3 | [Fluent Builder & DSL](Section9_DesignPatternsAndArchitecture/Project9.3_FluentBuilderAndDsl) | Console + tests |
+| 9.4 | [Strategy, Command, State, Mediator, Observer](Section9_DesignPatternsAndArchitecture/Project9.4_BehavioralPatterns) | Console + tests |
+| 9.5 | [Pipes & Filters, Chain of Responsibility, Decorator Pipeline, Interceptor/AOP](Section9_DesignPatternsAndArchitecture/Project9.5_PipelinePatterns) | Console + tests |
+| 9.6 | [Dataflow Architecture (TPL Dataflow)](Section9_DesignPatternsAndArchitecture/Project9.6_Dataflow) | Console + tests |
+| 9.7 | [Workflow Engine (retries, compensation, resume)](Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine) | Console + tests |
+| 9.8 | [Reactive Extensions (Rx / IObservable)](Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions) | Console + tests |

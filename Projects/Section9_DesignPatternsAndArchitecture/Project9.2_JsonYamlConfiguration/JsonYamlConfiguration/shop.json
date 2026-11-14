@@ -1,0 +1,15 @@
+{
+  // JSON configuration files in .NET may contain comments and trailing commas.
+  "Shop": {
+    "Name": "Roadmap Store",
+    "MaximumItemsPerOrder": 20,
+    "Shipping": {
+      "FreeShippingFrom": 50.0,
+      "Countries": [ "US", "CA", "GB" ]
+    },
+    "DiscountCodes": {
+      "WELCOME10": 10,
+      "VIP25": 25
+    }
+  }
+}
