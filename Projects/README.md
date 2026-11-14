@@ -44,7 +44,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 7.4 | [Output Caching + Health Check + robots.txt](Section7_SecurityBackgroundTasksAndDeployment/Project7.4_OutputCachingCatalog) | MVC + tests |
 | 7.5 | [Feature Flags](Section7_SecurityBackgroundTasksAndDeployment/Project7.5_FeatureFlags) | MVC |
 | 7.6 | [GitHub Actions CI](Section7_SecurityBackgroundTasksAndDeployment/Project7.6_GitHubActionsCi) | Workflow file |
-| 7.7 | [Idempotent Migration Scripts](Section7_SecurityBackgroundTasksAndDeployment/Project7.7_IdempotentMigrationScripts) | Console + SQL script |
+| 7.7 | [Idempotent Migration Scripts & Stored Procedures](Section7_SecurityBackgroundTasksAndDeployment/Project7.7_IdempotentMigrationScripts) | Console + SQL Server |
 | 7.8 | [Raw WebSockets](Section7_SecurityBackgroundTasksAndDeployment/Project7.8_RawWebSockets) | Web + tests |
 | 7.9 | [Redis Distributed Cache](Section7_SecurityBackgroundTasksAndDeployment/Project7.9_RedisDistributedCache) | Web API + tests |
 

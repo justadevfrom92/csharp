@@ -1,4 +1,6 @@
 using IdempotentMigrationScripts.DbContexts;
+using IdempotentMigrationScripts.Models;
+using IdempotentMigrationScripts.Services;
 using Microsoft.EntityFrameworkCore;
 
 // The app NEVER changes the database schema itself (no Database.Migrate()).
@@ -35,4 +37,18 @@ if (pendingMigrations.Count > 0)
 }
 
 Console.WriteLine("Database schema is up to date. Starting app...");
+
+// Stored procedure demo, for customer 1.
+var procedures = new OrderProcedureService(database);
+Console.WriteLine();
+Console.WriteLine("Stored procedures for customer 1:");
+List<OrderModel> orders = await procedures.GetOrdersForCustomerAsync(1);
+Console.WriteLine($"  GetOrdersForCustomer  -> {orders.Count} order(s)");
+foreach (OrderModel order in orders)
+{
+    Console.WriteLine($"    order {order.Id}: {order.Total:0.00} on {order.CreatedAtUtc:yyyy-MM-dd}");
+}
+Console.WriteLine($"  GetCustomerOrderTotal -> {await procedures.GetCustomerOrderTotalAsync(1):0.00}");
+Console.WriteLine($"  ApplyCustomerDiscount -> {await procedures.ApplyCustomerDiscountAsync(1, 10)} order(s) got 10% off");
+Console.WriteLine($"  GetCustomerOrderTotal -> {await procedures.GetCustomerOrderTotalAsync(1):0.00} after the discount");
 return 0;

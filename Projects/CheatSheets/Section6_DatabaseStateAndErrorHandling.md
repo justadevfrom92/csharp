@@ -124,7 +124,27 @@ List<ProductModel> computers = await database.Products
 await database.Database.ExecuteSqlAsync($"EXEC ArchiveOldOrders @OlderThanDays = {days}");
 ```
 
-Add the procedure itself in a migration with `migrationBuilder.Sql("CREATE PROCEDURE ...")`.
+Add the procedure itself in a migration. Wrap it in `EXEC(N'...')` (single quotes doubled inside), because
+SQL Server only allows `CREATE PROCEDURE` at the start of a batch and idempotent scripts put it inside `IF ... BEGIN`:
+
+```csharp
+migrationBuilder.Sql(@"EXEC(N'
+CREATE OR ALTER PROCEDURE GetProductsByCategory @Category NVARCHAR(50)
+AS
+BEGIN
+    SELECT Id, Name, Price FROM Products WHERE Category = @Category;
+END');");
+```
+
+Output parameter:
+
+```csharp
+var totalParameter = new SqlParameter("@Total", SqlDbType.Decimal) { Direction = ParameterDirection.Output, Precision = 18, Scale = 2 };
+await database.Database.ExecuteSqlAsync($"EXEC GetCustomerOrderTotal @CustomerId = {customerId}, @Total = {totalParameter} OUTPUT");
+decimal total = (decimal)totalParameter.Value;
+```
+
+Working example: [Project 7.7](../Section7_SecurityBackgroundTasksAndDeployment/Project7.7_IdempotentMigrationScripts).
 
 ## EF Core: transactions and concurrency
 

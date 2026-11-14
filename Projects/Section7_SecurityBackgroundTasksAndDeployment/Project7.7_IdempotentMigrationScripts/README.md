@@ -1,7 +1,8 @@
 # Project 7.7 — Zero-Downtime Idempotent Migration Scripts
 
-An EF Core model (Customers, Orders) with two migrations, and the generated **idempotent** SQL
+An EF Core model (Customers, Orders) with three migrations, and the generated **idempotent** SQL
 script (`migrations.sql`) that a deployment pipeline runs *before* the new app version starts.
+The third migration adds **stored procedures**, and `Services/OrderProcedureService.cs` calls them.
 
 ```bash
 ./generate-migration-script.sh
@@ -11,7 +12,8 @@ script (`migrations.sql`) that a deployment pipeline runs *before* the new app v
 dotnet run
 ```
 
-With a real SQL Server, the app checks the schema and refuses to start if a migration is missing:
+With a real SQL Server, the app checks the schema and refuses to start if a migration is missing.
+If the schema is up to date, it then calls the three stored procedures for customer 1:
 
 ```bash
 ORDERS_CONNECTION_STRING="Server=...;Database=Orders;..." dotnet run
@@ -25,11 +27,47 @@ SQLite. Generating the script needs no database at all.)
 Open `migrations.sql`: every migration is wrapped in
 `IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '...')`.
 So the *same* file can be run against:
-- an empty database → applies both migrations,
-- a database at `InitialCreate` → applies only `AddCustomerEmail`,
+- an empty database → applies all three migrations,
+- a database at `InitialCreate` → applies only `AddCustomerEmail` and `AddOrderStoredProcedures`,
 - an up-to-date database → does nothing.
 
 Running it twice is harmless. The pipeline never has to know which version a database is at.
+
+## Stored procedures
+
+A **stored procedure** is a named piece of SQL saved **inside the database**, called by name like a function.
+The `AddOrderStoredProcedures` migration creates three, one of each kind:
+
+| Procedure | Kind | Called with |
+|---|---|---|
+| `GetOrdersForCustomer @CustomerId` | **returns rows** | `database.Orders.FromSql($"EXEC ...")` → `List<OrderModel>` |
+| `ApplyCustomerDiscount @CustomerId, @Percent` | **changes data**, returns no rows | `database.Database.ExecuteSqlAsync($"EXEC ...")` → rows changed |
+| `GetCustomerOrderTotal @CustomerId, @Total OUTPUT` | **output parameter** | a `SqlParameter` with `Direction = Output`, read after the call |
+
+**Why use them:** complex SQL lives in one place that every program using the database shares; the app's
+database account can be allowed to run only these procedures instead of touching tables directly; some
+companies require them. **Why not everywhere:** the logic is split between C# and the database, it's harder
+to test, and every change needs a migration. Plain LINQ is the default; a procedure is for when there's a reason.
+
+**How they're created:** EF has no "create procedure" method, so the migration uses `migrationBuilder.Sql(...)`
+with hand-written SQL. Two details:
+- `CREATE OR ALTER PROCEDURE`: running it twice replaces the procedure instead of failing.
+- **`EXEC(N'...')` around each one.** SQL Server only accepts `CREATE PROCEDURE` as the first statement of a
+  batch, but `migrations.sql` wraps every step in `IF NOT EXISTS (...) BEGIN ... END`. The first version of
+  this migration used plain `CREATE OR ALTER PROCEDURE`, and the generated script would have failed with a
+  syntax error. `EXEC` runs the text as its own batch. Inside `N'...'`, single quotes are doubled (`''`).
+
+**Rules when calling them:**
+- Every `{value}` in `FromSql`/`ExecuteSql` becomes a SQL parameter, so it's safe from SQL injection.
+- You can't add LINQ (`Where`, `OrderBy`) after `FromSql("EXEC ...")`: SQL Server can't use a procedure inside
+  a bigger query. Sorting and filtering go inside the procedure.
+- A procedure that returns entities must return **every column** of that entity.
+- `ApplyCustomerDiscount` checks the percentage in C# **and** in SQL (`THROW 50001`), because other programs
+  can call the procedure directly.
+
+**Not tested here:** this container has no SQL Server, so the procedures were not run against a real
+database. The project builds and `migrations.sql` is generated; run the script and
+`ORDERS_CONNECTION_STRING=... dotnet run` against a SQL Server to try them.
 
 ## Production runbook
 
@@ -126,6 +164,50 @@ if (pendingMigrations.Count > 0)
 modelBuilder.Entity<OrderModel>().Property(order => order.Total).HasPrecision(18, 2); // decimal(18,2)
 ```
 
+**Create a stored procedure in a migration**, from `Migrations/20261114032721_AddOrderStoredProcedures.cs`
+
+```csharp
+migrationBuilder.Sql(@"EXEC(N'
+CREATE OR ALTER PROCEDURE GetOrdersForCustomer
+    @CustomerId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT Id, CustomerId, Total, CreatedAtUtc
+    FROM Orders
+    WHERE CustomerId = @CustomerId
+    ORDER BY CreatedAtUtc DESC;
+END');");
+
+// Down(): remove it again
+migrationBuilder.Sql("DROP PROCEDURE IF EXISTS GetOrdersForCustomer;");
+```
+
+**Call the three kinds of procedure**, from `Services/OrderProcedureService.cs`
+
+```csharp
+// returns rows
+List<OrderModel> orders = await database.Orders
+    .FromSql($"EXEC GetOrdersForCustomer @CustomerId = {customerId}")
+    .AsNoTracking()
+    .ToListAsync();
+
+// changes data, returns how many rows changed
+int changed = await database.Database.ExecuteSqlAsync(
+    $"EXEC ApplyCustomerDiscount @CustomerId = {customerId}, @Percent = {percent}");
+
+// output parameter
+var totalParameter = new SqlParameter("@Total", SqlDbType.Decimal)
+{
+    Direction = ParameterDirection.Output,
+    Precision = 18,
+    Scale = 2,
+};
+await database.Database.ExecuteSqlAsync(
+    $"EXEC GetCustomerOrderTotal @CustomerId = {customerId}, @Total = {totalParameter} OUTPUT");
+decimal total = (decimal)totalParameter.Value;
+```
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
@@ -138,4 +220,6 @@ General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in t
 | `DesignTimeDbContextFactory : IDesignTimeDbContextFactory<T>` | The `dotnet ef` tool looks for this interface to create the context without running the app. | — |
 | `return 0` / `return 1` from top-level code | The program's exit code. A deploy pipeline checks it: non-zero = stop. | Printing an error but exiting with 0 would let a broken deploy continue. |
 | `List<string> pendingMigrations` | We need `Count` and then the names — `ToList()` runs the check once. | A lazy `IEnumerable` would query the database twice. |
+| `Task<int>` from `ApplyCustomerDiscountAsync` | The number of rows the procedure changed, as SQL Server reports it. | — |
+| `SqlParameter` with `Direction = Output` | The only way to get a value back through an `OUTPUT` parameter: the procedure writes into the parameter object. | An interpolated plain `decimal` is input-only; it can't be changed by the procedure. |
 | `string? connectionString` | Missing environment variable → `null` → print help instead of crashing. | — |

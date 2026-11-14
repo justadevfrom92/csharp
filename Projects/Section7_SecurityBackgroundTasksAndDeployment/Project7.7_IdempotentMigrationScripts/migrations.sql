@@ -77,3 +77,72 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261114032721_AddOrderStoredProcedures'
+)
+BEGIN
+    EXEC(N'
+    CREATE OR ALTER PROCEDURE GetOrdersForCustomer
+        @CustomerId INT
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        SELECT Id, CustomerId, Total, CreatedAtUtc
+        FROM Orders
+        WHERE CustomerId = @CustomerId
+        ORDER BY CreatedAtUtc DESC;
+    END');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261114032721_AddOrderStoredProcedures'
+)
+BEGIN
+    EXEC(N'
+    CREATE OR ALTER PROCEDURE ApplyCustomerDiscount
+        @CustomerId INT,
+        @Percent INT
+    AS
+    BEGIN
+        IF @Percent < 1 OR @Percent > 50
+            THROW 50001, ''Discount must be 1 to 50 percent.'', 1;
+
+        UPDATE Orders
+        SET Total = ROUND(Total * (100 - @Percent) / 100.0, 2)
+        WHERE CustomerId = @CustomerId;
+    END');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261114032721_AddOrderStoredProcedures'
+)
+BEGIN
+    EXEC(N'
+    CREATE OR ALTER PROCEDURE GetCustomerOrderTotal
+        @CustomerId INT,
+        @Total DECIMAL(18, 2) OUTPUT
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        SELECT @Total = COALESCE(SUM(Total), 0)
+        FROM Orders
+        WHERE CustomerId = @CustomerId;
+    END');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261114032721_AddOrderStoredProcedures'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261114032721_AddOrderStoredProcedures', N'10.0.14');
+END;
+
+COMMIT;
+GO
+
