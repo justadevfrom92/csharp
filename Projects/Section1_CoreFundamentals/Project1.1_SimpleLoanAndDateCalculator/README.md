@@ -138,6 +138,32 @@ receipt.AppendLine($"{monthNumber,4} {paymentDate:yyyy-MM-dd}   {paymentThisMont
 Console.Write(receipt.ToString());
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (they compile; the results below were checked by running them).
+
+| Job | Variation (`Variations/...`) | Same result as the original? | The difference |
+|---|---|---|---|
+| "name or 'Customer'" | `NullHandlingVariation.WithNullCoalescing` (`??`, original style) | — | shortest |
+| | `WithIsNull` (`is null`) | ✅ | can't be fooled by an overloaded `==` operator |
+| | `WithEqualsNull` (`== null`) | ✅ for `string` | for your own class, an overloaded `==` (9.1) runs and could answer differently |
+| | `WithIsNotNullTernary` | ✅ | positive-first reading |
+| | `WithIsNullOrWhiteSpace` | ❌ | `"   "` → `Customer` too (the others keep `"   "`) |
+| text → number | `NumberParsingVariation.WithTryParseInvariant` (original) | — | bad text → `null`, no exception |
+| | `WithParse` | ✅ for good text | `"abc"` → `FormatException` |
+| | `WithConvert` (`Convert.ToDecimal`) | ❌ | `null` → **0** (hides a missing value); `"abc"` → `FormatException` |
+| | `WithTryParseCulture("1,5", "de-DE")` | ❌ | **1.5** in Germany, but **15** with InvariantCulture (comma = thousands separator) |
+| | `WithTryParseCurrentCulture` | depends on the PC | uses the computer's settings: same program, different answers on different machines |
+| `int.MaxValue + 1` | `OverflowVariation.Default` / `Unchecked` | ✅ (same as each other) | `-2147483648`, silently |
+| | `Checked` / `CheckedBlock` | ❌ | `OverflowException`; a `checked { }` block covers every line inside |
+| | `WithLong` / `WithBigInteger` | ❌ | `2147483648` — a bigger type, so no overflow |
+| | `<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>` in the `.csproj` | — | makes **everything** checked by default (no code change) |
+| "Ann owes 1,234.50" | `StringBuildingVariation`: `+`, `$"..."`, `string.Create(culture, $"...")`, `string.Format`, `string.Concat`, `StringBuilder`, `string.Join` | ✅ all 7 identical | readability and speed: `$"..."` reads best; `StringBuilder` for many pieces / loops; `string.Format` is the older style |
+| monthly payment | `LoanFormulaVariation.WithDecimalLoop` (original) / `WithDoublePow` (`Math.Pow`) | ✅ in a 200,000-loan check | `double` can't store most decimal amounts exactly; once unrounded doubles are added up, cents drift. Use `decimal` for money |
+| a date | `DateVariation.AsDateOnly` (original) / `AsDateTime` / `AsDateTimeOffset` | same day | `DateTime` adds a time and a `Kind`; `DateTimeOffset` is a moment, not a day |
+| | `WithTryParseExact("01/02/2027")` | ❌ | rejected: only `yyyy-MM-dd` accepted (no guessing) |
+| | `WithTryParseCulture("01/02/2027", ...)` | ❌ | **2 January** in `en-US`, **1 February** in `en-GB` — same text, different day |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

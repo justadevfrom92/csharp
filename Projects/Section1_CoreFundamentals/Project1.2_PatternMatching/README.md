@@ -141,3 +141,21 @@ return words switch
 ```csharp
 public record CardPaymentModel(decimal Amount, string LastFourDigits);
 ```
+
+## Variations
+
+Other ways to write the same code, in `PatternMatching/Variations/`. `PatternMatching.Tests/VariationsTest.cs` proves which ones
+give the same answers as the original and pins down where they differ.
+
+| Job | Original | Variation | Same result? | The difference |
+|---|---|---|---|---|
+| credit score bands | `CreditScoreClassifier.Classify` (switch **expression**) | `ClassifyWithIfStatements` | ✅ every score 300–850 | longer; easy to get an edge wrong |
+| | | `CreditScoreVariation.WithSwitchStatement` (`switch` + `case ... when`) | ✅ | older syntax; needs `return`/`break` in every case; no "not every value handled" warning |
+| | | `CreditScoreVariation.WithLookupTable` (array of `(UpTo, Label)`) | ✅ | **data instead of code**: change a limit without touching logic; limits could come from settings |
+| | | `CreditScoreVariation.WithTernaryChain` (`a ? b : c ? d : ...`) | ✅ | compact but hard to read; shown so you recognise it |
+| "is it a card payment?" | type pattern in `PaymentClassifier.Describe` | `PaymentTypeCheckVariation.CardAmountWithIsPattern` (`is CardPaymentModel card`) | ✅ | the `if` form of the same pattern |
+| | | `CardAmountWithAs` (`as` + `!= null`) | ✅ | older style, two steps |
+| | | `CardAmountWithCast` (cast in `try/catch`) | ✅ | uses an exception for a normal "no": slow, don't |
+| | | `CardAmountWithExactType` (`GetType() == typeof(...)`) | ❌ for child types | **ignores inheritance**: a `GiftCardPaymentVariation` (child of `CardPaymentModel`) is not matched; every other version matches it |
+| shipping price | property patterns in `ShippingCostClassifier` | `ShippingCostVariation.WithNestedIfs` | ✅ | nested `if`s: same rules, harder to compare with the rule list |
+| bank command | list patterns in `BankCommandParser` | `BankCommandVariation.WithLengthAndIndex` (`words.Length`, `words[1]`) | ✅ same answers and same exception types | the list pattern shows the **shape** of valid input; the index version hides it in conditions |
