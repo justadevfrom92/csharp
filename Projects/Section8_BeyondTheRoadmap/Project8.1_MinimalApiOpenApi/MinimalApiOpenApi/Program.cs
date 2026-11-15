@@ -1,3 +1,4 @@
+using MinimalApiOpenApi.Variations;
 using MinimalApiOpenApi.Endpoints;
 using MinimalApiOpenApi.Stores;
 
@@ -22,7 +23,8 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
 app.UseStatusCodePages();    // an empty 404/405 gets a ProblemDetails body too
 
 app.MapOpenApi();            // GET /openapi/v1.json
-app.MapBookEndpoints();      // GET/POST/DELETE /books...
+app.MapBookEndpoints();
+app.MapBookVariations();     // /variations/books/... - other ways to write "get one book" (Variations/)      // GET/POST/DELETE /books...
 
 app.Run();
 

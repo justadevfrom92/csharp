@@ -151,3 +151,39 @@ public class ApiKeyEndpointFilter : IEndpointFilter
 ```bash
 curl -X POST http://localhost:5000/books -H "X-Api-Key: <key from appsettings.json>" -H "Content-Type: application/json" -d '{"title":"Dune","author":"Frank Herbert","year":1965}'
 ```
+
+## Variations
+
+"Get one book" written five more ways, in `MinimalApiOpenApi/Variations/BookEndpointVariation.cs`
+(`/variations/books/...`). `MinimalApiOpenApi.Tests/VariationsTest.cs` compares them with the original `/books/{id}`.
+
+| Way | Book exists | Book missing | 404 in the OpenAPI document? | The difference |
+|---|---|---|---|---|
+| named static method returning `Results<Ok<BookModel>, NotFound>` (original) | 200 | 404 | ✅ | testable on its own |
+| inline lambda with `TypedResults` (`/lambda`) | 200 | 404 | ✅ | same, logic written in place |
+| `IResult` + `Results.Ok` / `Results.NotFound` (`/iresult`) | 200 | 404 | **❌ only 200 listed** | the return type no longer says which answers are possible |
+| return the object itself (`/plain`) | 200 | **200 with body `null`** | — | the client can't tell "missing" from "found" |
+| `?? throw new KeyNotFoundException(...)` (`/throw`) | 200 | **500** | — | an exception for a normal answer: wrong status, slower |
+| `[AsParameters]` record (`/as-parameters`) | 200 | 404 | ✅ | route value, query value and services arrive as **one object** |
+
+**Gotcha found by the tests:** a non-nullable parameter **without a default** is **required** in minimal APIs.
+`[FromQuery] bool Uppercase` made every request without `?uppercase=...` fail with **400**; `bool Uppercase = false`
+(or `bool?`) makes it optional. Wrong values (`?uppercase=maybe`) still give 400.
+
+**Same endpoint as an MVC controller** (documented):
+
+```csharp
+[ApiController]
+[Route("books")]
+public class BooksController : ControllerBase
+{
+    [HttpGet("{id:int}")]
+    public ActionResult<BookModel> Get(int id)
+    {
+        BookModel? book = store.FindById(id);
+        return book == null ? NotFound() : book;
+    }
+}
+```
+
+`[ApiController]` adds automatic 400 for invalid models and binding rules; minimal APIs need `AddValidation()` (.NET 10) for the same.

@@ -1,3 +1,4 @@
+using IdentityJwtPolicies.Variations;
 using System.Text;
 using IdentityJwtPolicies.Constants;
 using IdentityJwtPolicies.DbContexts;
@@ -89,6 +90,7 @@ app.UseAuthorization();  // applies RequireAuthorization(...) policies
 
 app.MapAccountEndpoints();
 app.MapProtectedEndpoints();
+app.MapPolicyVariations();   // /variations/policies/... - other ways to write rules (Variations/)
 
 app.Run();
 

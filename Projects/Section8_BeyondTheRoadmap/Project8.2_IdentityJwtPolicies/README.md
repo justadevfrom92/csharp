@@ -201,3 +201,36 @@ app.MapGet("/admin/dashboard", () => TypedResults.Ok("Admin dashboard")).Require
 ```bash
 curl http://localhost:5000/me -H "Authorization: Bearer <token>"
 ```
+
+## Variations
+
+Other ways to write the rules and token checks, in `IdentityJwtPolicies/Variations/`. `IdentityJwtPolicies.Tests/VariationsTest.cs`
+proves each row with real tokens.
+
+**Writing an authorization rule** (`PolicyStyleVariation`, `/variations/policies/...`)
+
+| Way | admin (dept "it") | adult in "finance" | 15-year-old in "sales" | The difference |
+|---|---|---|---|---|
+| named policy `AddPolicy("AdminOnly", p => p.RequireRole("Admin"))` (original) | 200 | 403 | 403 | defined once, used by name everywhere |
+| inline `.RequireAuthorization(p => p.RequireRole("Admin"))` (`/inline-role`) | 200 | — | 403 | same rule, no name, can't be reused |
+| requirement + handler class (original `AtLeast18`) | — | 200 | 403 | can use DI (it gets `TimeProvider`, so tests can fake the date) |
+| `RequireAssertion(context => ...)` lambda (`/assertion-18`) | — | 200 | 403 | shorter; **can't** use DI services |
+| `RequireClaim("department", "finance", "it")` (`/finance-or-it`) | **200** | 200 | 403 | several allowed values = OR |
+| `if (user.IsInRole("Admin")) ... else Results.Forbid()` (`/manual`) | 200 | — | 403 | hidden inside the code; tools can't see the rule |
+
+**Token validation settings** (`TokenValidationVariation`)
+
+| Setting | Token that expired **1 minute ago** | The difference |
+|---|---|---|
+| `ClockSkew = 30 seconds` (original) | ❌ rejected (the app answers 401) | tolerates small clock differences only |
+| `ClockSkew` left at the **library default (5 minutes)** | ✅ **accepted** | an expired token keeps working for 5 more minutes |
+| `ValidateLifetime = false` | ✅ accepted even 60 minutes after expiry | tokens never expire — never do this |
+
+| Setting | Token made for audience `"some-other-api"` |
+|---|---|
+| `ValidateAudience = true` (original) | ❌ rejected |
+| `ValidateAudience = false` | ✅ accepted — a token issued for **another** service works here |
+
+**Login styles** (documented): JWT bearer tokens (this project, for APIs and mobile apps) · cookies (7.1, for browsers;
+CSRF protection needed) · Identity's own `MapIdentityApi<IdentityUser>()` (.NET 8+: ready-made `/register`, `/login`,
+refresh tokens) · an external provider (Microsoft Entra ID, Google) via OpenID Connect.
