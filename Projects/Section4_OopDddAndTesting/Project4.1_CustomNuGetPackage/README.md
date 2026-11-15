@@ -114,6 +114,38 @@ public static class UrlSlugGenerator
 }
 ```
 
+## Variations
+
+**The same slug code, four ways** (`ConsumerApp/Variations/UrlSlugVariation.cs`; `dotnet run --project ConsumerApp` prints them side by side):
+
+| Way | `"Hello, World! C# in 2026"` | `"  --Café au lait--  "` | The difference |
+|---|---|---|---|
+| `UrlSlugGenerator.MakeUrlSlug` (the package, a `foreach` loop) | `hello-world-c-in-2026` | `caf-au-lait` | — |
+| `WithRegex` (`Regex.Replace("[^a-z0-9]+", "-")`) | same | same | 2 lines; change the pattern to `\p{L}` to keep `é` |
+| `WithLinq` (`Select` + `Split` + `string.Join`) | same | same | no loop, but builds extra strings |
+| `ToUrlSlug` **extension method** | same | same | called as `"Hello".ToUrlSlug()` — static class + `this` on the first parameter |
+
+**Ways to use a library from another project** (one `<ItemGroup>` line each; only one is used at a time):
+
+| `.csproj` line | What it uses | The difference |
+|---|---|---|
+| `<PackageReference Include="Roadmap.SimpleHelpers" Version="2.0.0" />` (original) | the packed `.nupkg` | what other people/teams use; versioned |
+| `<ProjectReference Include="../SimpleHelpers/SimpleHelpers.csproj" />` | the source code | same solution only; changes show up immediately, no pack step |
+| `<Reference Include="SimpleHelpers"><HintPath>libs/SimpleHelpers.dll</HintPath></Reference>` | a loose `.dll` file | no versions, no dependencies pulled in — avoid |
+
+**Version numbers in a `PackageReference`** (NuGet's rules):
+
+| `Version="..."` | Means |
+|---|---|
+| `2.0.0` (original) | **2.0.0 or higher** (the lowest that satisfies everything is chosen) |
+| `[2.0.0]` | exactly 2.0.0 |
+| `[1.0,3.0)` | 1.0 up to, **not including**, 3.0 |
+| `2.*` | the highest 2.x available (floating; the build can change without you changing anything) |
+
+**Version numbers you set when packing** (`<Version>` in `SimpleHelpers.csproj`, "semantic versioning"):
+`MAJOR.MINOR.PATCH` — PATCH = bug fix, MINOR = new features (old code still works), MAJOR = breaking change.
+`2.0.0-beta.1` = a pre-release (not picked unless asked for).
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

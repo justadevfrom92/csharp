@@ -252,6 +252,38 @@ public void OpenAccount_PositiveNegative_WhitespaceOwner_IsRefusedAndNothingSave
 }
 ```
 
+## Variations
+
+Other ways to write the same domain code, in `Banking.Domain/Variations/`. `Banking.Tests/VariationsTest.cs` proves each difference.
+
+**Money: record vs positional record vs struct vs class**
+
+| Version | `==` on equal values | Hole | Test result |
+|---|---|---|---|
+| `MoneyValueObject` — `record` with get-only properties (original) | ✅ equal | none | — |
+| `MoneyPositionalVariation(decimal Amount, string Currency)` — one-line record | ✅ equal | `with { Amount = -5 }` copies the object **without running the check** | `-5` accepted |
+| `MoneyStructVariation` — `readonly record struct` | ✅ equal | `default(MoneyStructVariation)` **skips the constructor** | `Currency` is `null` |
+| `MoneyClassVariation` — plain `class` | ❌ **not equal** | compares **references** (same object?), not values | `a == b` and `a.Equals(b)` both `false` |
+
+All four reject `-1` in the constructor; only the original has no way around it.
+
+**Telling the caller a withdrawal failed** (`WithdrawStyleVariation`)
+
+| Style | Not enough money | Caller can ignore it? | Use for |
+|---|---|---|---|
+| exception — `account.Withdraw(...)` (original) | `InsufficientFundsException` | no: unhandled, it stops the request | rare failures, programming mistakes |
+| `bool TryWithdraw(..., out string? error)` | `false`, "Balance is only 10.00 USD." | **yes** | cheap checks, like `int.TryParse` |
+| result object `WithdrawResultVariation(Succeeded, Error)` | `Succeeded = false` + the message | yes, but it's in the data | **expected** business failures; easy to return as JSON |
+
+`null` amounts still throw in every style: a result object is for expected failures, not bugs.
+
+**Domain events: collected (original) vs fired immediately** (`AccountWithEventVariation`)
+
+| | When listeners run | If saving fails |
+|---|---|---|
+| `PendingEvents` list, sent by `BankAccountService` **after** `Save()` (original) | after saving | nothing is sent |
+| C# `event` raised inside `Deposit` | **immediately**, before saving | the test's "email" was already sent — too late to take back |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

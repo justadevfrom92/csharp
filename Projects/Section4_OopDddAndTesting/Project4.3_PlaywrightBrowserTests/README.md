@@ -130,6 +130,29 @@ IAPIResponse response = await page.APIRequest.GetAsync(website.BaseUrl + "/produ
 Assert.Equal(404, response.Status);
 ```
 
+## Variations
+
+The same browser actions written other ways, in `VariationsTest.cs` (4 tests, all passing).
+
+**Finding elements**
+
+| Way | Example | The difference |
+|---|---|---|
+| CSS id (original) | `page.FillAsync("#Name", ...)` | short; breaks if a developer renames the id |
+| label text | `page.GetByLabel("Name").FillAsync(...)` | finds it the way a **user** does; also checks the label is connected |
+| role + visible name | `page.GetByRole(AriaRole.Button, new() { Name = "Save" })` | Playwright's recommended way; also proves the page is accessible |
+| XPath | `page.Locator("xpath=//input[@name='Price']")` | can express anything, hard to read |
+| ambiguous locator | `GetByRole(AriaRole.Link, new() { Name = "Edit" })` (one per row) | acting on it throws **"strict mode violation"** so you never click the wrong one; `.First` / `.Nth(i)` chooses on purpose |
+
+**Checking the page**
+
+| Way | Example | The difference |
+|---|---|---|
+| read, then xUnit assert (original) | `Assert.Equal("Keyboard", await page.Locator("h2").InnerTextAsync())` | reads **once**: right only if the page has finished changing |
+| Playwright `Expect` | `await Assertions.Expect(page.Locator("h2")).ToHaveTextAsync("Keyboard")` | **retries** until it matches or times out; the error says what it found ("Keyboard") |
+| wait for URL | `page.WaitForURLAsync(url)` (original) vs `Assertions.Expect(page).ToHaveURLAsync(url)` | same wait; the second reads as an assertion |
+| a selector that matches nothing | `page.Locator("#does-not-exist").InnerTextAsync()` | **waits for the timeout** (default 30 s) then `TimeoutException` — a typo in a selector makes tests slow, not just red |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
