@@ -1,5 +1,5 @@
 // This whole app is ONE file. The program runs from the top.
-// The classes it uses (Product, Order, Sale) are defined at the BOTTOM of this file.
+// The classes it uses (Product, Order, Sale) are defined at the BOTTOM of this file (public, so Variations/ can use them).
 // (In C#, top-level code must come before any class definitions in the file.)
 
 using System.Diagnostics;
@@ -146,7 +146,7 @@ void CompareLookupSpeed()
     Console.WriteLine($"1000 lookups in {itemCount:N0} items -> List: {listTime} ms, Dictionary: {dictionaryTime} ms");
 }
 
-class Product
+public class Product
 {
     public Product(string code, string name, string category, decimal price, int quantityInStock)
     {
@@ -164,6 +164,6 @@ class Product
     public int QuantityInStock { get; set; }
 }
 
-record Order(int OrderNumber, string ProductCode, int Quantity);
+public record Order(int OrderNumber, string ProductCode, int Quantity);
 
-record Sale(string ProductCode, string Category, int Quantity, decimal Total);
+public record Sale(string ProductCode, string Category, int Quantity, decimal Total);

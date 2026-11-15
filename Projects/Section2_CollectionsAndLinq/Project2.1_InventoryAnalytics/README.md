@@ -119,6 +119,41 @@ timer.Restart();
 dictionary.ContainsKey(lastCode);     // O(1): jumps straight to it
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (they compile; the results below were checked by running them).
+
+| Job | Variation | Same result? | The difference |
+|---|---|---|---|
+| find by code | `DictionaryLookupVariation.WithTryGetValue` (original) | — | one lookup, `null` if missing |
+| | `WithContainsKey` + `stock[code]` | ✅ | looks the key up **twice** |
+| | `WithGetValueOrDefault` | ✅ | shortest |
+| | `WithIndexer` (`stock[code]` only) | ❌ | missing key → `KeyNotFoundException` |
+| | `WithListSearch` (`List.FirstOrDefault`) | ✅ | checks items one by one: O(n) instead of O(1) |
+| low-stock names, sorted | `LinqStyleVariation.WithMethodSyntax` (original) | — | `Where().OrderBy().Select()` |
+| | `WithQuerySyntax` (`from ... where ... orderby ... select`) | ✅ | SQL-like; the compiler turns it into the method calls |
+| | `WithLoopAndSort` (`foreach` + `List.Sort`) | ✅ without ties, ❌ **with ties** | `OrderBy` is **stable** (equal items keep their order); `List.Sort` is **not**: 20 products with equal stock came out `Delta, Alpha, Tie17, Tie16...` instead of `Delta, Alpha, Beta, Gamma...` |
+| value per category | `ValueByCategoryWithGroupBy` / `WithToLookup` | ✅ | `GroupBy` is **deferred** (re-runs every time you loop); `ToLookup` groups **once, now** |
+| total value | `TotalWithSum` / `TotalWithAggregate` | ✅ | `Aggregate` is the general "fold" that `Sum`, `Max`... are special cases of |
+| one item | `SingleItemVariation.First` / `FirstOrDefault` / `Single` / `SingleOrDefault` | ❌ on 0 or 2+ matches | see below |
+| "any out of stock?" | `HasAnyWithAny` / `HasAnyWithCount` (`Count() > 0`) | ✅ | `Any` stops at the first match; `Count` counts everything |
+| first in, first out | `CollectionTypeVariation.DrainWithQueue` / `DrainWithListRemoveAt` | ✅ | `List.RemoveAt(0)` shifts every remaining item |
+| unique values | `UniqueWithHashSet` / `UniqueWithDistinct` | ✅ here | `Distinct` keeps first-seen order; a `HashSet`'s order is **not guaranteed** |
+| "read-only" list | `AsReadOnlyView` (`AsReadOnly()`) | ❌ | a **view**: later changes to the original show through (count went 1 → 3) |
+| | `AsReadOnlyInterface` (`IReadOnlyList` cast) | ❌ | only a promise: the caller cast it back to `List` and added an item |
+| | `AsImmutableCopy` (`ToImmutableList`) / `AsFrozenSet` (`ToFrozenSet`) | ❌ | real copies that never change (count stayed 1); frozen = built for fast lookups |
+
+**One item — the four look-alikes** (checked with 0, 1 and 2 matches):
+
+| | 0 matches ("Toys") | 1 match ("Lighting") | 2 matches ("Furniture") |
+|---|---|---|---|
+| `First` | `InvalidOperationException` | Lamp | Desk (the first) |
+| `FirstOrDefault` | `null` | Lamp | Desk |
+| `Single` | `InvalidOperationException` | Lamp | `InvalidOperationException` |
+| `SingleOrDefault` | `null` | Lamp | `InvalidOperationException` |
+
+Use `Single` when 2 matches would be a **bug** (an id); `First` when you just want one of them.
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
