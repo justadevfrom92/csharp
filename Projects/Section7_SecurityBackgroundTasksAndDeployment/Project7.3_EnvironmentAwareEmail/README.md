@@ -214,6 +214,34 @@ while (await timer.WaitForNextTickAsync(stoppingToken))
 ASPNETCORE_ENVIRONMENT=UAT dotnet run
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/`.
+
+**"Every 100 ms" when the job takes 250 ms** (`TimerStyleVariation`, each run for 1 second, results from running them)
+
+| Timer | Runs started | Most running at once | The difference |
+|---|---|---|---|
+| `PeriodicTimer` + `WaitForNextTickAsync` (original) | 4 | **1** | waits for the job before the next tick: never overlaps; missed ticks are skipped |
+| `System.Threading.Timer` | 11 | **3** | fires on schedule **whether or not the last run finished** — two digests sent, two writes at once |
+| `await Task.Delay(100)` in a loop | 3 | 1 | the gap comes after the job, so each round is 350 ms and the schedule drifts |
+
+**Background workers** (`HostedServiceVariation`, not registered — for comparison)
+
+| Way | The difference |
+|---|---|
+| `class X : BackgroundService` + `ExecuteAsync` (original) | the base class starts and stops the loop for you |
+| `class X : IHostedService` with `StartAsync` / `StopAsync` | you start the loop yourself (`StartAsync` must return quickly or the app won't start serving) and cancel/await it on shutdown |
+| `_ = Task.Run(() => sender.SendAsync(...))` in a controller | returns at once, but: nobody sees its exceptions, it's killed on shutdown with no warning, and scoped services (a DbContext) may already be disposed. The queue + `BackgroundService` (original) avoids all three |
+
+**Choosing the sender per environment** (`SenderRegistrationVariation`, alternatives for `Program.cs`)
+
+| Way | The difference |
+|---|---|
+| keyed services + factory building a decorator chain (original) | logging and UAT redirection wrap **any** sender; each piece is reusable |
+| `if (environment.IsProduction()) AddSingleton<IEmailSender, Smtp...>() else ...` | simplest; no decorators, so logging/redirection would be copied into each sender |
+| factory that `new`s the whole chain | the chain is visible in one expression, but you pass every constructor argument by hand |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

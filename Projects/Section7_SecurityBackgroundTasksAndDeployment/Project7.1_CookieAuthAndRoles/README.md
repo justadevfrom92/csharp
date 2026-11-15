@@ -170,6 +170,35 @@ Assert.Equal(302, (int)response.StatusCode);
 
 The app's `Program.cs` ends with `public partial class Program { }` so `WebApplicationFactory<Program>` can find it.
 
+## Variations
+
+Other ways to write the same checks, in `CookieAuthAndRoles/Variations/AuthorizationVariation.cs` (`/variations/auth/...`).
+`CookieAuthAndRoles.Tests/VariationsTest.cs` proves each row ("admin" has role Admin, "alice" has role User).
+
+| Way | admin | alice | Not logged in | The difference |
+|---|---|---|---|---|
+| `[Authorize(Roles = "Admin")]` on the class (original, `AdminController`) | ✅ | → AccessDenied | → Login | — |
+| `[Authorize(Roles = "Admin,User")]` — **one** attribute, comma | ✅ | ✅ | → Login | comma = **OR** |
+| `[Authorize(Roles = "Admin")]` + `[Authorize(Roles = "User")]` — **two** attributes | → AccessDenied | → AccessDenied | → Login | two attributes = **AND** (needs both roles) |
+| `if (!User.IsInRole("Admin")) return Forbid();` in the action | ✅ | → AccessDenied | → Login | same result, but hidden inside the method |
+| `return StatusCode(403)` yourself | ✅ | **plain 403**, no redirect | → Login | for APIs; a person just sees an error |
+
+**"Remember me"** (`/variations/auth/sign-in-demo?remember=...`)
+
+| `AuthenticationProperties` | Cookie | The difference |
+|---|---|---|
+| `IsPersistent = false` (original login) | no `expires=` | a session cookie: gone when the browser closes |
+| `IsPersistent = true` | has `expires=` | survives closing the browser (until `ExpireTimeSpan`) |
+
+**Making every page require a login** (one line in `Program.cs` each, documented only):
+
+| Way | Covers |
+|---|---|
+| `options.Filters.Add(new AuthorizeFilter(policy))` (original) | MVC controllers only |
+| `AddAuthorization(options => options.FallbackPolicy = policy)` | **every** endpoint without its own rule: controllers, Razor Pages, minimal APIs, static files after `UseAuthorization` |
+| `.RequireAuthorization()` on `MapControllerRoute(...)` | the controllers mapped by that route |
+| `[Authorize]` on each controller | only where you remember to write it |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

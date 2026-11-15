@@ -128,6 +128,43 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 ```
 
+## Variations
+
+Other ways to write the same protections, in `Variations/` (results from `curl`).
+
+**Encoding the same input for different places** (`EncodingVariation`, `/variations/encoding?input=...`).
+Input: `<script>alert('hi')</script> & "quotes"`
+
+| Where the value goes | Encoder | Output |
+|---|---|---|
+| HTML text — `@value` in Razor (original) | `HtmlEncoder` | `&lt;script&gt;alert(&#x27;hi&#x27;)&lt;/script&gt; &amp; &quot;quotes&quot;` |
+| inside a JavaScript string `var x = "...";` | `JavaScriptEncoder` | `<script>alert('hi')</script> & "quotes"` |
+| inside a URL `?q=...` | `UrlEncoder` | `%3Cscript%3Ealert(%27hi%27)%3C%2Fscript%3E%20%26%20%22quotes%22` |
+| `@Html.Raw(value)` | none | `<script>alert('hi')</script> & "quotes"` — **runs** in the page |
+
+Each place needs **its own** encoder: HTML-encoded text is still unsafe inside a `<script>` block or a URL.
+
+**CSRF protection** (`CsrfVariation`, POST `/variations/csrf/...` with no token, over **HTTPS**)
+
+| Way | POST without a token | The difference |
+|---|---|---|
+| global `AutoValidateAntiforgeryTokenAttribute` filter (original) | **400** | every POST/PUT/DELETE checked; nothing to forget |
+| `[ValidateAntiForgeryToken]` on each action (3.1, 6.4) | 400 | only where you remember to write it |
+| `[IgnoreAntiforgeryToken]` | **200** "accepted WITHOUT a token" | opts out: only for endpoints that don't log in with cookies (token APIs, 8.2) |
+| changing data in a **GET** (`/delete-via-get`) | 200 | GETs are never checked: `<img src="...">` on any site triggers it |
+
+Found while testing: over plain **HTTP** the protected POST didn't return 400 — it crashed with
+"AntiforgeryOptions.Cookie.SecurePolicy = Always, but the current request is not an SSL request". The antiforgery
+cookie is HTTPS-only here, so the app must be used over HTTPS (`UseHttpsRedirection` does that in normal use).
+
+**Adding the security headers** (documented only — one pipeline per app):
+
+| Way | The difference |
+|---|---|
+| a middleware **class** + `app.UseMiddleware<SecurityHeadersMiddleware>()` (original) | testable, reusable, has its own file |
+| inline `app.Use(async (context, next) => { context.Response.Headers[...] = ...; await next(context); })` | quickest for 1–2 headers |
+| `context.Response.OnStarting(...)` | runs just before the response starts, even if a later middleware set the headers first |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
