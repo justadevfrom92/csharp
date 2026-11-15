@@ -116,3 +116,29 @@ app.MapGet("/api/quotes", ...).RequireRateLimiting(RateLimitPolicyConstants.PerC
 app.MapGet("/api/report", ...).RequireRateLimiting(RateLimitPolicyConstants.OneReportAtATime);
 app.MapGet("/health", () => Results.Ok("Healthy")).DisableRateLimiting();
 ```
+
+## Variations
+
+The four built-in algorithms compared on the **same burst**, in `RateLimiting/Variations/LimiterAlgorithmVariation.cs`:
+4 requests at the very end of a time window, then up to 10 more right after time moves on one step
+(`AutoReplenishment = false` + `TryReplenish()` decide exactly when). `RateLimiting.Tests/VariationsTest.cs` checks them.
+
+| Limiter (all "4 requests") | Allowed right after the boundary | The difference |
+|---|---|---|
+| **fixed window** (original, per client) | **4** — 8 requests in a moment | the count resets completely at each boundary |
+| **sliding window**, 2 segments | **0** | requests are forgotten only one full window later: no double burst |
+| **token bucket**, 4 tokens, +2 per 100 ms | **3** (in 8 of 8 runs) | refills by **time that really passed** (150 ms = 1.5 periods); short bursts OK, steady average |
+| **concurrency** (original, for `/api/report`) | — | not about time: 3rd request refused **while 2 run**, allowed as soon as one **finishes** |
+
+Two things found while writing these: `TryReplenish()` only works once the period has **really passed** (so the demo waits
+150 ms first), and the token bucket gave **3**, not the 2 expected, because it refills in proportion to elapsed time.
+
+**Who shares a limit** (the partition key, documented):
+
+| Partition by | Example | Risk |
+|---|---|---|
+| a header like `X-Client-Id` (original) | `context.Request.Headers["X-Client-Id"]` | clients can send any id — fine for trusted API clients |
+| logged-in user | `context.User.Identity?.Name` | anonymous users need a separate rule |
+| IP address | `context.Connection.RemoteIpAddress` | everyone behind one office/mobile network shares one limit; behind a proxy you need forwarded headers |
+| nothing (`AddFixedWindowLimiter` without a partition) | — | **one** limit for **all** clients together: one heavy client blocks everybody |
+| `options.GlobalLimiter = ...` | every request, before endpoint policies | a safety net for the whole app |

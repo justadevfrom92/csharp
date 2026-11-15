@@ -128,3 +128,34 @@ catch (Exception exception) when (exception is HttpRequestException or TimeoutRe
     return TypedResults.Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "The exchange-rate service is unavailable. Try again later.");
 }
 ```
+
+## Variations
+
+Other ways to call the rates service, in `HttpClientResilience/Variations/RateClientVariation.cs`.
+`HttpClientResilience.Tests/VariationsTest.cs` runs them against the scripted fake network, which counts calls.
+
+**Getting an `HttpClient`**
+
+| Way | The difference |
+|---|---|
+| **typed client** `AddHttpClient<ExchangeRateClient>(...)` (original) | a class receives a ready `HttpClient`; callers ask for `ExchangeRateClient` |
+| **named client** `AddHttpClient("rates", ...)` + `factory.CreateClient("rates")` | same pooling and resilience; callers work with a raw `HttpClient` and a name string |
+| `factory.CreateClient()` (no name) | pooled, but no base address or resilience configured |
+| `new HttpClient()` per call | each one opens new connections: under load the server **runs out of sockets** |
+| one `static readonly HttpClient` forever | no socket problem, but it **never notices DNS changes** (`SocketsHttpHandler.PooledConnectionLifetime` fixes that) |
+
+**Resilience** (service fails twice with 503, then answers)
+
+| Way | Calls made | Result |
+|---|---|---|
+| custom pipeline `AddResilienceHandler(...)` with retry + per-attempt timeout (original) | 3 | the rate (see `ConvertTest`) |
+| `AddStandardResilienceHandler()` | **3** | the rate — Microsoft's defaults: retry ×3 with jitter, circuit breaker, 10 s per attempt, 30 s total |
+| no resilience handler | **1** | `HttpRequestException` |
+| any of them, on a **404** | **1** | not retried: asking again won't change "not found" |
+
+**Reading the answer** (unknown currency → 404)
+
+| Way | 200 | 404 |
+|---|---|---|
+| `GetAsync` + check `StatusCode` first (original, `GetWithStatusCheck`) | the rate | `null` |
+| `GetFromJsonAsync<T>(url)` (`GetWithGetFromJson`) | the rate | **throws `HttpRequestException`** — "unknown currency" looks the same as "service down" |

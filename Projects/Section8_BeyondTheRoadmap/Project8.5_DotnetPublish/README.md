@@ -159,3 +159,26 @@ public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }
 ```
+
+## Variations
+
+The publish **modes** are compared above. The code variation is how JSON is written, in
+`PublishDemo/Variations/JsonSerializationVariation.cs`; `PublishDemo.Tests/VariationsTest.cs` checks it.
+
+| Way | `GreetingModel("Hello")` | Works with trimming / Native AOT? | The difference |
+|---|---|---|---|
+| source-generated context **inside the app's Web options** (original, `ConfigureHttpJsonOptions`) | `{"message":"Hello"}` | ✅ | code written at build time; Web defaults (camelCase) still apply |
+| `JsonSerializer.Serialize(value, AppJsonSerializerContext.Default.GreetingModel)` | `{"Message":"Hello"}` | ✅ | the context's **own** default options: names exactly as written in C# |
+| `JsonSerializer.Serialize(value, new JsonSerializerOptions(JsonSerializerDefaults.Web))` | `{"message":"Hello"}` | ❌ | **reflection** at runtime — switched off in Native AOT |
+| options with **only** the context, a type **not** listed in it | throws `NotSupportedException` | — | AOT apps can only serialize types named in `[JsonSerializable(...)]` |
+
+Found by the test: the same model gave `message` or `Message` depending on which options were used — add
+`[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]` to the context if you call it directly.
+
+**Builders** (documented):
+
+| Line | The difference |
+|---|---|
+| `WebApplication.CreateSlimBuilder(args)` (original) | fewer features loaded (no HTTPS endpoint config, fewer logging providers): smaller, AOT-friendly |
+| `WebApplication.CreateBuilder(args)` | everything a normal web app needs (3.x–8.x projects) |
+| `WebApplication.CreateEmptyBuilder(new())` | nothing at all; add each piece yourself — smallest possible app |
