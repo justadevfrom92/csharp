@@ -113,3 +113,26 @@ const socket = new WebSocket(scheme + location.host + "/ws/echo");
 socket.onmessage = event => log("received: " + event.data);
 socket.send("hello");
 ```
+
+## Variations
+
+Two other ways to write the echo loop, in `RawWebSockets/Variations/WebSocketEchoVariation.cs`, mapped at
+`/ws/variations/naive` and `/ws/variations/pooled`. `RawWebSockets.Tests/VariationsTest.cs` sends the same messages to all three.
+
+| Version | `"hello"` (1 frame) | `"one ", "two ", "three"` (1 message, 3 frames) | Plain HTTP GET | The difference |
+|---|---|---|---|---|
+| `EchoWebSocketHandler` (original) | `ECHO: HELLO` | `ECHO: ONE TWO THREE` | **400** | joins frames until `EndOfMessage`; checks `IsWebSocketRequest` first |
+| naive: one frame = one message | `ECHO: HELLO` | **three replies**: `ECHO: ONE `, `ECHO: TWO `, `ECHO: THREE` | **500** | ignores `EndOfMessage` — works in a quick test, breaks on long or split messages |
+| pooled: `ArrayPool` buffer + `ReceiveAsync(Memory<byte>)` | `ECHO: HELLO` | `ECHO: ONE TWO THREE` | 500 | same framing; borrows the buffer and gets a `ValueWebSocketReceiveResult` (a struct) — less garbage with thousands of sockets |
+
+The 500s come from calling `AcceptWebSocketAsync` on a normal HTTP request without checking `context.WebSockets.IsWebSocketRequest`
+first — the original checks and answers 400.
+
+**Choosing a technology for real-time messages** (documented):
+
+| Choice | The difference |
+|---|---|
+| raw `WebSocket` (this project) | you write framing, reconnects, message format, groups |
+| SignalR (8.8) | does all of that, falls back to other transports, typed hubs |
+| Server-Sent Events (`TypedResults.ServerSentEvents` in .NET 10, or `text/event-stream`) | server → browser **only**, plain HTTP, auto-reconnect in the browser |
+| polling (`fetch` every few seconds) | simplest; wasteful and delayed |

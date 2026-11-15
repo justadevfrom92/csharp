@@ -1,3 +1,4 @@
+using RawWebSockets.Variations;
 using RawWebSockets.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,9 @@ app.Map("/ws/echo", async (HttpContext context, EchoWebSocketHandler handler) =>
 {
     await handler.HandleAsync(context);
 });
+
+// Other ways to write the echo loop, for comparison (Variations/WebSocketEchoVariation.cs).
+app.MapWebSocketVariations();
 
 app.Run();
 

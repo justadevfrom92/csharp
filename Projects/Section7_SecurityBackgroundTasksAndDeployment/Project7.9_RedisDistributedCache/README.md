@@ -151,3 +151,34 @@ public class RedisFactAttribute : FactAttribute
 ```bash
 REDIS_CONNECTION_STRING=localhost:6379 dotnet test RedisDistributedCache.Tests
 ```
+
+## Variations
+
+Other ways to write the cache code, in `RedisDistributedCache/Variations/PriceCacheVariation.cs`.
+`RedisDistributedCache.Tests/VariationsTest.cs` runs them on the in-memory `IDistributedCache`.
+
+**Storing the value**
+
+| Way | The difference |
+|---|---|
+| `SetStringAsync(key, JsonSerializer.Serialize(product))` (original) | readable; the string helpers convert to bytes for you |
+| `SetAsync(key, JsonSerializer.SerializeToUtf8Bytes(product))` (`GetWithBytesAsync`) | same data in Redis, one conversion less; the test shows identical results |
+
+**When the price changes** (Mouse cached at 12.50)
+
+| Strategy | Next read | Extra database read? | The difference |
+|---|---|---|---|
+| **delete** the cache entry (original, `cache.RemoveAsync`) | new price | yes, one | never stale; simple |
+| **write-through**: put the new value in the cache (`UpdateWriteThroughAsync`) | new price (15.00) | **no** | saves a read; with two servers updating at once the cache can keep the **older** of the two |
+| **no invalidation**, wait for expiry (`UpdateWithoutInvalidatingAsync`) | **old price (12.50)** | no | simplest; stale until the entry expires |
+
+**Expiry options** (`DistributedCacheEntryOptions`, documented):
+
+| Setting | Entry is removed |
+|---|---|
+| `AbsoluteExpirationRelativeToNow = 5 min` | 5 minutes after it was written, however often it's read |
+| `SlidingExpiration = 1 min` | after 1 minute **without** being read — a popular entry could live forever on its own |
+| both (original) | whichever comes first: popular entries still refresh every 5 minutes |
+
+**Cache technology** (documented): `IMemoryCache` (one server, fastest, 6.3) · `IDistributedCache` + Redis (shared by all
+servers, this project) · `HybridCache` (.NET 9+: memory **and** Redis, plus stampede protection — see the 6.3 variations).
