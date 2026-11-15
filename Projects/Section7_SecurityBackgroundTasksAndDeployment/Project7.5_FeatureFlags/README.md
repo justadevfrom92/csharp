@@ -140,6 +140,38 @@ public IActionResult Reviews()
 FeatureFlags__NewCheckout=true dotnet run
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (`/variations/flags/...`; results from `curl` and a 10,000-user check).
+
+**When `ProductReviews` is off**
+
+| Way | Answer | The difference |
+|---|---|---|
+| `[RequireFeatureFlag(...)]` action filter (original, `/attribute-404`) | **404** | the page looks like it doesn't exist yet |
+| check in the action, `StatusCode(403, ...)` (`/manual-403`) | **403** "Reviews aren't available yet." | admits the page exists — fine for "join the beta" |
+| check in the action, `RedirectToAction("Index", "Shop")` (`/manual-redirect`) | **302** → `/` | no dead end for the user |
+
+**Turning a feature on for 50% of users** (`PercentageRolloutVariation`, 5 page loads per user)
+
+| Way | ann | bob | The difference |
+|---|---|---|---|
+| hash of the user id (`IsOnForUser`) | off ×5 | on ×5 | the **same user always gets the same answer** |
+| `Random.Shared.Next(100) < percent` (`IsOnRandomly`) | off, off, **on**, off, off | off, **on**, off, off, off | the page flips between old and new on every click |
+
+Hashing also makes rollouts grow cleanly: with 10,000 users, 10% = 959 users, 20% = 1,950 users, and **0** users who had
+the feature at 10% lost it at 20%.
+
+**Where flags come from** (documented only):
+
+| Source | Change without redeploying? | The difference |
+|---|---|---|
+| `appsettings.json` + `IOptionsMonitor` (original) | ✅ edit the file | simple; one server's file at a time |
+| environment variable `FeatureFlags__NewCheckout=true` | restart needed | per server/container |
+| `const bool NewCheckout = false;` in code | ❌ | not a flag any more — just code |
+| `Microsoft.FeatureManagement` package | ✅ | the official library: `[FeatureGate]`, `IFeatureManager`, built-in **percentage** and **time-window** filters, per-user targeting |
+| Azure App Configuration / LaunchDarkly / similar service | ✅ instantly, all servers | a dashboard to flip flags; costs money |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

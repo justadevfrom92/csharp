@@ -227,6 +227,30 @@ builder.Services.AddTransient<RequestTimingMiddleware>();
 app.UseMiddleware<RequestTimingMiddleware>();
 ```
 
+## Variations
+
+Caching attributes compared, in `OutputCachingCatalog/Variations/CacheAttributeVariation.cs` (`/variations/cache/...`).
+`OutputCachingCatalog.Tests/VariationsTest.cs` calls each one twice and checks whether the database was read again.
+
+| Attribute | 2nd call read the database again? | `?page=1` then `?page=2` | The difference |
+|---|---|---|---|
+| `[OutputCache(PolicyName = "Catalog")]` (original) | no | separate entries (policy varies by `page`) | settings in one place (`Program.cs`); can be evicted by tag |
+| `[OutputCache(Duration = 30)]` | no | — | settings on the attribute; repeated per action |
+| `[OutputCache(Duration = 30, VaryByQueryKeys = [])]` | no | **page 2 got page 1's copy** | ignores the query string — wrong if the query changes the page |
+| `[ResponseCache(Duration = 30)]` | **yes** | — | a **different feature**: only adds `Cache-Control: public, max-age=30` so the **browser** keeps a copy; the server still runs every request it receives |
+| no attribute | yes | — | — |
+
+**Middleware written three ways** (the first two are in `Middlewares/`; all three run in `Program.cs`'s style):
+
+| Way | Created | Can use scoped services in the constructor? |
+|---|---|---|
+| `class : IMiddleware` + `AddTransient<...>()` + `UseMiddleware<...>()` (`RequestTimingMiddleware`) | by DI, per request | yes |
+| convention class with `RequestDelegate next` + `InvokeAsync(HttpContext)` (`FullPipelineHeaderMiddleware`) | **once**, at startup | no — take them as `InvokeAsync` parameters instead |
+| inline `app.Use(async (context, next) => { ...; await next(context); })` | — | no class to test; fine for one line |
+
+Related: `app.UseWhen(context => context.Request.Path.StartsWithSegments("/api"), branch => branch.UseMiddleware<...>())`
+runs middleware **only for some URLs**, then rejoins the main pipeline; `app.Map("/path", branch => ...)` splits off a separate pipeline.
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

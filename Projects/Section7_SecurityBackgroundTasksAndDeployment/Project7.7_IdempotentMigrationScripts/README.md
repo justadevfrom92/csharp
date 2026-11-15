@@ -208,6 +208,29 @@ await database.Database.ExecuteSqlAsync(
 decimal total = (decimal)totalParameter.Value;
 ```
 
+## Variations
+
+Other ways to get the migrations into a database. The scripts below were generated from this project's three migrations
+and compared (`IF NOT EXISTS` = the step checks whether it already ran).
+
+| Way | Command | Result here | Safe to run twice? | The difference |
+|---|---|---|---|---|
+| **idempotent script** (original) | `dotnet ef migrations script --idempotent -o migrations.sql` | 148 lines, `IF NOT EXISTS` ×10 | ✅ | works on a database at **any** version |
+| plain script | `dotnet ef migrations script -o plain.sql` | 88 lines, `IF NOT EXISTS` ×0 | ❌ a 2nd run repeats `CREATE TABLE [Customers]` on a table that already exists (not run here: no SQL Server) | only for a known-empty database |
+| from/to script | `dotnet ef migrations script InitialCreate AddOrderStoredProcedures` | 54 lines: only `AddCustomerEmail` + the procedures | ❌ | exactly one upgrade step; you must know the database's current version |
+| **rollback** script (to an older version) | `dotnet ef migrations script AddOrderStoredProcedures AddCustomerEmail` | 13 lines: `DROP PROCEDURE` ×3 | ❌ | runs the migration's `Down()` — the undo path |
+| migration **bundle** | `dotnet ef migrations bundle -o efbundle` | one 80 MB executable | ✅ (checks history itself) | a program instead of a script: `./efbundle --connection "..."`; needs no .NET SDK on the server |
+| `Database.Migrate()` at startup (6.1) | — | — | ✅ | the app changes its own schema — see "Why NOT" above |
+| `Database.EnsureCreated()` (6.2, 6.6 tests) | — | — | — | creates tables from the **model**, writes **no** migration history: later migrations can't be applied. Tests and demos only |
+
+**Stored procedure SQL in a migration**
+
+| Way | Works in the idempotent script? |
+|---|---|
+| `migrationBuilder.Sql("EXEC(N'CREATE OR ALTER PROCEDURE ...')")` (original) | ✅ |
+| `migrationBuilder.Sql("CREATE OR ALTER PROCEDURE ...")` | ❌ the script wraps it in `IF NOT EXISTS ... BEGIN`, and SQL Server only accepts `CREATE PROCEDURE` first in a batch (see Stored procedures above) |
+| `CREATE PROCEDURE` without `OR ALTER` | ✅ once; ❌ if the procedure already exists |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

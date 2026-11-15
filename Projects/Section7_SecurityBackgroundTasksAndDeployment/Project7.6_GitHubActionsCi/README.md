@@ -115,3 +115,67 @@ e2e-tests:
   needs: build-and-unit-tests
   runs-on: ubuntu-latest
 ```
+
+## Variations
+
+Other ways to write parts of `ci.yml`. These are **examples only** (a workflow file runs as soon as it's pushed, so they
+are not added to `.github/workflows/`); each block was checked to be valid YAML.
+
+**Running the tests**
+
+```yaml
+# Original: a loop over every *.Tests.csproj, so ALL projects run even if one fails, then the job fails.
+
+# One command for the whole solution: shorter, and also runs every test project - but the
+# Playwright project too, which needs a browser installed first.
+- run: dotnet test CSharpMasteryRoadmap.slnx -c Release --no-build
+```
+
+```yaml
+# A MATRIX: one parallel job per entry. Faster overall, uses more runners, each job installs .NET again.
+strategy:
+  fail-fast: false            # keep the other jobs running when one fails
+  matrix:
+    project: [Section4_OopDddAndTesting/Project4.2_DddBankingEngine/Banking.Tests, Section8_BeyondTheRoadmap/Project8.1_MinimalApiOpenApi/MinimalApiOpenApi.Tests]
+steps:
+  - run: dotnet test ${{ matrix.project }}
+```
+
+**When it runs**
+
+```yaml
+on:
+  push:
+    branches: [main]          # original: pushes to main...
+  pull_request:               # ...and pull requests
+  schedule:
+    - cron: "0 3 * * 1"       # also every Monday 03:00 UTC (catches breakage from new package versions)
+  workflow_dispatch:          # and the "Run workflow" button
+```
+
+**Speed**
+
+```yaml
+- uses: actions/setup-dotnet@v4
+  with:
+    dotnet-version: 10.0.x
+    cache: true                               # cache NuGet packages between runs...
+    cache-dependency-path: "**/*.csproj"      # ...keyed on the project files
+```
+
+**Running on several operating systems**
+
+```yaml
+runs-on: ${{ matrix.os }}
+strategy:
+  matrix:
+    os: [ubuntu-latest, windows-latest, macos-latest]   # catches path, line-ending and culture differences
+```
+
+| Choice | Original | Alternative | Trade-off |
+|---|---|---|---|
+| test command | loop over `*.Tests.csproj` | `dotnet test` on the solution | shorter, but runs projects that need extra setup |
+| parallelism | one job, sequential | `matrix` | faster wall-clock time, more runner minutes |
+| `needs:` between jobs | e2e waits for unit tests | no `needs` | everything starts at once; a compile error wastes minutes in every job |
+| `if: always()` on upload | uploads results even when tests fail | default (`if: success()`) | without it, you get no results exactly when you need them |
+| `concurrency: cancel-in-progress` | on | off | off = every push runs to the end, even if outdated |
