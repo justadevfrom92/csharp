@@ -160,3 +160,32 @@ public class TodoItemComponentTest : BunitContext
     }
 }
 ```
+
+## Variations
+
+Component variations in `BlazorTodo/Components/Variations/`, rendered by `BlazorTodo.Tests/VariationsTest.cs` (bUnit).
+
+**Child tells parent "clicked"** (child clicked twice)
+
+| Child parameter | Parent's counter | Parent's screen | The difference |
+|---|---|---|---|
+| `EventCallback OnClicked` (original style, `ChildEventCallbackComponent`) | 2 | **2** | Blazor re-renders the parent after the callback |
+| `Action? OnClicked` (`ChildActionComponent`) | 2 | **0** | the method ran, but Blazor doesn't know the **parent** changed — its screen is stale |
+| either, with no handler given | — | no crash | `EventCallback` is safe empty; `Action?` needs `?.Invoke` |
+
+**Binding a text box** (typing "Ann")
+
+| Binding | While typing | After leaving the box | The difference |
+|---|---|---|---|
+| `@bind="name"` (`BindOnChangeComponent`) | nothing — there is **no `oninput` handler at all** (bUnit: "only an onchange handler") | "Ann" | updates on the `change` event |
+| `@bind="name" @bind:event="oninput"` (`BindOnInputComponent`) | "Ann" immediately | "Ann" | every keystroke re-renders: live search, character counters |
+| `@bind="name" @bind:after="Saved"` (`BindAfterComponent`) | — | "Ann", then `Saved()` runs | run code after each change (2 changes = saved 2 times) without writing `value` + `@onchange` by hand |
+
+**Render modes** (documented — the original uses Interactive Server):
+
+| Mode | Where C# runs | The difference |
+|---|---|---|
+| Static server rendering (no `@rendermode`) | server, once | plain HTML; buttons don't run C# (forms still post) |
+| `InteractiveServer` (original) | server, over a SignalR connection | fast start, needs a live connection; every click is a round trip |
+| `InteractiveWebAssembly` | in the browser (.NET in WebAssembly) | works offline after download; bigger first load; no direct database access |
+| `InteractiveAuto` | server first, then WebAssembly once downloaded | best first load + offline later; the component must work in both |

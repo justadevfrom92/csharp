@@ -1,0 +1,7 @@
+@* @bind on an input = updates the field on the "change" event: when the box LOSES FOCUS (or Enter). *@
+<input class="name" @bind="name" />
+<p class="echo">@name</p>
+
+@code {
+    private string name = "";
+}

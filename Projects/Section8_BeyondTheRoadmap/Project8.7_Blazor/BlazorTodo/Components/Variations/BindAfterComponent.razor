@@ -1,0 +1,13 @@
+@* @bind:after="Method" = bind as usual, THEN run a method (e.g. save, search). Replaces writing value + @onchange by hand. *@
+<input class="name" @bind="name" @bind:after="Saved" />
+<p class="echo">@name (saved @saves time(s))</p>
+
+@code {
+    private string name = "";
+    private int saves;
+
+    private void Saved()
+    {
+        saves++;
+    }
+}

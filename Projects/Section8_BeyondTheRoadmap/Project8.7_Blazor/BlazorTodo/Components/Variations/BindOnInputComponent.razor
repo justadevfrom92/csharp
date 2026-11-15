@@ -1,0 +1,7 @@
+@* @bind:event="oninput" = updates on EVERY KEYSTROKE (live search boxes, character counters). More re-renders. *@
+<input class="name" @bind="name" @bind:event="oninput" />
+<p class="echo">@name</p>
+
+@code {
+    private string name = "";
+}

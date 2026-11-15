@@ -1,0 +1,7 @@
+@* Child that reports a click with an EventCallback (the original style, see TodoItemComponent). *@
+<button class="child" @onclick="() => OnClicked.InvokeAsync()">Add one</button>
+
+@code {
+    [Parameter]
+    public EventCallback OnClicked { get; set; }
+}

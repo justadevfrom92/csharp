@@ -1,0 +1,11 @@
+<p class="count">@count</p>
+<ChildEventCallbackComponent OnClicked="Increment" />
+
+@code {
+    private int count;
+
+    private void Increment()
+    {
+        count++;
+    }
+}

@@ -1,0 +1,9 @@
+@* Child that reports a click with a plain Action delegate instead of an EventCallback.
+   The parent's method RUNS, but Blazor doesn't know the PARENT changed, so the parent is NOT re-rendered:
+   its screen shows an old number until something else makes it redraw. EventCallback re-renders it automatically. *@
+<button class="child" @onclick="() => OnClicked?.Invoke()">Add one</button>
+
+@code {
+    [Parameter]
+    public Action? OnClicked { get; set; }
+}

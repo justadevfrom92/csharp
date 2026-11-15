@@ -1,0 +1,8 @@
+@page "{term?}"
+@model SearchWithRouteValuePageModel
+@{
+    ViewData["Title"] = "SearchWithRouteValue";
+}
+<h1>SearchWithRouteValue</h1>
+<p id="term">term: "@Model.Term"</p>
+<p id="count">@Model.Results.Count result(s)</p>

@@ -1,0 +1,13 @@
+<p class="count">@count</p>
+<ChildActionComponent OnClicked="Increment" />
+
+@code {
+    private int count;
+
+    public int RealCount => count; // for the test: the value really changed, only the screen didn't
+
+    private void Increment()
+    {
+        count++;
+    }
+}

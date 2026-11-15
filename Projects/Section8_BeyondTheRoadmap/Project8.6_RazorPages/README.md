@@ -120,3 +120,24 @@ public IActionResult OnPostDelete(int id)   // POST /Contacts/Edit/1?handler=Del
 ```cshtml
 <a asp-page="/Contacts/Edit" asp-route-id="@contact.Id">Edit</a>
 ```
+
+## Variations
+
+Four ways for a page to receive a search term, in `RazorPagesContacts/Pages/Variations/`.
+`RazorPagesContacts.Tests/VariationsTest.cs` searches for "ada" (1 of the 2 seeded contacts) with each.
+
+| Page | URL | Filtered? | Page can show the term? | The difference |
+|---|---|---|---|---|
+| `[BindProperty(SupportsGet = true)] string? Term` (`SearchWithSupportsGet`) | `?term=ada` | ✅ 1 result | ✅ | the usual way for search/filter pages |
+| `@page "{term?}"` + `SupportsGet` (`SearchWithRouteValue`) | `/ada` | ✅ 1 result | ✅ | the value in the **path** (like the original Edit page's `{id:int}`) |
+| `[BindProperty]` **without** `SupportsGet` (`SearchWithoutSupportsGet`) | `?term=ada` | ❌ **2 results** | ❌ | only binds on **POST** (right for the original Create/Edit forms) — on GET the term is silently ignored |
+| handler parameter `OnGet(string? term)` (`SearchWithHandlerParameter`) | `?term=ada` | ✅ 1 result | ❌ | the value is a local variable; copy it to a property to show it |
+
+**Other Razor Pages choices** (documented):
+
+| Original | Alternative | The difference |
+|---|---|---|
+| `[BindProperty] public ContactModel Contact` | `OnPost(ContactModel contact)` parameter | same binding; the parameter isn't on the page for re-display after an error unless you copy it |
+| `[BindProperty]` per property | `[BindProperties]` on the class | binds **every** public property — easy over-posting |
+| `return RedirectToPage("./Index")` after a save | `return Page()` | Page() re-renders; refreshing the browser **posts the form again** |
+| named handler `OnPostDelete` + `asp-page-handler="Delete"` | a separate Delete page | one page for edit + delete vs one page per action |
