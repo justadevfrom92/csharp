@@ -162,6 +162,37 @@ static async Task FillLaterAsync(Memory<byte> memory)
 }
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (results below from running them).
+
+**A full bounded channel** (`ChannelFullModeVariation`: capacity 3, write 1..10 with nobody reading, then read)
+
+| `FullMode` | Left in the channel | What happened to the rest |
+|---|---|---|
+| `Wait` (original) | 1, 2, 3 | `TryWrite` returned `false`; `WriteAsync` would **wait** (backpressure — nothing lost) |
+| `DropOldest` | 8, 9, 10 | oldest thrown away to make room — "latest values matter" (sensor readings) |
+| `DropNewest` | 1, 2, 10 | the newest item **already queued** is replaced each time |
+| `DropWrite` | 1, 2, 3 | new items silently ignored |
+| `Channel.CreateUnbounded` | 1..10 | nothing dropped, nothing waits — memory grows if the reader is slow |
+
+**Producer/consumer queue** (`ProducerConsumerVariation`, 1,000 items; all three summed to 500,500)
+
+| Queue | How the consumer waits | The difference |
+|---|---|---|
+| `Channel<T>` (original) | `await foreach ... ReadAllAsync()` | no thread blocked; bounded = backpressure |
+| `BlockingCollection<T>` | `GetConsumingEnumerable()` **blocks a thread** | older API; fine on a dedicated thread, wasteful in async code |
+| `ConcurrentQueue<T>` | **polls** (`TryDequeue` + `Thread.Yield` in a loop) | thread-safe but no waiting and no size limit |
+
+**Reading the 3rd word of a log line** (`LogLineParseVariation`, 100,000 lines, all returned 1234)
+
+| Way | Memory allocated per line |
+|---|---|
+| `line.Split(' ')[2]` | 232 bytes (an array + a string per word) |
+| `ReadOnlySpan<char>` slicing (original idea) | **0 bytes** |
+| `IndexOf` + `Substring` | 32 bytes (one string, for the number) |
+| `[GeneratedRegex]` | 384 bytes (a `Match` per line) — easiest to change |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

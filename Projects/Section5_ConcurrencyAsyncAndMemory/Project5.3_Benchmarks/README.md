@@ -151,3 +151,34 @@ builder.Append(values[i]);               // StringBuilder: adds to one growing b
 
 return string.Join(',', values);         // works out the final length first, copies once
 ```
+
+## Variations
+
+The benchmarks already compare variations (`+=` vs `StringBuilder` vs `string.Join`; `Split` vs `Span`; `List` vs
+`HashSet` vs `Dictionary`). Added: **dictionary kinds**, in `Benchmarks/Variations/DictionaryKindVariation.cs`.
+
+```bash
+dotnet run -c Release -- --filter "*DictionaryKindVariation*" --job short
+```
+
+| Collection | Lookup (1,000 items, `--job short`, this container) | Ratio | Choose it when |
+|---|---|---|---|
+| `Dictionary<K,V>` (baseline) | 9.3 ns | 1.00 | the default |
+| `FrozenDictionary<K,V>` | 7.4 ns | **0.80** | built once at startup, read millions of times, never changed (slower to build) |
+| `ImmutableDictionary<K,V>` | 15.5 ns | 1.67 | every "change" must make a **new copy** and old copies must stay valid (snapshots shared between threads) |
+| `SortedDictionary<K,V>` | 292.6 ns | **31.6** | you need the keys **in order**; lookups are O(log n), not O(1) |
+
+`Benchmarks.Tests/VariationsTest.cs` checks all four return the **same value** (and all throw `KeyNotFoundException`
+for a missing key) — a benchmark is only fair if every method does the same work.
+
+**Ways to configure a benchmark run** (BenchmarkDotNet):
+
+| Choice | Effect |
+|---|---|
+| `--job short` (used here) | few iterations: quick, less precise (see the Error column) |
+| no `--job` (default) | many iterations: precise, takes minutes |
+| `--job dry` | runs each method once: only checks it **works**, numbers are meaningless |
+| `[MemoryDiagnoser]` on/off | adds/removes the Allocated column |
+| `[Params(10, 1000)]` vs `[ArgumentsSource(nameof(Inputs))]` | same benchmark at several sizes vs a method supplying input values |
+| `[Benchmark(Baseline = true)]` on/off | adds/removes the Ratio column |
+| `Stopwatch` by hand (5.2, 2.1) | one rough measurement: no warm-up, no statistics, Debug builds allowed by mistake |

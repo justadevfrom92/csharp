@@ -169,6 +169,37 @@ Predicate<string> isEvenFile = name => int.Parse(name.Substring(4, 2)) % 2 == 0;
 Action<string> printLine = text => Console.WriteLine("  " + text);
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (results below from running them; 3 runs for the counters).
+
+**4 threads × 100,000 additions to one counter** (`SharedCounterVariation`, expected 400,000)
+
+| Way | Run 1 | Run 2 | Run 3 | Safe? |
+|---|---|---|---|---|
+| `counter++` | 207,024 | 189,590 | 234,431 | ❌ updates lost, different every run |
+| `Interlocked.Increment(ref counter)` (original) | 400,000 | 400,000 | 400,000 | ✅ fastest for one number |
+| `lock (object) { counter++; }` | 400,000 | 400,000 | 400,000 | ✅ use when **several** values change together |
+| `lock (System.Threading.Lock) { ... }` (.NET 9+) | 400,000 | 400,000 | 400,000 | ✅ a dedicated lock type; can't lock on the wrong object by accident |
+| `Volatile.Write(ref c, Volatile.Read(ref c) + 1)` | 151,608 | 166,526 | 167,899 | ❌ **volatile is not atomic** — read and write are still two steps |
+
+**12 jobs of ~50 ms, at most 3 at once** (`RunManyJobsVariation`; each returns the highest number running together)
+
+| Way | Most at once | Time | The difference |
+|---|---|---|---|
+| `ThreadPool` + `CountdownEvent` + `SemaphoreSlim.Wait` (original style) | 3 | 206 ms | a waiting job **blocks a thread** |
+| `Task.WhenAll` + `SemaphoreSlim.WaitAsync` | 3 | 215 ms | waits without holding a thread; the usual choice in async code |
+| `Parallel.ForEachAsync` with `MaxDegreeOfParallelism = 3` | 3 | 212 ms | the limit is **one option**, no semaphore to write |
+| `Parallel.For` | 3 | 216 ms | for CPU work; blocks the caller until done |
+| `Task.WhenAll` with **no limit** | **12** | 51 ms | everything at once: fine for 12, floods a server with 10,000 |
+
+**Notifying listeners** (`NotifyListenersVariation`)
+
+| Way | Outside code can | Test result |
+|---|---|---|
+| `public event Action<string>? FinishedEvent` (original style) | only `+=` / `-=` | calling it or assigning with `=` from outside is a compile error (`CS0079`) |
+| `public Action<string>? FinishedDelegate` (a plain field) | `+=`, **call it**, **replace it with `=`** | `= ...` silently removed the first handler; outside code "finished" a fake download |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
