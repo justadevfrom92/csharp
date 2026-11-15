@@ -19,6 +19,9 @@ builder.Services.AddMemoryCache(options =>
 // 3. Singleton: one CategoryService for the whole app (it only holds the cache and settings).
 builder.Services.AddSingleton<CategoryService>();
 
+// Only for Variations/CacheStampedeVariation.cs: HybridCache, a newer cache that also prevents "stampedes".
+builder.Services.AddHybridCache();
+
 builder.Services.AddControllers();
 
 var app = builder.Build();

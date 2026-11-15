@@ -161,6 +161,34 @@ using (IServiceScope scope = app.Services.CreateScope())
 }
 ```
 
+## Variations
+
+"Every book with its author's name", loaded seven ways in `Variations/BookLoadingVariation.cs`
+(`/variations/loading/...`). Each request builds its **own** in-memory database with 5 books (the app's real
+database is untouched) and counts SQL commands with `Variations/CommandCountingVariation.cs`.
+
+| Way | URL | SQL commands | Tracked objects | The difference |
+|---|---|---|---|---|
+| `Include(book => book.Author)` (original) | `/include` | **1** (a JOIN) | 10 | everything in one query; EF tracks books + authors |
+| no Include, load the author **inside the loop** | `/n-plus-one` | **6** (1 + 1 per book) | 0 | the "N+1 queries" problem: 5,000 books = 5,001 queries |
+| explicit loading `Entry(book).Reference(...).LoadAsync()` | `/explicit` | 2 | 6 | load a navigation **later, only when needed**; the others say "(not loaded)" |
+| projection `Select(book => book.Title + " by " + book.Author.Name)` | `/projection` | 1 | **0** | only the columns needed; nothing to track — best for read-only pages |
+| `Include(...).Include(book => book.Tags).AsSplitQuery()` | `/split` | 2 | 10 | one query per collection instead of one huge JOIN (avoids duplicated rows) |
+| `ToListAsync()` **then** `Where` | `/filter-in-memory` | 1 | 0 | downloads **every** row, filters in C# |
+| `Where` **then** `ToListAsync()` | `/filter-in-sql` | 1 | 0 | `WHERE "b"."PublishedYear" > 1900` in the SQL — only matching rows sent (`ToQueryString()` shows it) |
+
+Not shown: **lazy loading** (package `Microsoft.EntityFrameworkCore.Proxies`, `virtual` navigation properties) loads
+a navigation automatically the first time you touch it — convenient, and it produces the N+1 pattern without you
+writing a loop.
+
+**Registering the DbContext** (one line in `Program.cs` each):
+
+| Line | The difference |
+|---|---|
+| `AddDbContextPool<LibraryDbContext>(...)` (original) | reuses DbContext objects between requests: less allocation |
+| `AddDbContext<LibraryDbContext>(...)` | a new DbContext per request (scoped); allows constructor injection of other services |
+| `AddDbContextFactory<LibraryDbContext>(...)` | inject `IDbContextFactory<T>` and create contexts yourself — for background services and Blazor |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

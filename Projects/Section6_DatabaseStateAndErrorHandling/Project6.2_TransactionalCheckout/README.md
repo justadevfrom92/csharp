@@ -113,6 +113,27 @@ database.Database.EnsureDeleted();
 database.Database.EnsureCreated(); // creates tables + seed data (HasData)
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (results below from running them; each starts from a fresh database).
+
+**Checkout that fails at the last step** (`CheckoutTransactionVariation`: Alice buys 3 mice, only 2 in stock)
+
+| Way | Orders left | Alice's wallet | Mouse stock | The difference |
+|---|---|---|---|---|
+| `BeginTransaction` + several `SaveChanges` + `Rollback` (original) | 0 | 100.00 | 2 | everything undone |
+| **no transaction**, `SaveChanges` after each step | **1** | **62.50** | 2 | Alice **paid** for an order that can't be delivered |
+| change everything, **one** `SaveChanges` at the end | 0 | 100.00 | 2 | EF wraps one `SaveChanges` in a transaction itself; simplest when you don't need ids between steps |
+| `TransactionScope` (ambient transaction) | 0 | 100.00 | 2 | **not supported by SQLite**: EF throws `AmbientTransactionWarning` at the first query, so nothing ran. Works with SQL Server, and joins every connection inside the block |
+
+**Deleting "Old Webcam"** (`DeleteStyleVariation`)
+
+| Way | Visible to normal queries? | Row still in the table? | The difference |
+|---|---|---|---|
+| `Remove` + `SaveChanges` (original) | no | **yes** (`IsDeleted = true`) | our `SaveChanges` override turns delete into soft delete |
+| `ExecuteDelete()` | no | **no — really deleted** | goes straight to the database and **skips `SaveChanges`**, so the soft-delete override never runs |
+| `ExecuteUpdate(... IsDeleted = true ...)` | no | yes | a fast bulk **soft** delete, written by hand |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

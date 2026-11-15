@@ -131,6 +131,33 @@ List<string>? categories = await cache.GetOrCreateAsync(CategoriesCacheKey, asyn
 cache.Remove(CategoriesCacheKey); // when the data changes
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (controllers on `/variations/...`; results from running them).
+
+**Reading a setting** (`OptionsVariation`, `/variations/options`). Test: start the app, change `ShopName` in
+`appsettings.json` to "Renamed Store" while it runs, read again.
+
+| Way | Before | After the edit | The difference |
+|---|---|---|---|
+| `IOptions<ShopSettings>` (original) | Roadmap Store | **Roadmap Store** | read once; singleton; needs a restart |
+| `IOptionsSnapshot<ShopSettings>` | Roadmap Store | Renamed Store | read again **per request**; scoped, so not usable in a singleton |
+| `IOptionsMonitor<ShopSettings>` | Roadmap Store | Renamed Store | always latest; works in singletons; `OnChange(...)` callback (used in 7.5) |
+| `configuration["Shop:ShopName"]` | Roadmap Store | Renamed Store | a plain string, no class or validation; a typo (`"Shop:ShopNmae"`) quietly returns `null` |
+| `configuration.GetSection("Shop").Get<ShopSettings>()` | Roadmap Store | Renamed Store | a new object each time; skips `ValidateOnStart` / `ValidateDataAnnotations` |
+
+**Cache stampede** (`CacheStampedeVariation`, `/variations/cache/stampede`): empty cache, **20 requests at the same moment**.
+How many ran the slow "database" query?
+
+| Way | Loads | The difference |
+|---|---|---|
+| `IMemoryCache.GetOrCreateAsync` (original) | **20** | no protection: every request that misses runs the factory |
+| `TryGetValue` + `Set` by hand | **20** | same problem, more code |
+| `HybridCache.GetOrCreateAsync` (.NET 9+, package `Microsoft.Extensions.Caching.Hybrid`, `AddHybridCache()`) | **1** | the first caller loads, the other 19 **wait for its result**; can also use Redis as a second level |
+| `ConcurrentDictionary<string, Lazy<Task<T>>>` | 1 | hand-made "only once"; never expires |
+
+With a slow query and heavy traffic, a stampede can take the database down exactly when the cache expires.
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

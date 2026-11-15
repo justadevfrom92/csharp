@@ -157,6 +157,42 @@ using ShopDbContext context = new ShopDbContext(options);
 context.Database.EnsureCreated();
 ```
 
+## Variations
+
+Other ways to write the same queries, in `EfCoreAdvancedQueries/Variations/ProductQueryVariation.cs` — two of them
+wrong on purpose. `EfCoreAdvancedQueries.Tests/VariationsTest.cs` (8 tests) shows exactly what happens.
+
+**Searching by name**
+
+| Way | `"Mo"` | `"' OR 1=1 --"` | `"O'Brien"` | The difference |
+|---|---|---|---|---|
+| `FromSql($"... LIKE {pattern}")` (original) | Monitor, Mouse | nothing | nothing | `{pattern}` becomes a parameter |
+| `FromSqlInterpolated($"...")` | same | nothing | nothing | older name for the same thing |
+| `FromSqlRaw("... LIKE @pattern", new SqliteParameter(...))` | same | nothing | nothing | for SQL text built at runtime; values still parameters |
+| plain LINQ `Where(p => p.Name.Contains(text))` | same | nothing | nothing | no SQL written; the usual choice |
+| `FromSqlRaw("... LIKE '%" + text + "%'")` ❌ | same | **all 6 products** (SQL injection) | **`SqliteException`** (the quote breaks the SQL) | text joined into SQL |
+
+EF's analyzer warns (`EF1002`) if you pass an **interpolated** string to `FromSqlRaw`; joining with `+` gives **no warning**
+(both checked).
+
+**Raising prices for a category**
+
+| Way | Statements | Objects already loaded | Goes through `SaveChanges` |
+|---|---|---|---|
+| `ExecuteUpdateAsync` (original) | 1 `UPDATE` | **stale** (still the old price) | no — skips overrides, interceptors on `SaveChanges`, concurrency checks |
+| load, change, `SaveChangesAsync` | 1 `SELECT` + 1 `UPDATE` per row | up to date | yes |
+
+**Two people changing the same price** (Alice saves 29.99, then Bob saves 19.99, both having seen version 0)
+
+| Way | Bob's result | Final price | The difference |
+|---|---|---|---|
+| concurrency token + `DbUpdateConcurrencyException` (original) | `ConflictSomeoneElseChangedIt` | 29.99 | EF adds `AND Version = @seen` itself |
+| `ExecuteUpdate` with `Version == seen` in the `Where` | 0 rows changed | 29.99 | the same check by hand, without loading |
+| `ExecuteUpdate` **without** a version check ❌ | 1 row changed, no error | **19.99** | "last write wins": Alice's change is silently lost |
+
+Not coded (model changes): `[ConcurrencyCheck]` on any property makes that property a token; `[Timestamp] byte[]` is a
+`rowversion` column SQL Server updates by itself (SQLite has no such type, hence the manual `Version` here).
+
 ## Why these types
 
 | Choice | Why |

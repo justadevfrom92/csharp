@@ -15,6 +15,8 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
     builder.Services.AddControllersWithViews();
+    // Only for Variations/: an IExceptionHandler class, tried before the /Error/ServerError page.
+    builder.Services.AddExceptionHandler<ErrorHandlingAndCrashRecovery.Variations.ApiErrorExceptionHandlerVariation>();
 
     var app = builder.Build();
 

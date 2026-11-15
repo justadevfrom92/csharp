@@ -120,6 +120,23 @@ public decimal Total
 }
 ```
 
+## Variations
+
+Where the cart is kept, three ways. Cookie versions are in `Variations/CartStorageVariation.cs` (`/variations/cart/...`);
+results below are from `curl`, including a user **editing** their cookie.
+
+| Storage | What the browser holds | User edits the Monitor's price 180 → 0.01 | The difference |
+|---|---|---|---|
+| **Session** (original) | a random session id | nothing to edit: prices live on the server | server memory/Redis; lost when the session expires |
+| **plain cookie** (`/plain`) | the cart JSON, prices included | **accepted: total 0.01** | readable and editable by the user; never trust it |
+| **protected cookie** (`/protected`, `IDataProtector.Protect`) | `CfDJ8HXOPZInQBlM...` (encrypted + signed) | rejected: `Unprotect` threw, cart ignored | can't be read or changed; but max ~4 KB, sent with every request, and an old copy can be replayed |
+
+Rule from the original that matters for all of them: the **price comes from the server's list** when an item is added,
+never from the form or the cookie.
+
+Other storage choices (not coded here): a **database table** keyed by user id (survives logins on other devices) and a
+**distributed cache** like Redis (7.9) behind session when there are several servers.
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

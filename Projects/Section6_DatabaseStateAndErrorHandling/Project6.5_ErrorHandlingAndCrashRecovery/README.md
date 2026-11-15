@@ -122,6 +122,38 @@ public IActionResult ServerError()
 logger.LogWarning("Status {StatusCode} for {Path}", statusCode, reExecuteDetails?.OriginalPath);
 ```
 
+## Variations
+
+The same crash (a message containing a database password) handled different ways, in `Variations/`
+(`/variations/errors/...`). Results from `curl` with the app in **Production**:
+
+```bash
+ASPNETCORE_ENVIRONMENT=Production dotnet run --no-launch-profile
+```
+
+(`--no-launch-profile` matters: `dotnet run` otherwise applies `Properties/launchSettings.json`, which sets Development —
+and then the developer error page shows the password and full stack trace. That happened while testing these.)
+
+| Way | Response | Password shown? | The difference |
+|---|---|---|---|
+| `UseExceptionHandler("/Error/ServerError")` (original, `/Home/Crash`) | 500, HTML "Sorry, something went wrong" + error id | no | one place for the whole app |
+| `IExceptionHandler` class (`ApiErrorExceptionHandlerVariation`, `/handler`) | 500, JSON `{"title":"Something went wrong.","errorId":"..."}` | no | .NET 8+; asked **before** the error page; can choose by URL (JSON for APIs, HTML for pages) |
+| MVC exception filter (`[HideErrorsFilterVariation]`, `/filter`) | 500, JSON from the filter | no | only for the controllers/actions it's put on |
+| `try/catch` in the action (`/try-catch`) | 503 "Please try again later." | no | full control, repeated in every action |
+| `try/catch` returning `exception.Message` (`/leaky`) | 500 "...with password 'Hunter2'" | **yes** | the mistake sanitization exists to prevent |
+
+**Gotcha found while writing `ApiErrorExceptionHandlerVariation`:** with `UseExceptionHandler("/Error/ServerError")`,
+by the time an `IExceptionHandler` runs, `Request.Path` has **already been changed** to `/Error/ServerError`. The URL
+that failed is in `HttpContext.Features.Get<IExceptionHandlerPathFeature>().Path`.
+
+**Status-code pages** (one line in `Program.cs`, documented only):
+
+| Line | `/does-not-exist` gives | The difference |
+|---|---|---|
+| `UseStatusCodePagesWithReExecute("/Error/Status/{0}")` (original) | 404 + the nice page, **URL unchanged** | correct status for browsers and search engines |
+| `UseStatusCodePagesWithRedirects("/Error/Status/{0}")` | **302** → `/Error/Status/404` | the address bar changes and the first answer is a redirect, not 404 (this app's error page then sets 404 itself; a page that doesn't would return 200) |
+| `UseStatusCodePages()` | 404 + plain text "Status Code: 404; Not Found" | no page to design; fine for APIs |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:
