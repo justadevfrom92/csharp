@@ -37,7 +37,7 @@ The same goes for every other folder: `ModelBinders/` → `...ModelBinder`, `Vie
 `States/` → `...State`, `Contexts/` → `...Context`, `Mediators/` → `...Mediator`, `Requests/` → `...Request`,
 `Results/` → `...Result`, `Observers/` → `...Observer`, `Publishers/` → `...Publisher`, `Pipelines/` → `...Pipeline`,
 `Processors/` → `...Processor`, `Decorators/` → `...Decorator`, `Engines/` → `...Engine`, `Steps/` → `...Step`,
-`Monitors/` → `...Monitor`, `ValueObjects/` → `...ValueObject`.
+`Monitors/` → `...Monitor`, `ValueObjects/` → `...ValueObject`, `Jobs/` → `...Job`, `Notifiers/` → `...Notifier`.
 
 Abstract base classes start with `Base` and still end in the folder name: `BaseOrderState` in `States/`,
 `BaseApprovalHandler` in `Handlers/`, `BaseWorkflowStep` in `Steps/`.

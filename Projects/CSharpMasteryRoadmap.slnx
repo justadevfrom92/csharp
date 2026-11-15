@@ -163,4 +163,8 @@
     <Project Path="Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions/ReactiveExtensions.Tests/ReactiveExtensions.Tests.csproj" />
     <Project Path="Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions/ReactiveExtensions/ReactiveExtensions.csproj" />
   </Folder>
+  <Folder Name="/Section9_DesignPatternsAndArchitecture/Project9.9_ServiceRegistration/">
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.9_ServiceRegistration/ServiceRegistration.Tests/ServiceRegistration.Tests.csproj" />
+    <Project Path="Section9_DesignPatternsAndArchitecture/Project9.9_ServiceRegistration/ServiceRegistration/ServiceRegistration.csproj" />
+  </Folder>
 </Solution>

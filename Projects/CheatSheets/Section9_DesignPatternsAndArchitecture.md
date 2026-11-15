@@ -1,6 +1,6 @@
 # Cheat Sheet — Section 9: Design Patterns & Architecture
 
-Projects: [9.1](../Section9_DesignPatternsAndArchitecture/Project9.1_OperatorsAndLambdas), [9.2](../Section9_DesignPatternsAndArchitecture/Project9.2_JsonYamlConfiguration), [9.3](../Section9_DesignPatternsAndArchitecture/Project9.3_FluentBuilderAndDsl), [9.4](../Section9_DesignPatternsAndArchitecture/Project9.4_BehavioralPatterns), [9.5](../Section9_DesignPatternsAndArchitecture/Project9.5_PipelinePatterns), [9.6](../Section9_DesignPatternsAndArchitecture/Project9.6_Dataflow), [9.7](../Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine), [9.8](../Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions).
+Projects: [9.1](../Section9_DesignPatternsAndArchitecture/Project9.1_OperatorsAndLambdas), [9.2](../Section9_DesignPatternsAndArchitecture/Project9.2_JsonYamlConfiguration), [9.3](../Section9_DesignPatternsAndArchitecture/Project9.3_FluentBuilderAndDsl), [9.4](../Section9_DesignPatternsAndArchitecture/Project9.4_BehavioralPatterns), [9.5](../Section9_DesignPatternsAndArchitecture/Project9.5_PipelinePatterns), [9.6](../Section9_DesignPatternsAndArchitecture/Project9.6_Dataflow), [9.7](../Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine), [9.8](../Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions), [9.9](../Section9_DesignPatternsAndArchitecture/Project9.9_ServiceRegistration).
 Where each pattern appears in the whole repo: [DESIGN_PATTERNS.md](../DESIGN_PATTERNS.md).
 
 ## Operator overloading
@@ -258,4 +258,36 @@ ticks.Buffer(TimeSpan.FromSeconds(1), scheduler).Select(batch => batch.Count); /
 
 var scheduler = new TestScheduler();                          // tests: fake clock (Microsoft.Reactive.Testing)
 scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
+```
+
+## `builder.Services`: every registration style (9.9)
+
+```csharp
+builder.Services.AddSingleton<IClock, SystemClock>();          // one for the app
+builder.Services.AddScoped<IOrderService, OrderService>();     // one per request
+builder.Services.AddTransient<IEmailBuilder, EmailBuilder>();  // new every time
+builder.Services.AddKeyedSingleton<INotifier, SmsNotifier>("sms");
+builder.Services.AddSingleton(serviceProvider => new GreetingService("Roadmap Store"));    // factory
+builder.Services.AddSingleton<INotifier>(new EmailNotifier());                             // instance
+builder.Services.AddScoped(typeof(IRepository<>), typeof(InMemoryRepository<>));           // open generic
+builder.Services.TryAddSingleton(TimeProvider.System);                                     // only if not registered
+builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<INotifier, EmailNotifier>()); // add once to a "many" list
+builder.Services.Replace(ServiceDescriptor.Singleton<IPriceService, FakePriceService>());  // swap (tests)
+builder.Services.RemoveAll<INotifier>();                                                   // remove (tests)
+builder.Services.AddOptions<ShopSettings>().BindConfiguration("Shop").ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddHostedService<JobRunnerBackgroundService>();
+builder.Services.RegisterAllExistingJobs();                                                // our own: assembly scanning
+builder.Host.UseDefaultServiceProvider(options => { options.ValidateScopes = true; options.ValidateOnBuild = true; });
+```
+
+```csharp
+// assembly scanning: register every class implementing IJob
+foreach (Type type in typeof(IJob).Assembly.GetTypes().Where(type => type.IsClass && !type.IsAbstract && typeof(IJob).IsAssignableFrom(type)))
+{
+    services.TryAddEnumerable(ServiceDescriptor.Transient(typeof(IJob), type));
+}
+
+// a singleton using scoped services: new scope per unit of work
+using IServiceScope scope = scopeFactory.CreateScope();
+var jobs = scope.ServiceProvider.GetServices<IJob>();
 ```
