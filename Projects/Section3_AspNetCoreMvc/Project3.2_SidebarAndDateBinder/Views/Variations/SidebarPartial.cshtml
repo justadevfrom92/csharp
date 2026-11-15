@@ -1,0 +1,8 @@
+@model List<ActivityEntryModel>
+@{
+    ViewData["Title"] = "Partial view";
+}
+@* A partial reuses HTML only. The controller had to load Model and pass it here. *@
+<div id="partial">
+    <partial name="~/Views/Shared/Components/RecentActivitySidebar/Default.cshtml" model="Model" />
+</div>

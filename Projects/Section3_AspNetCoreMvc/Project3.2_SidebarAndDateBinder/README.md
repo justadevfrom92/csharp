@@ -92,6 +92,32 @@ public IActionResult Day([ModelBinder(typeof(CustomIsoDateFormatModelBinder))] D
 }
 ```
 
+## Variations
+
+Other ways to write the same code, in `Variations/` (controllers on `/variations/...`; results checked with `curl`).
+
+**Reading `?day=...`** (`DateBindingVariation`, `/variations/dates/...`)
+
+| `?day=` | `custom` (original binder, `yyyy-MM-dd` only) | `default` (built-in `DateOnly?` binding) | `manual` (`string` + `TryParseExact` in the action) |
+|---|---|---|---|
+| `2026-11-05` | 2026-11-05 | 2026-11-05 | 2026-11-05 |
+| `11/05/2026` | ❌ "not a date in yyyy-MM-dd format" | **2026-11-05** (read as month/day) | ❌ same message |
+| `05.11.2026` | ❌ | **2026-05-11** (read as 11 May!) | ❌ |
+| `abc` | ❌ | ❌ "The value 'abc' is not valid." | ❌ |
+
+The built-in binding reads query strings with InvariantCulture and **accepts many formats** — a British user
+typing `11/05/2026` (11 May) silently gets 5 November. The custom binder and the manual parse refuse anything but
+`yyyy-MM-dd`; the binder does it once for every action, the manual version repeats the code in each action.
+
+**Showing the sidebar** (`SidebarVariation`, `/variations/sidebar/...`)
+
+| Way | The difference |
+|---|---|
+| `<vc:recent-activity-sidebar count="5" />` (original, in the layout) | name and parameters checked at compile time |
+| `@await Component.InvokeAsync("RecentActivitySidebar", new { count = 2 })` (`/invoke`) | same HTML; name is a **string**, parameters an anonymous object — typos only show when the page runs |
+| `<partial name="..." model="Model" />` (`/partial`) | a partial can't load data: the **controller** had to fetch the list and pass it in |
+| `return ViewComponent("RecentActivitySidebar", new { count })` from an action (`/only`) | just the sidebar's HTML, no layout — for refreshing that piece with JavaScript |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

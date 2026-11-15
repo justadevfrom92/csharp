@@ -118,6 +118,31 @@ private async Task<string> SaveFileAsync(IFormFile file)
 ViewBag.SavedFiles = Directory.GetFiles(uploadFolder).Select(Path.GetFileName).ToList();
 ```
 
+## Variations
+
+Other ways to receive uploads, in `Variations/UploadVariation.cs` (POST `/variations/upload/...`). Nothing is saved;
+each action reports what it got. Results checked with `curl -F`.
+
+| Way | Tried with | Result | The difference |
+|---|---|---|---|
+| form class `AvatarUploadForm` (original) | `real.png` / `notes.txt` / nothing | valid / "Only these file types are allowed" / "Choose an image." | the attributes run automatically |
+| `IFormFile? avatar` parameter | `notes.txt` | **valid=True** | no form class = **no attributes**: a `.txt` got through; every check must be written in the action |
+| `List<IFormFile> files` | 2 files, same field name | "2 file(s): real.png, notes.txt" | several files (`<input type="file" multiple>`) |
+| `Request.ReadFormAsync()` → `form.Files` | 2 files, fields `a` and `b` | "2 file(s) in fields: a, b" | no binding: every file, any field name |
+| extension check vs **content (signature) check** | `fake.png` (a text file renamed to `.png`) | extension: image ✅, content: image ❌ | the extension is just part of the name; real PNG/JPEG files **start with fixed bytes** — check those |
+| `[RequestSizeLimit(2048)]` | a 5,000-byte file | 400 "Request body too large. The max request body size is 2048 bytes." | the server **stops reading** at the limit (nothing huge is buffered); the original `[MaximumFileSizeValidation]` only checks after the whole file arrived |
+
+**A bug found while writing these:** with `[RequestSizeLimit]` the file can't be bound, so the parameter is **`null`**,
+and the first version crashed (500) on `avatar.Length`. Always check for `null` / `ModelState` first.
+
+**Choosing the saved file name** (`GET /variations/upload/save-names?fileName=...`, computed only):
+
+| Strategy | `photo.PNG` | `../../Program.cs` |
+|---|---|---|
+| new GUID + lower-case extension (original) | `uploads/3d31….png` | `uploads/22db….cs` |
+| `Path.GetFileName(name)` | `uploads/photo.PNG` | `uploads/Program.cs` — folders stripped, but users can **overwrite** each other's files |
+| raw `Path.Combine(folder, name)` | `uploads/photo.PNG` | **`/app/Program.cs`** — outside the uploads folder ("path traversal") |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

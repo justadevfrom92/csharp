@@ -132,6 +132,49 @@ public static List<ProductModel> GetAll()
 }
 ```
 
+## Variations
+
+Other ways to write the same controller code, in `Variations/`. They're real controllers on their own
+`/variations/...` URLs, so you can try them while the app runs. The results below were checked with `curl`.
+
+**Route constraints** (`RouteConstraintVariation`, `/variations/routes/...`)
+
+| Route | `/…/5` | `/…/abc` | `/…/0` | The difference |
+|---|---|---|---|---|
+| `{id:int}` (original style) | `id=5` | **404** | `id=0` | non-numbers never reach the action |
+| `{id}` (no constraint) | `id=5` | 200, `id=0`, `ModelState.IsValid=False` | `id=0` | "abc" reaches the action as **0** — a bug if you don't check `ModelState` |
+| `{id:int:min(1)}` | `id=3` | 404 | **404** | several constraints at once |
+| `[FromQuery] int id` (`/query?id=5`) | `id=5` | — | missing → `id=0` | the value in the query string, not the path |
+
+**Return types and redirects** (`ActionResultVariation`, `/variations/results/...`)
+
+| Code | Result | The difference |
+|---|---|---|
+| `IActionResult` + `View("~/Views/Products/Details.cshtml", product)` (original style) | the HTML page | any kind of result; a view from another folder needs its full path |
+| `ActionResult<ProductModel>` + `return product;` | JSON `{"id":1,"name":"Keyboard",...}`; missing → 404 | return the **object**, MVC writes JSON — for APIs |
+| `RedirectToAction(nameof(ProductsController.Index), "Products")` | 302 → `/` | the compiler checks the name |
+| `RedirectToAction("Indx", "Products")` (typo) | 302 → `/Products/Indx` → **404** | compiles, sends users to a page that doesn't exist |
+| `Redirect(url)` with `https://evil.example` | 302 → `https://evil.example/` | goes **anywhere**: an "open redirect" if the url comes from the user |
+| `LocalRedirect(url)` with `https://evil.example` | **500** `InvalidOperationException: The supplied URL is not local` | only this site; `/product/1` works |
+
+**Giving data to a view** (`DataPassingVariation`, `/variations/data`, view `Views/Variations/DataPassing.cshtml`)
+
+| Way | Checked by the compiler? | Survives a redirect? | Seen in the test |
+|---|---|---|---|
+| `Model` (original) | ✅ | ❌ | "2 products" |
+| `ViewBag.X` | ❌ (`ViewBag.Typo` is just empty) | ❌ | `ViewBag.Lost` set before a redirect was gone |
+| `ViewData["X"]` | ❌ | ❌ | **same storage as `ViewBag`**: `ViewBag.Shared` was readable as `ViewData["Shared"]` |
+| `TempData["X"]` | ❌ | ✅ once | after `/variations/data/set-temp` the message showed |
+
+**Model binding** (`ModelBindingVariation`, POST `/variations/binding/...`, form `Id=999&Name=Lamp&...`)
+
+| Way | Result | The difference |
+|---|---|---|
+| whole `ProductModel` (original style) | `Id=999` | **over-posting**: a field the form doesn't have was still bound |
+| `[Bind("Name,Category,Price,Description")]` | `Id=0` | only the listed fields are bound |
+| separate parameters `(string name, decimal price)` | empty name → `valid=False` | nothing extra can be bound, but you write the checks (`ModelState.AddModelError`) |
+| form class `ProductFormVariation : IValidatableObject` | price 2000 with no description → "Products over 1,000 need a description." | a rule that compares **two** fields; attributes only check one |
+
 ## Why these types
 
 General rules: [WHY_THESE_TYPES.md](../../WHY_THESE_TYPES.md). Choices made in this project:

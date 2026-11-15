@@ -1,0 +1,16 @@
+@model List<ProductModel>
+@{
+    ViewData["Title"] = "Data passing variations";
+}
+@* Four ways data reaches a view. Only Model is checked by the compiler. *@
+<h2>Data passing variations</h2>
+<ul id="data">
+    <li>Model (typed, checked by the compiler): @Model.Count products</li>
+    <li>ViewBag.FromViewBag: @ViewBag.FromViewBag</li>
+    <li>ViewData["FromViewData"]: @ViewData["FromViewData"]</li>
+    <li>ViewData["Shared"] (set via ViewBag.Shared): @ViewData["Shared"]</li>
+    <li>ViewBag.FromViewData (set via ViewData): @ViewBag.FromViewData</li>
+    <li>ViewBag.Lost (set before a redirect): @(ViewBag.Lost ?? "(nothing - ViewBag doesn't survive a redirect)")</li>
+    <li>TempData["Survives"]: @(TempData["Survives"] ?? "(nothing - open /variations/data/set-temp)")</li>
+    <li>ViewBag.Typo (never set - no compile error, just empty): "@ViewBag.Typo"</li>
+</ul>

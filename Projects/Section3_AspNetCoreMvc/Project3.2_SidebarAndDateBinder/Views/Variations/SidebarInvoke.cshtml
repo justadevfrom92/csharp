@@ -1,0 +1,7 @@
+@{
+    ViewData["Title"] = "Component.InvokeAsync";
+}
+@* Same view component as <vc:recent-activity-sidebar count="2" />, called by its NAME (a string). *@
+<div id="invoked">
+    @await Component.InvokeAsync("RecentActivitySidebar", new { count = 2 })
+</div>
