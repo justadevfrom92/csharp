@@ -154,3 +154,33 @@ StockReply reply = await client.GetStockAsync(new GetStockRequest { Sku = "KB-01
 RpcException error = await Assert.ThrowsAsync<RpcException>(() => client.GetStockAsync(new GetStockRequest { Sku = "ZZ-99" }).ResponseAsync);
 Assert.Equal(StatusCode.NotFound, error.StatusCode);
 ```
+
+## Variations
+
+Other ways to **call** the service with the generated client, in `StockGrpc/Variations/StockClientVariation.cs`.
+`StockGrpc.Tests/VariationsTest.cs` runs them against the real service in memory.
+
+| Way | Result | The difference |
+|---|---|---|
+| `await client.GetStockAsync(request)` (original) | the reply | the normal choice |
+| `client.GetStock(request)` (no `Async`) | same reply | **blocks** the calling thread until the answer comes |
+| `GetStockAsync(request, deadline: DateTime.UtcNow.AddSeconds(5))` | same reply | gives up after the time limit; the server's `context.CancellationToken` is cancelled too |
+| `GetStockAsync(request, new Metadata { { "x-correlation-id", "..." } })` | same reply + response headers | **metadata** = gRPC's headers (correlation ids, auth tokens) |
+| bad SKU `"bad"`, any style | `RpcException` `InvalidArgument` | the status code doesn't depend on the call style |
+
+**Reading the `WatchStock` stream** (Mouse stock 3, then one reserved)
+
+| Way | Received | The difference |
+|---|---|---|
+| `await foreach (var reply in call.ResponseStream.ReadAllAsync())` (original) | 3, 2 | shortest |
+| `while (await call.ResponseStream.MoveNext()) { ... Current ... }` | 3, 2 | older style, same messages |
+| either, with `deadline: now + 300 ms` on a stream that never ends | `RpcException` **`DeadlineExceeded`** | without a deadline (or a cancellation token) the loop waits forever |
+
+**Exposing the same service other ways** (documented):
+
+| Way | Who can call it |
+|---|---|
+| plain gRPC over HTTP/2 (original) | gRPC clients (.NET, Go, Java, Python...) — not browsers |
+| gRPC-Web (`Grpc.AspNetCore.Web`, `app.UseGrpcWeb()`) | browsers too, through a gRPC-Web JavaScript client |
+| JSON transcoding (`Microsoft.AspNetCore.Grpc.JsonTranscoding` + `google.api.http` options in the `.proto`) | anything that speaks JSON over HTTP: `GET /v1/stock/KB-01` |
+| a JSON API alongside (8.1) | anyone; two APIs to maintain |
