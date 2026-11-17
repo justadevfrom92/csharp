@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using PublishDemo.Models;
@@ -11,6 +12,10 @@ public static class JsonSerializationVariation
 {
     // REFLECTION (the default you get without thinking about it): looks at the type's properties at RUNTIME.
     // Works in a normal build; in a Native AOT app reflection-based serialization is switched off.
+    // These attributes say "this method is NOT trim/AOT-safe". Without them the build WARNS (IL2026, IL3050) - the
+    // analyzer that <IsAotCompatible> switches on caught exactly the problem this variation demonstrates.
+    [RequiresUnreferencedCode("Reflection-based JSON: types may be trimmed away.")]
+    [RequiresDynamicCode("Reflection-based JSON needs runtime code generation.")]
     public static string WithReflection(GreetingModel greeting)
     {
         return JsonSerializer.Serialize(greeting, new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -25,6 +30,8 @@ public static class JsonSerializationVariation
 
     // Options that ONLY know the source-generated types - what an AOT app effectively has. A type that is NOT
     // listed in the context (here a plain anonymous object) can't be serialized: it throws instead of guessing.
+    [RequiresUnreferencedCode("Serializes an arbitrary runtime type.")]
+    [RequiresDynamicCode("Serializes an arbitrary runtime type.")]
     public static string WithContextOnly(object value)
     {
         var options = new JsonSerializerOptions { TypeInfoResolver = AppJsonSerializerContext.Default };

@@ -39,6 +39,10 @@ The same goes for every other folder: `ModelBinders/` → `...ModelBinder`, `Vie
 `Processors/` → `...Processor`, `Decorators/` → `...Decorator`, `Engines/` → `...Engine`, `Steps/` → `...Step`,
 `Monitors/` → `...Monitor`, `ValueObjects/` → `...ValueObject`, `Jobs/` → `...Job`, `Notifiers/` → `...Notifier`.
 
+`Variations/` → `...Variation`: every project has one, holding **other ways to write the same code** for comparison
+(see each README's **Variations** section). Two exceptions there: Razor Pages variations live in `Pages/Variations/`
+and end in `PageModel`, and Blazor ones in `Components/Variations/` end in `Component` (framework naming).
+
 Abstract base classes start with `Base` and still end in the folder name: `BaseOrderState` in `States/`,
 `BaseApprovalHandler` in `Handlers/`, `BaseWorkflowStep` in `Steps/`.
 

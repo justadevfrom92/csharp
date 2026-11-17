@@ -11,6 +11,9 @@ See [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
 
 **Which design pattern is where?** Strategy, Mediator, Decorator, DSL, Rx and more: [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md).
 
+**Other ways to write the same code?** Every project has a `Variations/` folder and a **Variations** section in its README:
+alternative versions side by side (names and behaviour), with the differences proved by tests or by running them.
+
 **Need code to copy?** The [cheat sheets](CheatSheets/README.md) have short snippets for every topic (one page per
 section, plus the `dotnet` CLI), and every project README has a **Code snippets** section with the key lines from that project.
 

@@ -173,6 +173,54 @@ HttpClient client = factory.WithWebHostBuilder(builder => builder.ConfigureTestS
 })).CreateClient();
 ```
 
+## Variations
+
+Other ways to register jobs, the look-alike "get a service" methods, and the naming conventions — in
+`ServiceRegistration/Variations/`, checked by `ServiceRegistration.Tests/VariationsTest.cs`.
+
+**Registering the jobs** (`JobRegistrationVariation`)
+
+| Way | Finds | When you add a new job | The difference |
+|---|---|---|---|
+| `RegisterAllExistingJobs()` — every non-abstract class implementing `IJob` (original) | all 3 | nothing to do | "magic": the list isn't visible in code |
+| `RegisterJobsByHand()` — one `TryAddEnumerable` line per job | the 2 written down; **`SendDailyReportJob` was "forgotten" and never runs** | add a line | explicit, easy to forget |
+| `.AddJob<TJob>()` generic helper | what you list (same 3 as scanning in the test) | add a line | shorter; `where TJob : IJob` is checked by the compiler |
+| by **name** — classes ending in `Job` (`FindJobsByName`) | **wrong both ways**: found `ReportJob` (not a job), missed `NightlyCleanup` (a job) | name it right | conventions are guesses |
+| by **attribute** `[AutoRegisterVariation]` (`RegisterJobsWithAttribute`) | only marked classes | add the attribute | opt-in: nothing registered by accident |
+
+**Getting a service out** (`ResolveVariation`) — normal code takes services in its **constructor** instead; these are for
+factories, background loops and tests:
+
+| Method | Service not registered | The difference |
+|---|---|---|
+| `GetService<T>()` | `null` | "optional" |
+| `GetRequiredService<T>()` | throws `InvalidOperationException` | "must exist" — the usual choice |
+| `GetServices<T>()` | empty list (2 notifiers here) | every registration of `T` |
+| `GetKeyedService<T>(key)` / `GetRequiredKeyedService<T>(key)` | `null` / throws | by key |
+| `ActivatorUtilities.CreateInstance<T>(provider)` | **creates it anyway** | for a class that isn't registered, filling its constructor from the container |
+
+**A lifetime mistake the container catches** — a singleton that takes a scoped service ("captive dependency"):
+
+| Provider | Result |
+|---|---|
+| built with no validation | **works, silently wrong**: the scoped object lives forever |
+| built with `ValidateScopes = true, ValidateOnBuild = true` (original `Program.cs`) | `AggregateException` at startup |
+
+Also found by this test: options with `BindConfiguration("Shop")` need an `IConfiguration` in the container
+(`WebApplication` adds one; a bare `ServiceCollection` doesn't), and `ValidateDataAnnotations` then rejected an empty `SupportEmail`.
+
+**What the method names mean** (the conventions across ASP.NET Core):
+
+| Prefix | Means | Examples |
+|---|---|---|
+| `Add...` on `builder.Services` | **register** services (before `Build()`) | `AddControllers`, `AddDbContext`, `AddHttpClient`, `RegisterAllExistingJobs` (our own, same idea) |
+| `TryAdd...` | register only if nothing is registered yet | `TryAddSingleton`, `TryAddEnumerable` |
+| `Configure<T>` / `PostConfigure<T>` | set **options** | `Configure<FeatureFlagSettings>(...)` |
+| `Use...` on `app` | add **middleware** to the request pipeline (order matters) | `UseRouting`, `UseAuthentication`, `UseRateLimiter` |
+| `Map...` on `app` | add **endpoints** | `MapGet`, `MapControllers`, `MapHub`, `MapGrpcService`, `MapHealthChecks` |
+| `With...` / `Require...` on an endpoint | add **metadata/rules** to one endpoint | `WithTags`, `RequireAuthorization`, `RequireRateLimiting` |
+| `Build()` / `Run()` | finish registering / start the app | `builder.Build()`, `app.Run()` |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

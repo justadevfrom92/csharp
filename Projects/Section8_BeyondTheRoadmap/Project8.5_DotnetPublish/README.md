@@ -172,6 +172,8 @@ The publish **modes** are compared above. The code variation is how JSON is writ
 | `JsonSerializer.Serialize(value, new JsonSerializerOptions(JsonSerializerDefaults.Web))` | `{"message":"Hello"}` | ❌ | **reflection** at runtime — switched off in Native AOT |
 | options with **only** the context, a type **not** listed in it | throws `NotSupportedException` | — | AOT apps can only serialize types named in `[JsonSerializable(...)]` |
 
+Found while building it: the `<IsAotCompatible>` analyzer warned (IL2026, IL3050) on the reflection version — the method is now marked `[RequiresUnreferencedCode]` + `[RequiresDynamicCode]`, which is how you label code that is not trim/AOT-safe.
+
 Found by the test: the same model gave `message` or `Message` depending on which options were used — add
 `[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]` to the context if you call it directly.
 
