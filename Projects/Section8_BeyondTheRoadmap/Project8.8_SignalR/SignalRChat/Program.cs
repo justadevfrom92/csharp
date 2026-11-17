@@ -16,6 +16,7 @@ app.UseDefaultFiles();          // "/" -> wwwroot/index.html (a small chat page)
 app.UseStaticFiles();
 app.UseMiddleware<RequireChatUserNameMiddleware>(); // refuses /hubs/chat connections without a valid ?user=
 app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<SignalRChat.Variations.UntypedChatHubVariation>("/hubs/variations/untyped"); // other ways, for comparison (Variations/)
 app.MapAnnouncementEndpoints();
 app.Run();
 

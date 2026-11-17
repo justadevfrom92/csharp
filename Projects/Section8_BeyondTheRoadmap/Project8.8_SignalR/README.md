@@ -130,3 +130,29 @@ await connection.start();
 await connection.invoke("JoinRoom", "general");
 await connection.invoke("SendMessage", "general", "hello");
 ```
+
+## Variations
+
+An **untyped** hub with every common target, in `SignalRChat/Variations/UntypedChatHubVariation.cs`
+(`/hubs/variations/untyped`). `SignalRChat.Tests/VariationsTest.cs` connects two real clients: Ann sends, Bob listens.
+
+**Who receives it** (Ann sends)
+
+| Target | Ann | Bob | Use for |
+|---|---|---|---|
+| `Clients.All` | ✅ | ✅ | announcements |
+| `Clients.Others` | ❌ | ✅ | "Ann is typing…" |
+| `Clients.Caller` | ✅ | ❌ | "your message was saved" |
+| `Clients.Group(room)` (original) | members of the room only | | chat rooms |
+| `Clients.OthersInGroup(room)`, `Clients.User(userId)`, `Clients.Client(connectionId)` | — | — | room minus sender; every connection of one user; one exact connection |
+
+**Typed vs untyped hub**
+
+| Hub | Calling a client method | A typo in the method name |
+|---|---|---|
+| `Hub<IChatClient>` (original) | `Clients.Group(room).ReceiveMessage(room, user, text)` | **compile error** |
+| `Hub` (untyped) | `Clients.All.SendAsync("ReceiveMessage", ...)` | `SendAsync("ReceiveMesage", ...)` **runs without any error, and nobody receives it** (checked by the test) |
+
+**Transports** (documented; SignalR picks the best one by itself unless told otherwise):
+WebSockets (fastest, two-way) → Server-Sent Events (server → client over HTTP) → Long Polling (works everywhere, slowest — the
+tests use it because it goes through the test server's `HttpMessageHandler` with no extra setup; WebSockets would need a custom `WebSocketFactory`).
