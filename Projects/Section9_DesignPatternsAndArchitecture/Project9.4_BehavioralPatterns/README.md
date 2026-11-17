@@ -183,6 +183,20 @@ foreach (IOrderPlacedObserver observer in observers.ToList())
 }
 ```
 
+## Variations
+
+A simpler version of each pattern, in `BehavioralPatterns/Variations/`, compared with the original by
+`BehavioralPatterns.Tests/VariationsTest.cs`.
+
+| Pattern | Original | Variation | Same result? | When the variation is enough |
+|---|---|---|---|---|
+| Strategy | one class per option + `ShippingService` | `Dictionary<string, Func<decimal, decimal, decimal>>` (`ShippingPriceVariation.WithFuncDictionary`) | ✅ all 4 cases | strategies are small calculations with no dependencies |
+| | | `switch` on the option name (`WithSwitch`) | ✅ | a handful of options that rarely change — but each new one **edits** the method |
+| State | one class per state | `enum` + table of allowed moves (`OrderStatusVariation`, `OrderStatusTransitionVariation`) | ✅ same path, **same error message** | states have no behaviour of their own, only allowed moves |
+| Command (undo/redo) | each command knows how to undo itself | **snapshots** of the whole text ("memento", `SnapshotEditorVariation`) | ✅ same text | small documents: no `Undo()` to write per action, but every edit stores a full copy |
+| Observer | `OrderEventPublisher` + `IOrderPlacedObserver` | C# `event Action<OrderPlacedEvent>` (`OrderPlacedEventVariation`) | ❌ when a handler fails | handlers never throw; with a failing handler the event **stops there** (the next handler was never called), the original still tells everyone and reports the failures together |
+| Mediator | `IMediator` finding handlers in DI | call the handler/service directly | — | a small app: the indirection costs "go to definition" for little gain |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

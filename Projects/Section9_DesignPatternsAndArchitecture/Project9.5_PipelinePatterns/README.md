@@ -170,6 +170,25 @@ public class LoggingInterceptor<T> : DispatchProxy where T : class
 }
 ```
 
+## Variations
+
+A lighter version of each pipeline, in `PipelinePatterns/Variations/`, compared with the original by
+`PipelinePatterns.Tests/VariationsTest.cs`.
+
+| Pattern | Original | Variation | Same result? | The difference |
+|---|---|---|---|---|
+| Pipes and filters | `TextPipeline` + `ITextFilter` classes | `filters.Aggregate(text, (current, filter) => filter(current))` over `Func<string, string>` (`TextPipelineVariation`) | ✅ | LINQ `Aggregate` **is** a pipeline; filter objects still work via `filter.Apply` |
+| Chain of responsibility | linked handler objects + `SetNext` | table of `(Limit, Role)` + loop (`ApprovalTableVariation`) | ✅ for all 5 amounts, edges included | enough when each handler only compares a number; objects win when a handler calls services or partly handles and passes on |
+| Decorator pipeline | one class per layer wrapping `IPaymentProcessor` | **functions**: each step gets `next` and returns a wrapped step (`PaymentMiddlewareVariation`) | ✅ same result **and same log** | exactly how ASP.NET Core builds its middleware pipeline (`app.Use((context, next) => ...)`) |
+| Interceptor / AOP | `DispatchProxy` for any interface | a hand-written decorator per interface | — | no reflection, faster, but one class per interface |
+
+**Order matters** (same two function steps, swapped, payment of -5):
+
+| Order | Result | Log |
+|---|---|---|
+| logging → validation | rejected | `start A-2` (logging saw it first) |
+| validation → logging | rejected | empty (rejected before logging) |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |
