@@ -141,6 +141,36 @@ public static string Describe(Expression<Func<ProductModel, bool>> condition)
 Func<ProductModel, bool> compiled = condition.Compile();
 ```
 
+## Variations
+
+More ways to write the same things, in `OperatorsAndLambdas/Variations/`, checked by `OperatorsAndLambdas.Tests/VariationsTest.cs`.
+
+**"Double a number" as a delegate** (`DelegateSyntaxVariation`; all return 14 for 7)
+
+| Syntax | Era | The difference |
+|---|---|---|
+| `number => number * 2` (original) | C# 3+ | shortest |
+| `delegate (int number) { return number * 2; }` | C# 2 | anonymous method: you'll see it in old code |
+| local function `int Double(int number) { ... }` returned as `Double` | C# 7+ | has a name; can call itself (recursion) |
+| method group `return DoubleIt;` | always | reuses an existing method |
+| custom `delegate int NumberRule(int number)` | always | names the shape; **not** interchangeable with `Func<int, int>` without converting |
+
+**Lambdas created in a loop** (`LoopCaptureVariation`; each lambda returns "its" loop value)
+
+| Loop | Result | Why |
+|---|---|---|
+| `for (int i ...) actions.Add(() => i);` | **3, 3, 3** | ONE `i` for the whole loop; every lambda sees its final value |
+| `for` with `int copy = i;` inside | 0, 1, 2 | a new variable each round (this is why 5.1 copies `thisWorker`) |
+| `foreach (int value in ...)` | 0, 1, 2 | since C# 5, a new variable each round |
+
+**Money conversions and operators** (`MoneyImplicitVariation`)
+
+| Way | `price = 19.99m` | The difference |
+|---|---|---|
+| `explicit operator decimal` only (original) | doesn't compile | the currency can't be lost or guessed |
+| `implicit operator MoneyImplicitVariation(decimal)` | compiles, **currency guessed as USD** | silent: `euroPrice.Add(5m)` throws because `5m` became dollars |
+| named method `Add(...)` instead of `+` (also 4.2) | — | same rule; longer in formulas, easier to find |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

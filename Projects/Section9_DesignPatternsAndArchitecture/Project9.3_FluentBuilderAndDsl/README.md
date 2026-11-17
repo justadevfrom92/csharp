@@ -134,6 +134,26 @@ List<PricingRuleModel> rules = PricingRuleParser.Parse(rulesText);
 PriceQuoteModel quote = PricingRuleEvaluator.Quote(order, rules);
 ```
 
+## Variations
+
+Other ways to build an order and write the rules, in `FluentBuilderAndDsl/Variations/`, checked by
+`FluentBuilderAndDsl.Tests/VariationsTest.cs`.
+
+**Creating an order**
+
+| Way | Missing customer | No lines | Reusing a half-built one | The difference |
+|---|---|---|---|---|
+| mutable `OrderBuilder` (original) | `Build()` throws | `Build()` throws | ❌ **leaks**: two orders started from the same builder share lines (order B got A's keyboard) | steps change the builder and return `this` |
+| immutable builder (`ImmutableOrderBuilderVariation`, a `record` + `with`) | `Build()` throws | `Build()` throws | ✅ each branch independent | every step returns a **new** builder |
+| `required` + `init` properties (`OrderInitVariation`) | **compile error CS9035** | ✅ accepted (`Lines = []`) | — | the compiler checks presence before the program runs, but rules across fields aren't checked |
+
+**Writing the pricing rules** (same order, same quote from both)
+
+| Way | Example | A typo is found | Change a rule |
+|---|---|---|---|
+| **external DSL** — text file + parser (original) | `WHEN total > 100 THEN discount 10%` | at **runtime**, when the file is read: `FormatException` with the line number | edit the text file, no rebuild |
+| **internal DSL** — fluent C# (`FluentRuleVariation`) | `When(o => o.Subtotal > 100).Discount(10)` | at **compile time** (`o.Subtotl` doesn't compile) | change code, rebuild, redeploy; any C# condition possible |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

@@ -8,6 +8,10 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.14" />
     <!-- YAML is not built into .NET; this small package adds an AddYamlFile(...) configuration source. -->
     <PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
+    <!-- Only for Variations/: the same settings as INI, XML and command-line arguments. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.14" />
   </ItemGroup>
   <ItemGroup>
     <None Update="shop.json" CopyToOutputDirectory="PreserveNewest" />

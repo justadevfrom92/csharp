@@ -133,6 +133,34 @@ Shop:
 <None Update="shop.Production.yaml" CopyToOutputDirectory="PreserveNewest" />
 ```
 
+## Variations
+
+Other formats and other ways to read, in `JsonYamlConfiguration/Variations/ConfigReadingVariation.cs`,
+checked by `JsonYamlConfiguration.Tests/VariationsTest.cs`.
+
+**The same setting in other formats** (all give the key `Shop:Name`)
+
+| Format | Example | Package |
+|---|---|---|
+| JSON (original) | `{ "Shop": { "Name": "Test Shop" } }` | built in |
+| YAML (original) | `Shop:` / `  Name: Test Shop` | `NetEscapades.Configuration.Yaml` |
+| INI | `[Shop]` / `Name=Test Shop` | `Microsoft.Extensions.Configuration.Ini` |
+| XML | `<settings><Shop><Name>Test Shop</Name></Shop></settings>` | `Microsoft.Extensions.Configuration.Xml` |
+| command line | `dotnet run -- --Shop:Name "Test Shop"` | `Microsoft.Extensions.Configuration.CommandLine` (already in ASP.NET Core) |
+| environment variable | `Shop__Name="Test Shop"` | built in |
+
+Every broken file — JSON, YAML, INI or XML — fails the same way: `InvalidDataException` "Failed to load configuration from file".
+
+**Reading settings**
+
+| Way | Key missing from config | The difference |
+|---|---|---|
+| `GetSection("Shop").Get<ShopSettings>()` (original) | the property gets its C# default | a **new** object each time |
+| `GetSection("Shop").Bind(existing)` | **keeps** the value already in the object (99 stayed 99) | fill an object you already have |
+| `GetValue("Shop:MaximumItemsPerOrder", defaultValue: 10)` | the default you give (10) | one value, no class |
+| `configuration["Shop:Name"]` | `null` | a string; you convert it |
+| `System.Text.Json` on the file directly | — | no layering or overrides, and it **rejects `//` comments and trailing commas** by default (`JsonException`) unless `ReadCommentHandling = Skip`; the configuration reader accepts them |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |
