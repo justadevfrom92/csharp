@@ -107,6 +107,36 @@ using IDisposable subscription = PriceMonitor.CountPerWindow(ticks, TimeSpan.Fro
 scheduler.AdvanceTo(TimeSpan.FromSeconds(3).Ticks);   // 3 "seconds" pass instantly
 ```
 
+## Variations
+
+Other operators and subjects, in `ReactiveExtensions/Variations/PriceStreamVariation.cs`, checked on a fake clock by
+`ReactiveExtensions.Tests/VariationsTest.cs`.
+
+**A tick every 50 ms for 1 second** (never quiet for 100 ms)
+
+| Operator | Ticks passed on | Use for |
+|---|---|---|
+| `Throttle(100 ms)` (original `SettledPrices`) | **0** — it waits for 100 ms of quiet that never comes | search-as-you-type: act when the user **stops** |
+| `Sample(100 ms)` (`SampledPrices`) | **10** — the latest value every 100 ms | redraw a live chart at a steady rate |
+| `Buffer(1 s)` (original `CountPerWindow`) | 1 list of 20 | counts / batches per time window |
+| `DistinctUntilChanged(t => t.Price)` (`OnlyChanges`) | 1, 1, 2, 2, 1 → **1, 2, 1** | drop repeats (the second 1 is a change from 2) |
+
+**What a late subscriber gets** (1, 2, 3 pushed before it subscribes, then 4)
+
+| Subject | Sees | Like |
+|---|---|---|
+| `Subject<T>` (original) | 4 | a live radio |
+| `BehaviorSubject<T>` | 3, 4 | "the current price" — always has a latest value |
+| `ReplaySubject<T>` | 1, 2, 3, 4 | a recording from the start |
+| `ReplaySubject<T>(2)` | 2, 3, 4 | the last 2, then live |
+
+**Cold vs hot** (`Observable.Interval(1 s).Take(4)`, a 2nd subscriber joins after 2.5 s)
+
+| | First subscriber | Late subscriber | The difference |
+|---|---|---|---|
+| cold (as created) | 0, 1, 2, 3 | **0, 1, 2, 3** | every subscriber gets its **own** timer from the start |
+| hot (`.Publish().RefCount()`) | 0, 1, 2, 3 | **2, 3** | subscribers **share** one timer; a late one joins mid-way |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

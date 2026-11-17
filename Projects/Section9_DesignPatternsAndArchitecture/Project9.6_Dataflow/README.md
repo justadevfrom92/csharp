@@ -126,6 +126,19 @@ _ = save.Completion.ContinueWith(
     CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
 ```
 
+## Variations
+
+The same import (200 valid lines + 2 broken) written four other ways, in `DataflowImport/Variations/OrderImportVariation.cs`.
+`DataflowImport.Tests/VariationsTest.cs` checks that all five import the same 200 orders and the same total.
+
+| Way | Parallel? | Keeps file order? | Backpressure | Batching / routing / errors back to the start | The difference |
+|---|---|---|---|---|---|
+| TPL Dataflow (original) | ✅ per stage | ✅ `EnsureOrdered` | ✅ `BoundedCapacity` | ✅ built in (`BatchBlock`, `LinkTo` predicates) | most to learn; most built in |
+| plain `foreach` (`Sequential`) | ❌ | ✅ | — | write it yourself | simplest; slowest with slow steps |
+| `Parallel.ForEachAsync` (`WithParallelForEachAsync`) | ✅ 4 at once | **❌ finish order** (the test checks it differs) | ❌ | write it yourself | one line of setup |
+| PLINQ `AsParallel().AsOrdered()` (`WithPlinq`) | ✅ | ✅ with `AsOrdered()` | ❌ | ❌ | for **CPU** work on data already in memory; no `await` inside |
+| `Channel` + 4 consumer tasks (`WithChannel`, the 5.2 style) | ✅ | ❌ | ✅ bounded channel | write it yourself | the building block Dataflow is made of |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

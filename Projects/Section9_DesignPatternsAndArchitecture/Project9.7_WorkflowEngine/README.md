@@ -119,6 +119,26 @@ WorkflowContext resumed = WorkflowContext.FromJson(json);
 await new WorkflowRunEngine().RunAsync(fulfilOrder, resumed);
 ```
 
+## Variations
+
+The same process hand-written without the engine, in `WorkflowEngine/Variations/FulfilOrderVariation.cs`,
+compared by `WorkflowEngine.Tests/VariationsTest.cs`.
+
+| Way | Shipping fails | Crash after payment, then restart | Retries / conditional steps | The difference |
+|---|---|---|---|---|
+| `WorkflowRunEngine` + step classes (original) | refund + release, newest first | resumes from saved JSON: charged **once** | ✅ built in | one engine for every process |
+| one method with `try/catch` per step (`WithTryCatch`) | refund + release — **same result** | starts again from the top: charged **twice** | write them yourself | readable for one short process; every new process repeats the plumbing |
+
+**Other ways to get the same features** (documented):
+
+| Need | Original | Alternative |
+|---|---|---|
+| undo across steps | compensation (saga) | a database transaction (6.2) — only when every step uses the **same** database |
+| retries | `MaximumAttempts` loop | Polly / `Microsoft.Extensions.Resilience` pipeline around a step (8.3) |
+| allowed state changes | step order in a list | a state machine (9.4 State, or the Stateless library) |
+| running for days, timers, waiting for people | — | Elsa, Temporal, Azure Durable Functions, AWS Step Functions |
+| saving progress | `context.ToJson()` after each step | a database table of completed steps, written in the **same transaction** as each step's own change, so they can never disagree |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |
