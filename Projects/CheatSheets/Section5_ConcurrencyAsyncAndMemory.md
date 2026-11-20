@@ -1,6 +1,6 @@
 # Cheat Sheet — Section 5: Concurrency, Async & Memory
 
-Projects: [5.1](../Section5_ConcurrencyAsyncAndMemory/Project5.1_ThreadedFileDownloader), [5.2](../Section5_ConcurrencyAsyncAndMemory/Project5.2_ChannelLogPipeline), [5.3](../Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks)
+Projects: [5.1](../Section5_ConcurrencyAsyncAndMemory/Project5.1_ThreadedFileDownloader), [5.2](../Section5_ConcurrencyAsyncAndMemory/Project5.2_ChannelLogPipeline), [5.3](../Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks), [5.4](../Section5_ConcurrencyAsyncAndMemory/Project5.4_AsyncStreams)
 
 ## async / await
 
@@ -110,6 +110,29 @@ await foreach (string job in channel.Reader.ReadAllAsync()) // consumer
 {
 }
 ```
+
+## Async streams (`IAsyncEnumerable`) — 5.4
+
+```csharp
+public static async IAsyncEnumerable<int> TicksAsync(int count, [EnumeratorCancellation] CancellationToken token = default)
+{
+    for (int number = 1; number <= count; number++)
+    {
+        await Task.Delay(100, token);
+        yield return number;
+    }
+}
+
+await foreach (int tick in TicksAsync(5).WithCancellation(token))
+{
+}
+
+List<int> firstTwo = await TicksAsync(5).Where(tick => tick > 1).Take(2).ToListAsync(); // .NET 10: built in
+IAsyncEnumerable<OrderModel> rows = database.Orders.AsAsyncEnumerable();                  // EF Core, row by row
+app.MapGet("/ticks", () => TicksAsync(5));                                                // streamed JSON
+```
+
+Forget `[EnumeratorCancellation]` → `WithCancellation(token)` is ignored. A streamed endpoint can't return 500 halfway: check first.
 
 ## Events and delegates
 

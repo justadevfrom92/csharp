@@ -11,6 +11,10 @@
   <Folder Name="/Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/">
     <Project Path="Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/InventoryAnalytics.csproj" />
   </Folder>
+  <Folder Name="/Section2_CollectionsAndLinq/Project2.2_Iterators/">
+    <Project Path="Section2_CollectionsAndLinq/Project2.2_Iterators/Iterators.Tests/Iterators.Tests.csproj" />
+    <Project Path="Section2_CollectionsAndLinq/Project2.2_Iterators/Iterators/Iterators.csproj" />
+  </Folder>
   <Folder Name="/Section3_AspNetCoreMvc/" />
   <Folder Name="/Section3_AspNetCoreMvc/Project3.1_ProductCatalog/">
     <Project Path="Section3_AspNetCoreMvc/Project3.1_ProductCatalog/ProductCatalog.csproj" />
@@ -43,6 +47,10 @@
   <Folder Name="/Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks/">
     <Project Path="Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks/Benchmarks.Tests/Benchmarks.Tests.csproj" />
     <Project Path="Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks/Benchmarks/Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/Section5_ConcurrencyAsyncAndMemory/Project5.4_AsyncStreams/">
+    <Project Path="Section5_ConcurrencyAsyncAndMemory/Project5.4_AsyncStreams/AsyncStreams.Tests/AsyncStreams.Tests.csproj" />
+    <Project Path="Section5_ConcurrencyAsyncAndMemory/Project5.4_AsyncStreams/AsyncStreams/AsyncStreams.csproj" />
   </Folder>
   <Folder Name="/Section6_DatabaseStateAndErrorHandling/" />
   <Folder Name="/Section6_DatabaseStateAndErrorHandling/Project6.1_EfCoreQueryLogging/">

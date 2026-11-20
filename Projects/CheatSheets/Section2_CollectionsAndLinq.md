@@ -1,6 +1,6 @@
 # Cheat Sheet — Section 2: Collections & LINQ
 
-Project: [2.1](../Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics)
+Projects: [2.1](../Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics), [2.2](../Section2_CollectionsAndLinq/Project2.2_Iterators)
 
 ## Which collection
 
@@ -131,6 +131,26 @@ List<Product> snapshot = query.ToList();                                    // r
 
 A query runs **each time** you loop over it. Call `ToList()` once if you'll use the result more than once,
 or before the data source changes / goes away (a `lock`, a `DbContext`).
+
+## Iterators (`yield`) — 2.2
+
+```csharp
+public static IEnumerable<int> Evens(int max)
+{
+    for (int number = 0; number <= max; number += 2)
+    {
+        yield return number; // hand out one, pause
+    }
+}
+// "yield break;" stops early. Nothing runs until someone loops - argument checks too.
+```
+
+| Want | Write |
+|---|---|
+| a class usable in `foreach` | implement `IEnumerable<T>`: one method, `GetEnumerator()` |
+| the easy `GetEnumerator()` | `foreach (var item in items) { yield return item; }` |
+| `new MyList { "a", "b" }` | `IEnumerable` + a public `Add` method |
+| endless sequence | `while (true) { yield return ...; }` + `.Take(n)` |
 
 ## Return types
 

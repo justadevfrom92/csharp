@@ -28,6 +28,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 1.1 | [Loan & Date Calculator](Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator) | Console |
 | 1.2 | [Pattern Matching](Section1_CoreFundamentals/Project1.2_PatternMatching) | Console + tests |
 | 2.1 | [Warehouse Inventory & Orders](Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics) | Console |
+| 2.2 | [Iterators (`IEnumerable`, `yield`)](Section2_CollectionsAndLinq/Project2.2_Iterators) | Console + tests |
 | 3.1 | [MVC Product Catalog](Section3_AspNetCoreMvc/Project3.1_ProductCatalog) | MVC |
 | 3.2 | [Sidebar View Component & ISO Date Binder](Section3_AspNetCoreMvc/Project3.2_SidebarAndDateBinder) | MVC |
 | 3.3 | [File Upload Portal](Section3_AspNetCoreMvc/Project3.3_FileUploadPortal) | MVC |
@@ -37,6 +38,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 5.1 | [Threaded File Downloader](Section5_ConcurrencyAsyncAndMemory/Project5.1_ThreadedFileDownloader) | Console |
 | 5.2 | [Channel Log Pipeline](Section5_ConcurrencyAsyncAndMemory/Project5.2_ChannelLogPipeline) | Console |
 | 5.3 | [Benchmarks (BenchmarkDotNet)](Section5_ConcurrencyAsyncAndMemory/Project5.3_Benchmarks) | Console + tests |
+| 5.4 | [Async Streams (`IAsyncEnumerable`)](Section5_ConcurrencyAsyncAndMemory/Project5.4_AsyncStreams) | Web API + SQLite + tests |
 | 6.1 | [EF Core Query Logging](Section6_DatabaseStateAndErrorHandling/Project6.1_EfCoreQueryLogging) | MVC + SQLite |
 | 6.2 | [Transactional Checkout & Soft Deletes](Section6_DatabaseStateAndErrorHandling/Project6.2_TransactionalCheckout) | Console + SQLite |
 | 6.3 | [Shared Cache & Settings](Section6_DatabaseStateAndErrorHandling/Project6.3_SharedCacheAndSettings) | Web API |
