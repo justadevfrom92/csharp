@@ -5,6 +5,7 @@ using MinimalApiOpenApi.Stores;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<BookStore>();
+builder.Services.AddSingleton<BookEntityStoreVariation>();
 builder.Services.AddOpenApi();        // builds an OpenAPI (Swagger) description of every endpoint
 builder.Services.AddValidation();     // .NET 10: checks [Required], [Range]... on endpoint parameters automatically
 builder.Services.AddProblemDetails(); // errors are returned as standard "application/problem+json"
@@ -24,7 +25,8 @@ app.UseStatusCodePages();    // an empty 404/405 gets a ProblemDetails body too
 
 app.MapOpenApi();            // GET /openapi/v1.json
 app.MapBookEndpoints();
-app.MapBookVariations();     // /variations/books/... - other ways to write "get one book" (Variations/)      // GET/POST/DELETE /books...
+app.MapBookVariations();     // /variations/books/... - other ways to write "get one book" (Variations/)
+app.MapBookDtoVariations();  // /variations/dto-books/... - entity vs DTO (Variations/)
 
 app.Run();
 

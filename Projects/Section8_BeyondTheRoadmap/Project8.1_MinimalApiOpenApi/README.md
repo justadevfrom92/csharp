@@ -187,3 +187,24 @@ public class BooksController : ControllerBase
 ```
 
 `[ApiController]` adds automatic 400 for invalid models and binding rules; minimal APIs need `AddValidation()` (.NET 10) for the same.
+
+**Entity vs DTO** (`Variations/BookEntityVariation`, `BookDtoVariation`, `BookMappingVariation`, endpoints under
+`/variations/dto-books/...`, checked by `MinimalApiOpenApi.Tests/DtoVariationsTest.cs`):
+
+| Word | Here | What it is |
+|---|---|---|
+| **POCO** | `BookEntityVariation` (also `BookModel`) | "plain old CLR object": a plain class, no framework base class or attributes |
+| **Entity** | `BookEntityVariation` | shaped like the database row, including private fields (`CostPrice`, `AddedBy`) |
+| **DTO** | `BookDtoVariation` (out), `SaveBookRequestModel` (in) | only what crosses the wire; the repo names these `*Model` / `*RequestModel` / `*ResponseModel` |
+| **Mapping** | `ToDto()`, `ToEntity(...)` | copy the fields by hand, a few lines |
+| **Contract** | the OpenAPI document, interfaces, 8.9's `.proto` | the agreed shape both sides rely on |
+
+| Endpoint | Result |
+|---|---|
+| `GET /entity/1` | **leaks** `costPrice` and `addedBy` to the client |
+| `GET /dto/1` | only `id`, `title`, `author`, `year` |
+| `POST /entity` with `"costPrice": -100, "addedBy": "hacker"` | **over-posting**: both saved as sent; an empty title and year 3000 are accepted too (no rules) |
+| `POST /dto` with the same JSON | extra fields ignored, server fills them; invalid title/year → **400** |
+
+The original `BookModel` is used for storage AND the response: fine while every field is meant to be public.
+Split it into entity + DTO as soon as a field must stay on the server.
