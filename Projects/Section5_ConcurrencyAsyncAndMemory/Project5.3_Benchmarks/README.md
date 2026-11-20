@@ -171,6 +171,22 @@ dotnet run -c Release -- --filter "*DictionaryKindVariation*" --job short
 `Benchmarks.Tests/VariationsTest.cs` checks all four return the **same value** (and all throw `KeyNotFoundException`
 for a missing key) — a benchmark is only fair if every method does the same work.
 
+**Reflection cost** (`Benchmarks/Variations/ReflectionCostVariation.cs`) — reading `string.Length` four ways:
+
+```bash
+dotnet run -c Release -- --filter "*ReflectionCostVariation*" --job short
+```
+
+| Way | Time (`--job short`, this container) | Ratio | Allocated | Why |
+|---|---|---|---|---|
+| `text.Length` (baseline) | 0.15 ns | 1 | — | the JIT inlines it to almost nothing |
+| delegate made once with `GetMethod.CreateDelegate<Func<string, int>>()` | 1.8 ns | 12 | — | a normal delegate call; the usual "fast reflection" trick |
+| `PropertyInfo` kept in a field, `GetValue` each call | 12.4 ns | 81 | 24 B | goes through `object`: the `int` is **boxed** (allocated) |
+| `GetProperty("Length")` on **every** call | 17.4 ns | 114 | 24 B | the name lookup each time |
+
+Nanoseconds are only a problem in hot loops; for startup scanning (9.9 `RegisterAllExistingJobs`) it doesn't matter.
+The tests check all four return the same value, and that a wrong name (`null`) or wrong delegate shape (`Func<string, long>` → `ArgumentException`) fails only at run time.
+
 **Ways to configure a benchmark run** (BenchmarkDotNet):
 
 | Choice | Effect |

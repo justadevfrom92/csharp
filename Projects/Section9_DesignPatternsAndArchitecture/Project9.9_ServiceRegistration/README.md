@@ -221,6 +221,19 @@ Also found by this test: options with `BindConfiguration("Shop")` need an `IConf
 | `With...` / `Require...` on an endpoint | add **metadata/rules** to one endpoint | `WithTags`, `RequireAuthorization`, `RequireRateLimiting` |
 | `Build()` / `Run()` | finish registering / start the app | `builder.Build()`, `app.Run()` |
 
+**Reflection** (`ReflectionVariation`, on the small class `StaffDiscountVariation`) — reading types at run time:
+
+| Call | Gives | Watch out |
+|---|---|---|
+| `type.GetProperties()` | `Code`, `Price` | — |
+| `type.GetMethods(Public \| Instance \| DeclaredOnly)` + skip `IsSpecialName` | `PriceForCustomer` | without the flags you also get `ToString`, `GetHashCode`... and the hidden `get_Price`/`set_Price` |
+| `PropertyInfo.GetValue(target)` | the value, as `object` | a misspelt name (`"Prise"`) is only found when it runs |
+| `PropertyInfo.SetValue(target, value)` | writes it | **ignores `init`**: wrote `Code` although `discount.Code = ...` doesn't compile; wrong type (`"cheap"` into `decimal`) → `ArgumentException` |
+| `GetMethod(name, NonPublic \| Instance).Invoke(...)` | calls a **private** method | an exception inside arrives wrapped in `TargetInvocationException`; wrong argument count → `TargetParameterCountException` |
+| `Assembly.LoadFrom(path).GetTypes()` | **plugins**: the 3 jobs in a `.dll` found by file path | missing file → `FileNotFoundException`; not a .NET dll → `BadImageFormatException`; the file stays loaded until the app stops |
+
+How slow it is: 5.3 `ReflectionCostVariation`.
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

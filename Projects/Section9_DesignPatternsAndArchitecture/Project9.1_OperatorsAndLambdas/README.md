@@ -171,6 +171,15 @@ More ways to write the same things, in `OperatorsAndLambdas/Variations/`, checke
 | `implicit operator MoneyImplicitVariation(decimal)` | compiles, **currency guessed as USD** | silent: `euroPrice.Add(5m)` throws because `5m` became dollars |
 | named method `Add(...)` instead of `+` (also 4.2) | — | same rule; longer in formulas, easier to find |
 
+**Named generic delegates** (`GenericDelegateVariation`) — `Func`/`Action`/`Predicate` cover most needs; these give the shape a name:
+
+| Delegate | Shape | Used by | The difference |
+|---|---|---|---|
+| `Comparison<T>` | `(T, T) -> int` | `List.Sort(...)` | negative = left first, 0 = same, positive = right first |
+| `Func<T, T, int>` with the same body | `(T, T) -> int` | — | `sorted.Sort(func)` **doesn't compile** (CS1503): wrap it, `new Comparison<string>(func)` |
+| `Converter<TInput, TOutput>` | `T -> TResult` | `List.ConvertAll(...)` | same job as LINQ `Select(Func<T, TResult>)`, which is more common |
+| custom `delegate TResult Transformer<T, TResult>(T input)` | `T -> TResult` | our `ApplyToAll<T, TResult>` | a **generic** custom delegate: one declaration, any types |
+
 ## Why these types
 
 | Choice | Why | Why not the alternative |

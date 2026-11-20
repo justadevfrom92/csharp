@@ -1,3 +1,4 @@
+using System.Reflection;
 using Benchmarks.Variations;
 
 namespace Benchmarks.Tests;
@@ -43,5 +44,40 @@ public class VariationsTest
         Assert.Throws<KeyNotFoundException>(() => benchmark.Frozen());
         Assert.Throws<KeyNotFoundException>(() => benchmark.Sorted());
         Assert.Throws<KeyNotFoundException>(() => benchmark.Immutable());
+    }
+    private static ReflectionCostVariation ReadyReflection()
+    {
+        var benchmark = new ReflectionCostVariation();
+        benchmark.Prepare();
+        return benchmark;
+    }
+
+    [Fact]
+    public void ReflectionCost_PositivePositive_AllFourReturnTheSameLength()
+    {
+        ReflectionCostVariation benchmark = ReadyReflection();
+
+        Assert.Equal(9, benchmark.Direct());
+        Assert.Equal(9, benchmark.CachedDelegate());
+        Assert.Equal(9, benchmark.CachedPropertyInfo());
+        Assert.Equal(9, benchmark.LookupEveryTime());
+    }
+
+    [Fact]
+    public void ReflectionCost_PositiveNegative_WithoutSetup_TheDelegateFieldStillHoldsItsPlaceholder()
+    {
+        var benchmark = new ReflectionCostVariation(); // Prepare() not called: text is "", delegate is the dummy
+
+        Assert.Equal(0, benchmark.Direct());
+        Assert.Equal(0, benchmark.CachedDelegate());
+        Assert.Equal(0, benchmark.CachedPropertyInfo());
+    }
+
+    [Fact]
+    public void ReflectionCost_NegativeNegative_WrongNameOrWrongDelegateShape_FailsAtRunTime()
+    {
+        Assert.Null(typeof(string).GetProperty("Lenght")); // a typo isn't a compile error, just null
+        MethodInfo getter = typeof(string).GetProperty("Length")!.GetMethod!;
+        Assert.Throws<ArgumentException>(() => getter.CreateDelegate<Func<string, long>>()); // returns int, not long
     }
 }

@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ServiceRegistration.Extensions;
@@ -108,6 +109,74 @@ public class VariationsTest
         public Task RunAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+    }
+    [Fact]
+    public void Reflection_PositivePositive_ListsReadsWritesAndCallsPrivate()
+    {
+        var discount = new StaffDiscountVariation { Code = "STAFF", Price = 50m };
+
+        Assert.Equal(["Code", "Price"], ReflectionVariation.ListPropertyNames(typeof(StaffDiscountVariation)));
+        Assert.Equal(["PriceForCustomer"], ReflectionVariation.ListMethodNames(typeof(StaffDiscountVariation)));
+        Assert.Equal(50m, ReflectionVariation.ReadProperty(discount, "Price"));
+        ReflectionVariation.WriteProperty(discount, "Price", 80m);
+        Assert.Equal(80m, discount.Price);
+        Assert.Equal(60m, ReflectionVariation.CallPrivateMethod(discount, "ApplyStaffDiscount", 25m));
+    }
+
+    [Fact]
+    public void Reflection_PositiveNegative_InitOnlyIsWritable_PrivateIsHiddenFromTheList_ExceptionsAreWrapped()
+    {
+        var discount = new StaffDiscountVariation { Code = "STAFF", Price = 50m };
+
+        ReflectionVariation.WriteProperty(discount, "Code", "HACKED"); // "discount.Code = ..." would not compile
+        Assert.Equal("HACKED", discount.Code);
+        Assert.DoesNotContain("ApplyStaffDiscount", ReflectionVariation.ListMethodNames(typeof(StaffDiscountVariation)));
+        var wrapped = Assert.Throws<TargetInvocationException>(() => ReflectionVariation.CallPrivateMethod(discount, "ApplyStaffDiscount", 150m));
+        Assert.IsType<ArgumentOutOfRangeException>(wrapped.InnerException);
+    }
+
+    [Fact]
+    public void Reflection_NegativeNegative_WrongNameOrWrongType_FailsOnlyAtRunTime()
+    {
+        var discount = new StaffDiscountVariation();
+
+        Assert.Throws<ArgumentException>(() => ReflectionVariation.ReadProperty(discount, "Prise"));          // typo
+        Assert.Throws<ArgumentException>(() => ReflectionVariation.WriteProperty(discount, "Price", "cheap"));  // string into decimal
+        Assert.Throws<ArgumentException>(() => ReflectionVariation.CallPrivateMethod(discount, "PriceForCustomer")); // public, not private
+        Assert.Throws<TargetParameterCountException>(() => ReflectionVariation.CallPrivateMethod(discount, "ApplyStaffDiscount"));
+    }
+
+    [Fact]
+    public void Plugins_PositivePositive_LoadingTheAppDllByPath_FindsTheThreeJobs()
+    {
+        string dllPath = typeof(IJob).Assembly.Location;
+
+        List<string> names = ReflectionVariation.FindJobsInFile(dllPath).Select(type => type.Name).ToList();
+
+        Assert.Equal(["CleanupTempFilesJob", "RefreshPricesJob", "SendDailyReportJob"], names);
+    }
+
+    [Fact]
+    public void Plugins_PositiveNegative_ADllWithNoJobs_GivesAnEmptyList()
+    {
+        string dllPath = typeof(Microsoft.Extensions.DependencyInjection.ServiceCollection).Assembly.Location;
+
+        Assert.Empty(ReflectionVariation.FindJobsInFile(dllPath));
+    }
+
+    [Fact]
+    public void Plugins_NegativeNegative_MissingFileOrNotADll_Throws()
+    {
+        string notADll = Path.GetTempFileName(); // an empty file
+        try
+        {
+            Assert.Throws<FileNotFoundException>(() => ReflectionVariation.FindJobsInFile(Path.Combine(AppContext.BaseDirectory, "NoSuchPlugin.dll")));
+            Assert.Throws<BadImageFormatException>(() => ReflectionVariation.FindJobsInFile(notADll));
+        }
+        finally
+        {
+            File.Delete(notADll);
         }
     }
 }
