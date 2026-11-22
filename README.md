@@ -220,8 +220,8 @@ CI (.github/workflows/ci.yml)
 - Job 3: pack the 4.1 library and run its consumer app against the .nupkg.
 
 GITHUB PAGES (.github/workflows/pages.yml)
-- On push to main: wrap each .md in {% raw %}...{% endraw %} after its title line (so code with {{ }} survives
-  Liquid), then actions/configure-pages, actions/jekyll-build-pages, upload-pages-artifact, deploy-pages.
+- On push to main: wrap each .md in Liquid "raw" / "endraw" tags after its title line (so code samples with
+  double curly braces survive Jekyll's template engine), then actions/configure-pages, actions/jekyll-build-pages, upload-pages-artifact, deploy-pages.
 
 WORKFLOW
 - Commit and push to main. Build with zero warnings. Run all tests before every push and check that CI is green.
