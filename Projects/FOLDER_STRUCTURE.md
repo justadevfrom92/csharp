@@ -38,7 +38,7 @@ The same goes for every other folder: `ModelBinders/` → `...ModelBinder`, `Vie
 `Results/` → `...Result`, `Observers/` → `...Observer`, `Publishers/` → `...Publisher`, `Pipelines/` → `...Pipeline`,
 `Processors/` → `...Processor`, `Decorators/` → `...Decorator`, `Engines/` → `...Engine`, `Steps/` → `...Step`,
 `Monitors/` → `...Monitor`, `ValueObjects/` → `...ValueObject`, `Jobs/` → `...Job`, `Notifiers/` → `...Notifier`,
-`Readers/` → `...Reader`, `Collections/` → `...Collection`, `Enumerators/` → `...Enumerator`.
+`Readers/` → `...Reader`, `Collections/` → `...Collection`, `Enumerators/` → `...Enumerator`, `Catalogs/` → `...Catalog`.
 
 `Variations/` → `...Variation`: every project has one, holding **other ways to write the same code** for comparison
 (see each README's **Variations** section). Two exceptions there: Razor Pages variations live in `Pages/Variations/`

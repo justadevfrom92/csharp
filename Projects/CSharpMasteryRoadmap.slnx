@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Playground/">
+    <Project Path="Playground/Playground.Tests/Playground.Tests.csproj" />
+    <Project Path="Playground/Playground/Playground.csproj" />
+  </Folder>
   <Folder Name="/Section10_SaaS/" />
   <Folder Name="/Section10_SaaS/Project10.1_MultiTenancy/">
     <Project Path="Section10_SaaS/Project10.1_MultiTenancy/MultiTenancy.Tests/MultiTenancy.Tests.csproj" />

@@ -1,12 +1,12 @@
-# Publishes every README, cheat sheet and doc as a website:
+# Publishes the PLAYGROUND - the real console projects compiled to WebAssembly, running in the browser:
 #   https://justadevfrom92.github.io/csharp/
-# GitHub's own Jekyll build turns each .md into a page, README.md into its folder's index page,
-# and links to .md files into links to the .html pages.
+# GitHub Pages only serves static files, and a Blazor WebAssembly app is just static files (HTML, JS, .wasm, .dll).
 name: Pages
 
 on:
   push:
     branches: [main]
+    paths: ["Projects/**", ".github/workflows/pages.yml"]
   workflow_dispatch: # "Run workflow" button in the Actions tab
 
 # The deploy step needs to write to Pages and prove who it is (OIDC token).
@@ -20,29 +20,38 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Jekyll reads "{{ }}" and "{% %}" as template tags, which would break code samples like
-      # "${{ github.ref }}". Wrapping each page (after its title line) in raw/endraw shows them as written.
-      - name: Show code samples exactly as written
-        run: |
-          find . -name "*.md" -not -path "./.git/*" | while read -r file; do
-            sed -i '1a {% raw %}' "$file"
-            printf '\n{%% endraw %%}\n' >> "$file"
-          done
-
-      - uses: actions/configure-pages@v5 # sets the /csharp base path
-
-      - uses: actions/jekyll-build-pages@v1
+      - uses: actions/setup-dotnet@v4
         with:
-          source: ./
-          destination: ./_site
+          global-json-file: Projects/global.json
+
+      - name: Publish the playground
+        run: dotnet publish Projects/Playground/Playground/Playground.csproj -c Release -o publish
+
+      # The site lives at /csharp/, not at the root, so the app must load its files from there.
+      # 404.html = a copy of index.html: opening /csharp/run/9.7 directly gives GitHub's 404 page,
+      # which is then the app itself, and the app shows the right project.
+      # .nojekyll stops GitHub from hiding the "_framework" folder (Jekyll skips names starting with "_").
+      - name: Prepare for GitHub Pages
+        working-directory: publish/wwwroot
+        run: |
+          sed -i 's#<base href="/" />#<base href="/csharp/" />#' index.html
+          rm -f index.html.br index.html.gz
+          cp index.html 404.html
+          touch .nojekyll
 
       - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
 
   deploy:
     needs: build

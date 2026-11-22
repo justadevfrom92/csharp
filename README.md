@@ -3,13 +3,14 @@
 A hands-on learning repo: **48 small, runnable projects** that walk through C# and .NET 10 from the basics
 (variables, pattern matching, LINQ) to ASP.NET Core, EF Core, security, background work, real-time apps and
 design patterns, and on into SaaS. The code is kept **deliberately simple**, every choice is explained, and most projects
-have tests that prove what the README says: **668 xUnit tests in 29 test projects, plus 13 Playwright
+have tests that prove what the README says: **674 xUnit tests in 30 test projects, plus 13 Playwright
 browser tests**.
 
 Everything lives in [`Projects/`](Projects). Start with [`Projects/README.md`](Projects/README.md), the full index.
 
-**Read it as a website:** https://justadevfrom92.github.io/csharp/ (every README, cheat sheet and doc, published by
-[`.github/workflows/pages.yml`](https://github.com/justadevfrom92/csharp/blob/main/.github/workflows/pages.yml) on every push to `main`).
+**Run the projects in your browser:** https://justadevfrom92.github.io/csharp/ — the [Playground](Projects/Playground) is the
+real console projects compiled to WebAssembly: pick one, press Run, see what `dotnet run` prints. Published by
+[`.github/workflows/pages.yml`](https://github.com/justadevfrom92/csharp/blob/main/.github/workflows/pages.yml) on every push to `main`.
 
 ## What makes this repo different
 
@@ -46,7 +47,7 @@ The full list with links is in [`Projects/README.md`](Projects/README.md).
 .
 ├── README.md                      ← this file
 ├── .github/workflows/ci.yml       ← CI: build + all tests + browser tests + NuGet package check
-├── .github/workflows/pages.yml    ← publishes the docs as a website (GitHub Pages)
+├── .github/workflows/pages.yml    ← publishes the Playground to GitHub Pages
 ├── cli.txt                        ← dotnet CLI command reference
 ├── migration.txt                  ← EF Core migrations command reference
 ├── diff.txt                       ← Laravel ↔ ASP.NET Core 10 mapping
@@ -57,6 +58,7 @@ The full list with links is in [`Projects/README.md`](Projects/README.md).
     ├── global.json                ← .NET SDK version
     ├── dotnet-tools.json          ← local tools (dotnet-ef)
     ├── CheatSheets/               ← one snippet page per section + dotnet CLI
+    ├── Playground/                ← Blazor WebAssembly app that runs the console projects in the browser
     ├── WHY_THESE_TYPES.md  FOLDER_STRUCTURE.md  DESIGN_PATTERNS.md  RAZOR_BASICS.md
     └── SectionN_Name/
         └── ProjectN.M_Name/
@@ -219,9 +221,15 @@ CI (.github/workflows/ci.yml)
 - Job 2: Playwright end-to-end tests (install Chromium) against 3.1.
 - Job 3: pack the 4.1 library and run its consumer app against the .nupkg.
 
-GITHUB PAGES (.github/workflows/pages.yml)
-- On push to main: wrap each .md in Liquid "raw" / "endraw" tags after its title line (so code samples with
-  double curly braces survive Jekyll's template engine), then actions/configure-pages, actions/jekyll-build-pages, upload-pages-artifact, deploy-pages.
+PLAYGROUND + GITHUB PAGES (.github/workflows/pages.yml)
+- Projects/Playground: a Blazor WebAssembly app that ProjectReferences every console project that can run in a
+  browser (no threads, database, server or disk files) and runs its real Program: Console.SetOut to a StringWriter,
+  find Main by reflection (prefer the async "<Main>$" of top-level programs - blocking freezes the one browser
+  thread), await it, show the output. Keep the programs from being trimmed (TrimmerRootAssembly), load all
+  globalization data, ValidateExecutableReferencesMatchSelfContained=false. Run every program in headless Chromium
+  and compare with dotnet run; fix what differs.
+- Workflow: dotnet publish the playground, set <base href="/csharp/">, copy index.html to 404.html, add .nojekyll,
+  upload-pages-artifact, deploy-pages.
 
 WORKFLOW
 - Commit and push to main. Build with zero warnings. Run all tests before every push and check that CI is green.

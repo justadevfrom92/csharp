@@ -1,0 +1,81 @@
+@page "/"
+@page "/run/{Number}"
+@using Playground.Catalogs
+@using Playground.Models
+@using Playground.Services
+@inject ProgramRunnerService Runner
+
+<PageTitle>@(selected == null ? "Roadmap Playground" : $"{selected.Number} {selected.Title}")</PageTitle>
+
+<div class="layout">
+    <nav class="projects">
+        @foreach (RunnableProjectModel project in ProjectCatalog.Projects)
+        {
+            <a class="@(project == selected ? "active" : "")" href="run/@project.Number">
+                <span class="number">@project.Number</span> @project.Title
+            </a>
+        }
+    </nav>
+
+    <section class="runner">
+        @if (selected == null)
+        {
+            <h1>Run the projects in your browser</h1>
+            <p>
+                These are the <strong>real console projects</strong> from the repo, compiled to WebAssembly. Pick one on the
+                left and press <strong>Run</strong>: its <code>Program</code> runs here, in this tab, and you see exactly
+                what <code>dotnet run</code> would print. Nothing is sent to a server.
+            </p>
+            <p>
+                Web apps, databases and multi-threaded projects need a real server, so they aren't here:
+                see each project's README on GitHub to run them locally.
+            </p>
+        }
+        else
+        {
+            <h1>@selected.Number @selected.Title</h1>
+            @if (selected.Note != "")
+            {
+                <p class="note">@selected.Note</p>
+            }
+            <p class="command"><code>dotnet run@(selected.Args.Length > 0 ? " -- " + string.Join(" ", selected.Args) : "")</code></p>
+            <button disabled="@busy" @onclick="RunAsync">@(busy ? "Running..." : "Run")</button>
+            @if (output != null)
+            {
+                <pre class="output" data-testid="output">@output</pre>
+            }
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? Number { get; set; }
+
+    private RunnableProjectModel? selected;
+    private string? output;
+    private bool busy;
+
+    protected override void OnParametersSet()
+    {
+        RunnableProjectModel? next = ProjectCatalog.Projects.FirstOrDefault(project => project.Number == Number);
+        if (next != selected)
+        {
+            selected = next;
+            output = null;
+        }
+    }
+
+    private async Task RunAsync()
+    {
+        if (selected == null)
+        {
+            return;
+        }
+        busy = true;
+        output = null;
+        await Task.Yield(); // let the page show "Running..." before the program starts
+        output = await Runner.RunAsync(selected.AssemblyName, selected.Args);
+        busy = false;
+    }
+}

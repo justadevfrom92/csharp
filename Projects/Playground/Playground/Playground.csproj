@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+  <!-- A Blazor WebAssembly app: C# compiled to run INSIDE the browser, so it can be hosted on GitHub Pages
+       (static files, no server). It references the real console projects and runs their Program. -->
+  <PropertyGroup>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <!-- The referenced projects are console apps (OutputType Exe). This app is "self-contained" (it ships its own
+         .NET runtime to the browser) and they aren't; the SDK refuses that mix unless told it's on purpose. -->
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+    <!-- By default the browser gets culture data for a few common languages only; 1.1 prints dates in ja-JP and
+         others, which then came out in the wrong format. Load them all (a larger first download). -->
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.14" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- The projects that can run in a browser: no threads, no database, no web server. -->
+  <ItemGroup>
+    <ProjectReference Include="../../Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/SimpleLoanAndDateCalculator.csproj" />
+    <ProjectReference Include="../../Section1_CoreFundamentals/Project1.2_PatternMatching/PatternMatching/PatternMatching.csproj" />
+    <ProjectReference Include="../../Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/InventoryAnalytics.csproj" />
+    <ProjectReference Include="../../Section2_CollectionsAndLinq/Project2.2_Iterators/Iterators/Iterators.csproj" />
+    <ProjectReference Include="../../Section4_OopDddAndTesting/Project4.2_DddBankingEngine/Banking.Demo/Banking.Demo.csproj" />
+    <ProjectReference Include="../../Section5_ConcurrencyAsyncAndMemory/Project5.2_ChannelLogPipeline/ChannelLogPipeline.csproj" />
+    <ProjectReference Include="../../Section9_DesignPatternsAndArchitecture/Project9.1_OperatorsAndLambdas/OperatorsAndLambdas/OperatorsAndLambdas.csproj" />
+    <ProjectReference Include="../../Section9_DesignPatternsAndArchitecture/Project9.4_BehavioralPatterns/BehavioralPatterns/BehavioralPatterns.csproj" />
+    <ProjectReference Include="../../Section9_DesignPatternsAndArchitecture/Project9.5_PipelinePatterns/PipelinePatterns/PipelinePatterns.csproj" />
+    <ProjectReference Include="../../Section9_DesignPatternsAndArchitecture/Project9.6_Dataflow/DataflowImport/DataflowImport.csproj" />
+    <ProjectReference Include="../../Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine/WorkflowEngine/WorkflowEngine.csproj" />
+    <ProjectReference Include="../../Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions/ReactiveExtensions/ReactiveExtensions.csproj" />
+  </ItemGroup>
+
+  <!-- Publishing TRIMS unused code to shrink the download. These programs are started by reflection, which the
+       trimmer can't see, so keep each of them whole. -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="SimpleLoanAndDateCalculator;PatternMatching;InventoryAnalytics;Iterators;Banking.Demo;Banking.Domain;ChannelLogPipeline;OperatorsAndLambdas;BehavioralPatterns;PipelinePatterns;DataflowImport;WorkflowEngine;ReactiveExtensions" />
+  </ItemGroup>
+</Project>

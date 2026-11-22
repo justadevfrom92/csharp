@@ -1,0 +1,57 @@
+:root {
+    --bg: #ffffff;
+    --text: #1f2328;
+    --muted: #59636e;
+    --line: #d1d9e0;
+    --panel: #f6f8fa;
+    --accent: #512bd4;
+    --code-bg: #0d1117;
+    --code-text: #e6edf3;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0d1117;
+        --text: #e6edf3;
+        --muted: #9198a1;
+        --line: #3d444d;
+        --panel: #151b23;
+        --accent: #a78bfa;
+        --code-bg: #010409;
+    }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: var(--accent); }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { font-weight: 600; text-decoration: none; color: var(--text); }
+.source { font-size: 0.9rem; }
+
+.layout { display: grid; grid-template-columns: 18rem 1fr; min-height: calc(100vh - 3.2rem); }
+.projects { border-right: 1px solid var(--line); padding: 0.5rem; display: flex; flex-direction: column; gap: 2px; }
+.projects a { padding: 0.45rem 0.6rem; border-radius: 6px; text-decoration: none; color: var(--text); font-size: 0.92rem; }
+.projects a:hover { background: var(--panel); }
+.projects a.active { background: var(--accent); color: #fff; }
+.number { display: inline-block; min-width: 2.2rem; font-variant-numeric: tabular-nums; opacity: 0.75; }
+
+.runner { padding: 1rem 1.5rem; min-width: 0; }
+.runner h1 { font-size: 1.4rem; margin-top: 0.25rem; }
+.note { color: var(--muted); }
+.command code { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 0.25rem 0.5rem; }
+button { padding: 0.5rem 1.4rem; font-size: 1rem; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: wait; }
+.output { margin-top: 1rem; padding: 1rem; background: var(--code-bg); color: var(--code-text); border-radius: 8px; overflow-x: auto; white-space: pre; font-size: 0.85rem; line-height: 1.45; }
+
+#blazor-error-ui { display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 0.6rem 1rem; background: #ffe7b3; color: #000; }
+#blazor-error-ui .dismiss { float: right; cursor: pointer; }
+.loading-progress-text { margin: 30vh auto 0; text-align: center; color: var(--muted); }
+.loading-progress-text:after { content: "Loading .NET in your browser..."; }
+.loading-progress { display: none; }
+
+@media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+    .projects { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: wrap; }
+}

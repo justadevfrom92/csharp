@@ -10,11 +10,15 @@ using System.Threading.Channels;
 // Stops after 3 seconds, or when you press Ctrl+C.
 
 using var stopSource = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-Console.CancelKeyPress += (sender, eventArgs) =>
+// A browser (the Playground) has no Ctrl+C, and Console.CancelKeyPress throws there - so only hook it elsewhere.
+if (!OperatingSystem.IsBrowser())
 {
-    eventArgs.Cancel = true; // don't kill the app, let it shut down cleanly
-    stopSource.Cancel();
-};
+    Console.CancelKeyPress += (sender, eventArgs) =>
+    {
+        eventArgs.Cancel = true; // don't kill the app, let it shut down cleanly
+        stopSource.Cancel();
+    };
+}
 
 // Bounded = at most 100 lines waiting. When full, the producer WAITS (backpressure).
 Channel<string> logLines = Channel.CreateBounded<string>(new BoundedChannelOptions(100)

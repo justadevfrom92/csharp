@@ -1,5 +1,7 @@
 # C# & .NET Roadmap Projects
 
+**Run them in your browser:** [the Playground](https://justadevfrom92.github.io/csharp/) runs the console projects live ([how](Playground)).
+
 Every project has its own `README.md` with how to run it and **why** it was built that way.
 
 **Why `List` vs `IEnumerable`, `record` vs `class` vs `interface`, `decimal` vs `double`, `checked`...?**
