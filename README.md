@@ -8,6 +8,9 @@ browser tests**.
 
 Everything lives in [`Projects/`](Projects). Start with [`Projects/README.md`](Projects/README.md), the full index.
 
+**Read it as a website:** https://justadevfrom92.github.io/csharp/ (every README, cheat sheet and doc, published by
+[`.github/workflows/pages.yml`](https://github.com/justadevfrom92/csharp/blob/main/.github/workflows/pages.yml) on every push to `main`).
+
 ## What makes this repo different
 
 | Feature | Where |
@@ -43,6 +46,7 @@ The full list with links is in [`Projects/README.md`](Projects/README.md).
 .
 ├── README.md                      ← this file
 ├── .github/workflows/ci.yml       ← CI: build + all tests + browser tests + NuGet package check
+├── .github/workflows/pages.yml    ← publishes the docs as a website (GitHub Pages)
 ├── cli.txt                        ← dotnet CLI command reference
 ├── migration.txt                  ← EF Core migrations command reference
 ├── diff.txt                       ← Laravel ↔ ASP.NET Core 10 mapping
@@ -95,7 +99,7 @@ Some parts need extras:
 
 ## CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` that touches `Projects/`:
+[`.github/workflows/ci.yml`](https://github.com/justadevfrom92/csharp/blob/main/.github/workflows/ci.yml) runs on every push to `main` that touches `Projects/`:
 
 1. **build-and-unit-tests**: restore, Release build, then every `*.Tests` project.
 2. **e2e-tests**: Playwright browser tests against the 3.1 MVC app.
@@ -214,6 +218,10 @@ CI (.github/workflows/ci.yml)
 - Job 1: restore, Release build of the solution, run every *.Tests.csproj, upload results.
 - Job 2: Playwright end-to-end tests (install Chromium) against 3.1.
 - Job 3: pack the 4.1 library and run its consumer app against the .nupkg.
+
+GITHUB PAGES (.github/workflows/pages.yml)
+- On push to main: wrap each .md in {% raw %}...{% endraw %} after its title line (so code with {{ }} survives
+  Liquid), then actions/configure-pages, actions/jekyll-build-pages, upload-pages-artifact, deploy-pages.
 
 WORKFLOW
 - Commit and push to main. Build with zero warnings. Run all tests before every push and check that CI is green.

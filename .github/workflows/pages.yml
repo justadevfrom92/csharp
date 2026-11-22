@@ -1,0 +1,55 @@
+# Publishes every README, cheat sheet and doc as a website:
+#   https://justadevfrom92.github.io/csharp/
+# GitHub's own Jekyll build turns each .md into a page, README.md into its folder's index page,
+# and links to .md files into links to the .html pages.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+# The deploy step needs to write to Pages and prove who it is (OIDC token).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a deployment halfway; a newer one simply waits.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Jekyll reads "{{ }}" and "{% %}" as template tags, which would break code samples like
+      # "${{ github.ref }}". Wrapping each page (after its title line) in raw/endraw shows them as written.
+      - name: Show code samples exactly as written
+        run: |
+          find . -name "*.md" -not -path "./.git/*" | while read -r file; do
+            sed -i '1a {% raw %}' "$file"
+            printf '\n{%% endraw %%}\n' >> "$file"
+          done
+
+      - uses: actions/configure-pages@v5 # sets the /csharp base path
+
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
