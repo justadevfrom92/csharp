@@ -16,6 +16,10 @@
     <Project Path="Section1_CoreFundamentals/Project1.2_PatternMatching/PatternMatching.Tests/PatternMatching.Tests.csproj" />
     <Project Path="Section1_CoreFundamentals/Project1.2_PatternMatching/PatternMatching/PatternMatching.csproj" />
   </Folder>
+  <Folder Name="/Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction/">
+    <Project Path="Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction/Tuples.Tests/Tuples.Tests.csproj" />
+    <Project Path="Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction/Tuples/Tuples.csproj" />
+  </Folder>
   <Folder Name="/Section2_CollectionsAndLinq/" />
   <Folder Name="/Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/">
     <Project Path="Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/InventoryAnalytics.csproj" />

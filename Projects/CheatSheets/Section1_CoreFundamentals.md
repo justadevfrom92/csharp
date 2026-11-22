@@ -1,6 +1,6 @@
 # Cheat Sheet — Section 1: Core Fundamentals
 
-Projects: [1.1](../Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator), [1.2](../Section1_CoreFundamentals/Project1.2_PatternMatching)
+Projects: [1.1](../Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator), [1.2](../Section1_CoreFundamentals/Project1.2_PatternMatching), [1.3](../Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction)
 
 ## Variables and types
 
@@ -191,6 +191,37 @@ finally
 
 throw new InvalidOperationException("Can't do that now.");
 ```
+
+## Tuples and deconstruction — 1.3
+
+```csharp
+(decimal Total, int Count) Summarize(List<decimal> prices)   // return several values
+{
+    return (prices.Sum(), prices.Count);
+}
+
+var result = Summarize(prices);        // result.Total, result.Count
+var (total, count) = Summarize(prices); // deconstruct
+var (_, onlyCount) = Summarize(prices); // "_" discards a value
+(left, right) = (right, left);          // swap
+
+foreach (var (key, value) in dictionary) { }
+
+decimal cost = (country, express) switch // switch on two values
+{
+    ("US", false) => 5m,
+    (_, true) => 40m,
+    _ => 25m,
+};
+
+public void Deconstruct(out int x, out int y) { x = X; y = Y; } // make a class deconstructable
+```
+
+| Need | Use |
+|---|---|
+| a private method returns 2–3 values | named tuple |
+| the result goes into JSON / an API | a `record` (tuple names become `{}` or `Item1` in JSON) |
+| success + value | `bool TryX(out T value)` |
 
 ## Records, classes, enums
 

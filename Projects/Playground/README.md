@@ -23,7 +23,7 @@ dotnet test
 | Project | Runs as |
 |---|---|
 | 1.1 Loan & Date Calculator | `dotnet run -- --demo` (answers typed in for you) |
-| 1.2 Pattern Matching, 2.1 Inventory, 2.2 Iterators, 4.2 DDD Banking, 5.2 Channel Pipeline | `dotnet run` |
+| 1.2 Pattern Matching, 1.3 Tuples, 2.1 Inventory, 2.2 Iterators, 4.2 DDD Banking, 5.2 Channel Pipeline | `dotnet run` |
 | 9.1 Operators & Lambdas, 9.4 Behavioral, 9.5 Pipelines, 9.6 Dataflow, 9.7 Workflow, 9.8 Rx | `dotnet run` |
 
 **Not in it**, because a browser can't do it: web apps (they need a server: 3.x, 5.4, 6.3–6.5, 7.x, 8.x, 9.9, 10.1),
