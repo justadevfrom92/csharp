@@ -15,4 +15,5 @@ taken from that project's code).
 | [Section 7 — Security, Background & Deployment](Section7_SecurityBackgroundTasksAndDeployment.md) | DI lifetimes, keyed services, cookie auth, CSRF/XSS, middleware, filters, background services, environments, output cache, Redis, WebSockets, CI |
 | [Section 8 — Beyond the Roadmap](Section8_BeyondTheRoadmap.md) | Minimal APIs, JWT, policies, Identity, `HttpClient`, rate limiting, Razor Pages, Blazor, SignalR, gRPC, publish |
 | [Section 9 — Design Patterns & Architecture](Section9_DesignPatternsAndArchitecture.md) | every `builder.Services` registration style, assembly scanning, operator overloading, lambdas, JSON/YAML config, fluent builder, DSL, strategy, command, state, mediator, observer, pipes & filters, chain of responsibility, decorator, AOP, Dataflow, workflow/saga, Rx |
+| [Section 10 — SaaS](Section10_SaaS.md) | multi-tenancy: tenant per request, global query filter, tenant stamping on save, admin bypass, safe tenant sources |
 | [`dotnet` CLI](DotnetCli.md) | `new`, `add`, `build`, `run`, `test`, `watch`, user secrets, `dotnet ef`, `pack`, `publish` |

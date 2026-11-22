@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/Section10_SaaS/" />
+  <Folder Name="/Section10_SaaS/Project10.1_MultiTenancy/">
+    <Project Path="Section10_SaaS/Project10.1_MultiTenancy/MultiTenancy.Tests/MultiTenancy.Tests.csproj" />
+    <Project Path="Section10_SaaS/Project10.1_MultiTenancy/MultiTenancy/MultiTenancy.csproj" />
+  </Folder>
   <Folder Name="/Section1_CoreFundamentals/" />
   <Folder Name="/Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/">
     <Project Path="Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/SimpleLoanAndDateCalculator.csproj" />

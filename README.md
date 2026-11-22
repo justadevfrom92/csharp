@@ -1,9 +1,9 @@
 # C# & .NET 10 Mastery Roadmap
 
-A hands-on learning repo: **47 small, runnable projects** that walk through C# and .NET 10 from the basics
+A hands-on learning repo: **48 small, runnable projects** that walk through C# and .NET 10 from the basics
 (variables, pattern matching, LINQ) to ASP.NET Core, EF Core, security, background work, real-time apps and
-design patterns. The code is kept **deliberately simple**, every choice is explained, and most projects
-have tests that prove what the README says: **648 xUnit tests in 28 test projects, plus 13 Playwright
+design patterns, and on into SaaS. The code is kept **deliberately simple**, every choice is explained, and most projects
+have tests that prove what the README says: **668 xUnit tests in 29 test projects, plus 13 Playwright
 browser tests**.
 
 Everything lives in [`Projects/`](Projects). Start with [`Projects/README.md`](Projects/README.md), the full index.
@@ -33,6 +33,7 @@ Everything lives in [`Projects/`](Projects). Start with [`Projects/README.md`](P
 | 7 | Security, Background Tasks & Deployment | 7.1–7.9 | cookie auth and roles, XSS/CSRF, background services, output caching, health checks, feature flags, GitHub Actions, migration scripts and stored procedures, WebSockets, Redis |
 | 8 | Beyond the Roadmap | 8.1–8.9 | minimal APIs + OpenAPI, Identity + JWT, `HttpClientFactory` + resilience, rate limiting, `dotnet publish` modes, Razor Pages, Blazor, SignalR, gRPC |
 | 9 | Design Patterns & Architecture | 9.1–9.9 | operators and lambdas, JSON/YAML config, fluent builders and DSLs, behavioural patterns, pipelines, TPL Dataflow, workflow engine, Rx, service registration |
+| 10 | SaaS | 10.1 | multi-tenancy: tenant per request, EF Core global query filters, tenant stamping, shared vs per-tenant databases |
 
 The full list with links is in [`Projects/README.md`](Projects/README.md).
 
@@ -193,7 +194,12 @@ Section 9 Design Patterns & Architecture: 9.1 operator overloading & lambdas (ge
   9.8 Reactive Extensions; 9.9 service registration: builder.Services.RegisterAllExistingJobs() (assembly
   scanning), every registration style, plus reflection variations (GetProperties, SetValue, private methods,
   plugin loading) and a reflection-cost benchmark in 5.3.
-If a section gets overloaded, split it and add more sections (10, 11, ...), within reason.
+Section 10 SaaS: 10.1 multi-tenancy (tenant from X-Tenant header via middleware into a scoped TenantContext; shared
+  database with TenantId; EF Core global query filter reading a DbContext property; SaveChanges stamps TenantId and
+  blocks cross-tenant writes; 404 for other tenants' ids; variations: claim/subdomain/path lookup, hand-written Where
+  and the forgotten-Where leak, filter capturing a local variable (first tenant baked in), database per tenant).
+  Later SaaS projects: organizations and invites, plans and limits, Stripe webhooks, audit log, outbox, OpenTelemetry.
+If a section gets overloaded, split it and add more sections (11, 12, ...), within reason.
 
 SHARED DOCS
 - Projects/README.md: index table of every project with links and type.

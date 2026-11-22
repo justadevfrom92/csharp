@@ -90,3 +90,11 @@ Patterns and techniques for structuring code. **Every one of them, and where els
 | 9.7 | [Workflow Engine (retries, compensation, resume)](Section9_DesignPatternsAndArchitecture/Project9.7_WorkflowEngine) | Console + tests |
 | 9.8 | [Reactive Extensions (Rx / IObservable)](Section9_DesignPatternsAndArchitecture/Project9.8_ReactiveExtensions) | Console + tests |
 | 9.9 | [Service Registration (`builder.Services`) & `RegisterAllExistingJobs`](Section9_DesignPatternsAndArchitecture/Project9.9_ServiceRegistration) | Web API + tests |
+
+## Section 10 — SaaS
+
+Building blocks for software sold as a service to many customer companies (tenants).
+
+| # | Project | Type |
+|---|---|---|
+| 10.1 | [Multi-Tenancy](Section10_SaaS/Project10.1_MultiTenancy) | Web API + SQLite + tests |
