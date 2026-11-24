@@ -30,6 +30,7 @@ dotnet build CSharpMasteryRoadmap.slnx
 | 1.1 | [Loan & Date Calculator](Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator) | Console |
 | 1.2 | [Pattern Matching](Section1_CoreFundamentals/Project1.2_PatternMatching) | Console + tests |
 | 1.3 | [Tuples & Deconstruction](Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction) | Console + tests |
+| 1.4 | [Records, Sealed Hierarchies & Extensions (`with`, C# 14 `extension`)](Section1_CoreFundamentals/Project1.4_RecordsSealedAndExtensions) | Console + tests |
 | 2.1 | [Warehouse Inventory & Orders](Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics) | Console |
 | 2.2 | [Iterators (`IEnumerable`, `yield`)](Section2_CollectionsAndLinq/Project2.2_Iterators) | Console + tests |
 | 3.1 | [MVC Product Catalog](Section3_AspNetCoreMvc/Project3.1_ProductCatalog) | MVC |

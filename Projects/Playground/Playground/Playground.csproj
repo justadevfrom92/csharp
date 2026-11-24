@@ -21,6 +21,7 @@
     <ProjectReference Include="../../Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator/SimpleLoanAndDateCalculator.csproj" />
     <ProjectReference Include="../../Section1_CoreFundamentals/Project1.2_PatternMatching/PatternMatching/PatternMatching.csproj" />
     <ProjectReference Include="../../Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction/Tuples/Tuples.csproj" />
+    <ProjectReference Include="../../Section1_CoreFundamentals/Project1.4_RecordsSealedAndExtensions/Records/Records.csproj" />
     <ProjectReference Include="../../Section2_CollectionsAndLinq/Project2.1_InventoryAnalytics/InventoryAnalytics.csproj" />
     <ProjectReference Include="../../Section2_CollectionsAndLinq/Project2.2_Iterators/Iterators/Iterators.csproj" />
     <ProjectReference Include="../../Section4_OopDddAndTesting/Project4.2_DddBankingEngine/Banking.Demo/Banking.Demo.csproj" />
@@ -36,6 +37,6 @@
   <!-- Publishing TRIMS unused code to shrink the download. These programs are started by reflection, which the
        trimmer can't see, so keep each of them whole. -->
   <ItemGroup>
-    <TrimmerRootAssembly Include="SimpleLoanAndDateCalculator;PatternMatching;Tuples;InventoryAnalytics;Iterators;Banking.Demo;Banking.Domain;ChannelLogPipeline;OperatorsAndLambdas;BehavioralPatterns;PipelinePatterns;DataflowImport;WorkflowEngine;ReactiveExtensions" />
+    <TrimmerRootAssembly Include="SimpleLoanAndDateCalculator;PatternMatching;Tuples;Records;InventoryAnalytics;Iterators;Banking.Demo;Banking.Domain;ChannelLogPipeline;OperatorsAndLambdas;BehavioralPatterns;PipelinePatterns;DataflowImport;WorkflowEngine;ReactiveExtensions" />
   </ItemGroup>
 </Project>

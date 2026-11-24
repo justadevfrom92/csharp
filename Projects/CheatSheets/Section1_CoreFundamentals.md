@@ -1,6 +1,6 @@
 # Cheat Sheet — Section 1: Core Fundamentals
 
-Projects: [1.1](../Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator), [1.2](../Section1_CoreFundamentals/Project1.2_PatternMatching), [1.3](../Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction)
+Projects: [1.1](../Section1_CoreFundamentals/Project1.1_SimpleLoanAndDateCalculator), [1.2](../Section1_CoreFundamentals/Project1.2_PatternMatching), [1.3](../Section1_CoreFundamentals/Project1.3_TuplesAndDeconstruction), [1.4](../Section1_CoreFundamentals/Project1.4_RecordsSealedAndExtensions)
 
 ## Variables and types
 
@@ -222,6 +222,40 @@ public void Deconstruct(out int x, out int y) { x = X; y = Y; } // make a class 
 | a private method returns 2–3 values | named tuple |
 | the result goes into JSON / an API | a `record` (tuple names become `{}` or `Item1` in JSON) |
 | success + value | `bool TryX(out T value)` |
+
+## `with`, sealed families, extension blocks — 1.4
+
+```csharp
+var p2 = p1 with { Name = "Filip Ekberg" };        // copy, change one property; p1 unchanged
+var p3 = p1 with { Name = "Sam", Age = 41 };       // several
+// shallow: a List inside is SHARED by both copies -> with { Orders = [.. p1.Orders] }
+
+public abstract record TransportationModel;        // can't be created itself
+public sealed record PlaneModel(string FlightNumber, TimeOnly ArrivalTime) : TransportationModel; // no sub-kinds
+
+public static class TransportationExtensions
+{
+    extension(TransportationModel transport)       // C# 14: methods AND properties
+    {
+        public string ToLabel()
+        {
+            ArgumentNullException.ThrowIfNull(transport); // extensions can be called on null
+            return transport switch { PlaneModel plane => $"flight {plane.FlightNumber}", _ => "other" };
+        }
+    }
+
+    extension(TransportationModel)                 // static members: TransportationModel.ByCar(...)
+    {
+        public static TransportationModel ByCar(TimeOnly at) { return new CarModel(at); }
+    }
+}
+```
+
+| Trap | Fix |
+|---|---|
+| a constructor-only check is skipped by `with` | check in `init => field = ...` |
+| `{ init => check } = Name;` skips the check in the constructor | assign `Name = name;` in a normal constructor |
+| `_ => throw` needed although every kind is handled (CS8509) | expected with `abstract`; future `closed` would remove it |
 
 ## Records, classes, enums
 

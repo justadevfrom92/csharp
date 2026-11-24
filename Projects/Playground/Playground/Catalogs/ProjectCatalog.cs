@@ -13,6 +13,7 @@ public static class ProjectCatalog
             Note: "Runs with --demo: the answers are typed in for you, including wrong ones (\"abc\", 50, 999) to show the validation. Browsers can't feed Console.ReadLine, so typing your own needs dotnet run."),
         new("1.2", "Pattern Matching", "PatternMatching", []),
         new("1.3", "Tuples & Deconstruction", "Tuples", []),
+        new("1.4", "Records, Sealed & Extensions", "Records", []),
         new("2.1", "Warehouse Inventory & Orders", "InventoryAnalytics", []),
         new("2.2", "Iterators (yield)", "Iterators", []),
         new("4.2", "DDD Banking", "Banking.Demo", []),

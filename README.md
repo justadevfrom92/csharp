@@ -1,9 +1,9 @@
 # C# & .NET 10 Mastery Roadmap
 
-A hands-on learning repo: **49 small, runnable projects** that walk through C# and .NET 10 from the basics
+A hands-on learning repo: **50 small, runnable projects** that walk through C# and .NET 10 from the basics
 (variables, pattern matching, LINQ) to ASP.NET Core, EF Core, security, background work, real-time apps and
 design patterns, and on into SaaS. The code is kept **deliberately simple**, every choice is explained, and most projects
-have tests that prove what the README says: **696 xUnit tests in 31 test projects, plus 13 Playwright
+have tests that prove what the README says: **713 xUnit tests in 32 test projects, plus 13 Playwright
 browser tests**.
 
 Everything lives in [`Projects/`](Projects). Start with [`Projects/README.md`](Projects/README.md), the full index.
@@ -28,7 +28,7 @@ real console projects compiled to WebAssembly: pick one, press Run, see what `do
 
 | # | Section | Projects | Covers |
 |---|---|---|---|
-| 1 | Core Fundamentals | 1.1–1.3 | types, `decimal` money math, dates, null handling, parsing, overflow, switch expressions and pattern matching, tuples and deconstruction |
+| 1 | Core Fundamentals | 1.1–1.4 | types, `decimal` money math, dates, null handling, parsing, overflow, switch expressions and pattern matching, tuples and deconstruction, records with `with`, sealed hierarchies, C# 14 extension blocks |
 | 2 | Collections & LINQ | 2.1–2.2 | `List`/`Dictionary`/`HashSet`, LINQ, deferred execution, iterators with `yield`, your own `IEnumerable`/`IEnumerator` |
 | 3 | ASP.NET Core MVC | 3.1–3.3 | controllers, views, routing, model binding, validation, view components, custom model binders, safe file uploads |
 | 4 | OOP, DDD & Testing | 4.1–4.3 | building a NuGet package, domain-driven design (value objects, aggregates, events), xUnit, Playwright browser tests |
@@ -174,7 +174,10 @@ PROJECTS (Projects/SectionN_Name/ProjectN.M_Name/)
 Section 1 Core Fundamentals: 1.1 loan & date calculator (decimal money, dates, null handling, parsing, overflow);
   1.2 pattern matching (switch expressions, relational/type patterns); 1.3 tuples & deconstruction (named tuple
   returns, nullable tuples, switch on a tuple, swap, discards, Deconstruct on a class, dictionary/LINQ tuples;
-  variations: out, Tuple<>, unnamed tuple, record, anonymous type; gotchas: JSON gives {} or Item1, == ignores names).
+  variations: out, Tuple<>, unnamed tuple, record, anonymous type; gotchas: JSON gives {} or Item1, == ignores names); 1.4 records, sealed hierarchies & extensions (p1 with { Name = ... },
+  shallow copy of lists, records with lists not equal, abstract record + sealed kinds, switch needs _ (CS8509; future
+  "closed" doesn't compile yet), C# 14 extension(...) blocks with methods/properties/static members vs classic this-methods,
+  init checks with the field keyword and where with/constructors skip them).
 Section 2 Collections & LINQ: 2.1 warehouse inventory (collections, LINQ, deferred execution);
   2.2 iterators (yield return/break, lazy file reader, endless sequence, own IEnumerable/IEnumerator).
 Section 3 ASP.NET Core MVC: 3.1 product catalog (controllers, views, routing, binding, validation);
