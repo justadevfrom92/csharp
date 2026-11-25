@@ -1,9 +1,9 @@
 # C# & .NET 10 Mastery Roadmap
 
-A hands-on learning repo: **50 small, runnable projects** that walk through C# and .NET 10 from the basics
+A hands-on learning repo: **51 small, runnable projects** that walk through C# and .NET 10 from the basics
 (variables, pattern matching, LINQ) to ASP.NET Core, EF Core, security, background work, real-time apps and
 design patterns, and on into SaaS. The code is kept **deliberately simple**, every choice is explained, and most projects
-have tests that prove what the README says: **713 xUnit tests in 32 test projects, plus 13 Playwright
+have tests that prove what the README says: **738 xUnit tests in 33 test projects, plus 13 Playwright
 browser tests**.
 
 Everything lives in [`Projects/`](Projects). Start with [`Projects/README.md`](Projects/README.md), the full index.
@@ -33,7 +33,7 @@ real console projects compiled to WebAssembly: pick one, press Run, see what `do
 | 3 | ASP.NET Core MVC | 3.1–3.3 | controllers, views, routing, model binding, validation, view components, custom model binders, safe file uploads |
 | 4 | OOP, DDD & Testing | 4.1–4.3 | building a NuGet package, domain-driven design (value objects, aggregates, events), xUnit, Playwright browser tests |
 | 5 | Concurrency, Async & Memory | 5.1–5.4 | threads, `async`/`await`, locks, channels, BenchmarkDotNet, async streams (`IAsyncEnumerable`) |
-| 6 | Database, State & Error Handling | 6.1–6.6 | EF Core (logging, loading, transactions, soft deletes, raw SQL, bulk updates, concurrency), options, caching, sessions, error handling |
+| 6 | Database, State & Error Handling | 6.1–6.7 | EF Core (logging, loading, transactions, soft deletes, raw SQL, bulk updates, concurrency, configuration classes, inheritance, shadow keys, aggregates), options, caching, sessions, error handling |
 | 7 | Security, Background Tasks & Deployment | 7.1–7.9 | cookie auth and roles, XSS/CSRF, background services, output caching, health checks, feature flags, GitHub Actions, migration scripts and stored procedures, WebSockets, Redis |
 | 8 | Beyond the Roadmap | 8.1–8.9 | minimal APIs + OpenAPI, Identity + JWT, `HttpClientFactory` + resilience, rate limiting, `dotnet publish` modes, Razor Pages, Blazor, SignalR, gRPC |
 | 9 | Design Patterns & Architecture | 9.1–9.9 | operators and lambdas, JSON/YAML config, fluent builders and DSLs, behavioural patterns, pipelines, TPL Dataflow, workflow engine, Rx, service registration |
@@ -190,7 +190,10 @@ Section 5 Concurrency, Async & Memory: 5.1 threaded file downloader (threads, lo
 Section 6 Database, State & Error Handling: 6.1 EF Core query logging (loading styles); 6.2 transactional
   checkout + soft deletes; 6.3 shared cache & options; 6.4 session shopping cart; 6.5 error handling & crash
   recovery (Serilog, IExceptionHandler); 6.6 EF Core advanced queries (FromSql, ExecuteUpdate/Delete, compiled
-  queries, concurrency tokens).
+  queries, concurrency tokens); 6.7 EF Core modelling for DDD aggregates (IEntityTypeConfiguration
+  classes + ApplyConfiguration, table-per-hierarchy discriminator vs table-per-type, shadow Id/foreign keys with a
+  Guid PublicId, private backing collection + AutoInclude/IgnoreAutoIncludes, OfType + Join + GroupBy into a
+  required record in one SQL command; log the SQL and test it).
 Section 7 Security, Background Tasks & Deployment: 7.1 cookie auth & roles; 7.2 XSS & CSRF; 7.3 environment-aware
   email with background services and a queue; 7.4 output caching + health check + robots.txt; 7.5 feature flags;
   7.6 GitHub Actions CI explained; 7.7 idempotent migration scripts + stored procedures (SQL Server, EXEC(N'...'));

@@ -89,6 +89,10 @@
     <Project Path="Section6_DatabaseStateAndErrorHandling/Project6.6_EfCoreAdvancedQueries/EfCoreAdvancedQueries/EfCoreAdvancedQueries.csproj" />
     <Project Path="Section6_DatabaseStateAndErrorHandling/Project6.6_EfCoreAdvancedQueries/EfCoreAdvancedQueries.Tests/EfCoreAdvancedQueries.Tests.csproj" />
   </Folder>
+  <Folder Name="/Section6_DatabaseStateAndErrorHandling/Project6.7_EfCoreModelling/">
+    <Project Path="Section6_DatabaseStateAndErrorHandling/Project6.7_EfCoreModelling/EfCoreModelling.Tests/EfCoreModelling.Tests.csproj" />
+    <Project Path="Section6_DatabaseStateAndErrorHandling/Project6.7_EfCoreModelling/EfCoreModelling/EfCoreModelling.csproj" />
+  </Folder>
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/" />
   <Folder Name="/Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/">
     <Project Path="Section7_SecurityBackgroundTasksAndDeployment/Project7.1_CookieAuthAndRoles/CookieAuthAndRoles.Tests/CookieAuthAndRoles.Tests.csproj" />

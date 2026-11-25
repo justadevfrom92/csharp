@@ -28,7 +28,7 @@ where they're used for real.
 | Pattern | Where |
 |---|---|
 | Repository | `IBankAccountRepository` (4.2) |
-| Value object, aggregate, domain events (DDD) | 4.2 |
+| Value object, aggregate, domain events (DDD) | 4.2; an aggregate stored with EF Core (private collection, shadow keys) in 6.7 |
 | Dependency injection: every `builder.Services` style, assembly scanning (`RegisterAllExistingJobs`) | [9.9](Section9_DesignPatternsAndArchitecture/Project9.9_ServiceRegistration); also 6.3, 7.3, 9.4 |
 | Options pattern (`IOptions`, `IOptionsMonitor`) | 6.3, 7.5 |
 | Cache-aside | 6.3, 7.9 |

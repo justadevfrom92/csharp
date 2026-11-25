@@ -1,6 +1,6 @@
 # Cheat Sheet — Section 6: Database, State & Error Handling
 
-Projects: [6.1](../Section6_DatabaseStateAndErrorHandling/Project6.1_EfCoreQueryLogging), [6.2](../Section6_DatabaseStateAndErrorHandling/Project6.2_TransactionalCheckout), [6.3](../Section6_DatabaseStateAndErrorHandling/Project6.3_SharedCacheAndSettings), [6.4](../Section6_DatabaseStateAndErrorHandling/Project6.4_SessionShoppingCart), [6.5](../Section6_DatabaseStateAndErrorHandling/Project6.5_ErrorHandlingAndCrashRecovery), [6.6](../Section6_DatabaseStateAndErrorHandling/Project6.6_EfCoreAdvancedQueries)
+Projects: [6.1](../Section6_DatabaseStateAndErrorHandling/Project6.1_EfCoreQueryLogging), [6.2](../Section6_DatabaseStateAndErrorHandling/Project6.2_TransactionalCheckout), [6.3](../Section6_DatabaseStateAndErrorHandling/Project6.3_SharedCacheAndSettings), [6.4](../Section6_DatabaseStateAndErrorHandling/Project6.4_SessionShoppingCart), [6.5](../Section6_DatabaseStateAndErrorHandling/Project6.5_ErrorHandlingAndCrashRecovery), [6.6](../Section6_DatabaseStateAndErrorHandling/Project6.6_EfCoreAdvancedQueries), [6.7](../Section6_DatabaseStateAndErrorHandling/Project6.7_EfCoreModelling)
 
 ## EF Core: set up
 
@@ -214,6 +214,35 @@ List<string>? categories = await cache.GetOrCreateAsync("categories", async entr
 });
 cache.Remove("categories");
 ```
+
+## EF Core modelling — 6.7
+
+```csharp
+public class ProductConfiguration : IEntityTypeConfiguration<ProductModel>   // one class per entity
+{
+    public void Configure(EntityTypeBuilder<ProductModel> builder)
+    {
+        builder.Property<int>("Id").ValueGeneratedOnAdd();                    // SHADOW key: not in the class
+        builder.HasKey("Id");
+        builder.HasDiscriminator<string>("Type")                              // one table for all kinds
+            .HasValue<MaterialModel>("Material").HasValue<ServiceModel>("Service");
+    }
+}
+modelBuilder.ApplyConfiguration(new ProductConfiguration());                  // or ApplyConfigurationsFromAssembly(...)
+
+builder.HasMany<InvoiceLineModel>("linesCollection").WithOne().HasForeignKey("InvoiceId"); // private list, shadow FK
+builder.Navigation("linesCollection").AutoInclude();                          // always loaded
+database.Invoices.IgnoreAutoIncludes().AsNoTracking();                        // ...except here
+
+database.Products.OfType<MaterialModel>();                                    // WHERE Type = 'Material'
+database.Products.Select(p => EF.Property<int>(p, "Id"));                     // read a shadow column (queries only)
+database.Entry(invoice).Property<int>("Id").CurrentValue;                     // ...on a tracked object
+```
+
+| Inheritance | Tables | `OfType` becomes |
+|---|---|---|
+| table-per-hierarchy (default) | 1 + `Type` column | `WHERE` |
+| `UseTptMappingStrategy()` | base + one per kind | `JOIN` |
 
 ## Session
 
