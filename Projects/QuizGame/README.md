@@ -15,7 +15,9 @@ How it plays: pick a section (or all, mixed), 10 / 20 / all questions, Easy / Me
 last question (no lives); 70% or more passes. **Every question shows code.**
 Each answer reports **Passed** / **Failed** with the explanation. Every run ends with an **answer sheet**: each question
 in order, marked Passed / Failed / Skipped, with its code, your answer, the correct answer and why. You can retry just the failed ones.
-Best score per section is kept in your browser. Keys: 1–4 to answer, Enter to check and continue.
+**Skip** any question (button or S). At the end of the run it asks: answer the skipped ones, or finish (they show as
+Skipped on the answer sheet); skipping again in that round asks again. Best score per section is kept in your browser.
+Keys: 1–4 to answer, S to skip, Enter to check and continue, F to finish at the skipped prompt.
 Fill-in-the-blank answers are case-sensitive, like C#. The newest features (extension blocks, the `field` keyword) are labelled ".NET 10".
 
 ## Files

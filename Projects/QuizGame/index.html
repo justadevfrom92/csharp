@@ -293,8 +293,15 @@ function startRun(section, onlyIds)
     document.getElementById("back").onclick = showHome;
     return;
   }
-  run = { section, list, index: 0, correct: 0, streak: 0, bestStreak: 0, wrong: [], answers: {}, answered: false, retry: Boolean(onlyIds) };
+  // queue = positions in list still to ask this round; a skipped question comes back in the next round.
+  const queue = list.map((_, position) => position);
+  run = { section, list, queue, step: 0, index: 0, round: 1, correct: 0, streak: 0, bestStreak: 0, wrong: [], answers: {}, answered: false, retry: Boolean(onlyIds) };
   showQuestion();
+}
+
+function skippedPositions()
+{
+  return run.list.map((q, position) => position).filter(position => run.answers[run.list[position].id] === undefined);
 }
 
 function choiceOrder(q)
@@ -308,9 +315,13 @@ function choiceOrder(q)
 
 function showQuestion()
 {
+  run.index = run.queue[run.step];
+  run.prompt = false;
   const q = run.list[run.index];
   run.answered = false;
   run.order = q.t === "blank" ? null : choiceOrder(q);
+  const answeredCount = Object.keys(run.answers).length;
+  const roundLabel = run.round > 1 ? ` <span class="chip plain">skipped questions</span>` : "";
   const label = run.section === "all" ? "all sections" : `section ${run.section}`;
   cmd.innerHTML = `dotnet test --filter <b>${label}</b>`;
   const isMonoChoice = q.t === "out";
@@ -320,20 +331,21 @@ function showQuestion()
         `<button class="choice ${isMonoChoice ? "mono-text" : ""}" data-choice="${original}"><span class="key">${shown + 1}</span><span class="text">${escapeHtml(q.choices[original])}</span></button>`).join("")}</div>`;
   app.innerHTML = `<div class="wrap">
     <div class="status">
-      <span>${run.index + 1} / ${run.list.length}</span>
-      <span class="stats"><span>passed <b>${run.correct}</b></span><span>failed <b>${run.wrong.length}</b></span><span>streak <b>${run.streak}</b></span></span>
+      <span>question ${run.index + 1} of ${run.list.length}${roundLabel}</span>
+      <span class="stats"><span>passed <b>${run.correct}</b></span><span>failed <b>${run.wrong.length}</b></span><span>skipped <b>${run.list.length - answeredCount - (run.queue.length - run.step)}</b></span><span>streak <b>${run.streak}</b></span></span>
     </div>
-    <div class="bar"><i style="width:${(run.index / run.list.length) * 100}%"></i></div>
+    <div class="bar"><i style="width:${(answeredCount / run.list.length) * 100}%"></i></div>
     <section class="card" aria-live="polite">
       <div class="chips"><span class="chip">${TYPE_LABELS[q.t]}</span><span class="chip plain">${LEVELS[q.lvl]}</span><span class="chip plain">Project ${q.p}</span></div>
       <div class="question">${escapeHtml(q.q)}</div>
       ${q.code ? `<pre class="code">${codeHtml(q.code)}</pre>` : ""}
       ${choices}
       <div id="verdict"></div>
-      <div class="actions"><button class="btn ghost" id="quit">Stop run</button><span class="hint">${q.t === "blank" ? "Enter checks your answer" : "Press 1–" + q.choices.length}</span></div>
+      <div class="actions"><button class="btn ghost" id="skip">Skip</button><button class="btn ghost" id="quit">Stop run</button><span class="hint">${q.t === "blank" ? "Enter checks your answer" : "Press 1–" + q.choices.length + ", S to skip"}</span></div>
     </section>
   </div>`;
   document.getElementById("quit").onclick = finishRun;
+  document.getElementById("skip").onclick = skipQuestion;
   if (q.t === "blank")
   {
     const input = document.getElementById("answer");
@@ -401,32 +413,80 @@ function record(passed, rightAnswer, note, given)
     run.streak = 0;
     run.wrong.push(q.id);
   }
-  const last = run.index === run.list.length - 1;
+  const last = run.step === run.queue.length - 1;
   document.getElementById("verdict").innerHTML = `<div class="verdict ${passed ? "pass" : "fail"}">
     <span class="line">${passed ? "✓ Passed" : "✗ Failed"}${passed ? "" : ` — expected: ${rightAnswer}`}</span>
     <span>${escapeHtml(q.why)}${note}</span></div>`;
   const actions = app.querySelector(".actions");
-  actions.innerHTML = `<button class="btn" id="next">${last ? "See results" : "Next question"}</button><span class="hint">Enter</span>`;
+  actions.innerHTML = `<button class="btn" id="next">${last ? "Continue" : "Next question"}</button><span class="hint">Enter</span>`;
   const next = document.getElementById("next");
   next.onclick = goNext;
   next.focus();
 }
 
+function skipQuestion()
+{
+  if (run.answered)
+  {
+    return;
+  }
+  run.streak = 0; // a skip breaks the streak, but isn't a fail
+  goNext();
+}
+
 function goNext()
 {
-  if (run.index === run.list.length - 1)
+  if (run.step < run.queue.length - 1)
+  {
+    run.step++;
+    showQuestion();
+    return;
+  }
+  // End of this round: offer the skipped questions, or finish.
+  const skipped = skippedPositions();
+  if (skipped.length === 0)
   {
     finishRun();
     return;
   }
-  run.index++;
+  showSkippedPrompt(skipped);
+}
+
+function showSkippedPrompt(skipped)
+{
+  run.prompt = true;
+  const answeredCount = Object.keys(run.answers).length;
+  app.innerHTML = `<div class="wrap">
+    <section class="card">
+      <h2>You skipped ${skipped.length} question${skipped.length === 1 ? "" : "s"}</h2>
+      <p class="note">Answered ${answeredCount} of ${run.list.length}: passed ${run.correct}, failed ${run.wrong.length}.
+        Answer the skipped ones now, or finish and see the answer sheet (they'll show as skipped).</p>
+      <div class="actions">
+        <button class="btn" id="redo">Answer the ${skipped.length} skipped</button>
+        <button class="btn ghost" id="finish">Finish</button>
+        <span class="hint">Enter answers them, F finishes</span>
+      </div>
+    </section>
+  </div>`;
+  const redo = document.getElementById("redo");
+  redo.onclick = () => redoSkipped(skipped);
+  redo.focus();
+  document.getElementById("finish").onclick = finishRun;
+}
+
+function redoSkipped(skipped)
+{
+  run.queue = skipped;
+  run.step = 0;
+  run.round++;
   showQuestion();
 }
 
 // ---------- results ----------
 function finishRun()
 {
-  const answered = run.index + (run.answered ? 1 : 0);
+  run.prompt = false;
+  const answered = Object.keys(run.answers).length;
   const percent = answered === 0 ? 0 : Math.round((run.correct / run.list.length) * 100);
   const passed = run.correct / run.list.length >= PASS_MARK && answered === run.list.length;
   if (run.section !== "all" && !run.retry && answered > 0)
@@ -492,7 +552,21 @@ document.addEventListener("keydown", event =>
   {
     return;
   }
+  if (run.prompt)
+  {
+    if (event.key === "f" || event.key === "F")
+    {
+      document.getElementById("finish").click();
+    }
+    return; // Enter presses the focused "Answer the skipped" button by itself
+  }
   const q = run.list[run.index];
+  const typing = event.target instanceof HTMLInputElement;
+  if (!run.answered && !typing && (event.key === "s" || event.key === "S"))
+  {
+    skipQuestion();
+    return;
+  }
   if (event.key === "Enter")
   {
     if (run.answered)
