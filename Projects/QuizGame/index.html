@@ -131,7 +131,15 @@ pre.code .gap { background: var(--accent); color: var(--accent-ink); border-radi
 .result-line.pass { color: var(--pass); }
 .result-line.fail { color: var(--fail); }
 .review { display: grid; gap: 10px; }
-.review .item { border: 1px solid var(--line); border-left: 3px solid var(--fail); border-radius: 8px; padding: 12px 14px; background: var(--surface); display: grid; gap: 6px; min-width: 0; }
+.review .item { border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--surface); display: grid; gap: 6px; min-width: 0; }
+.review .item.pass { border-left-color: var(--pass); }
+.review .item.fail { border-left-color: var(--fail); }
+.review .item .head { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.review .item .num { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.verdict-tag { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; }
+.verdict-tag.pass { color: var(--pass); }
+.verdict-tag.fail { color: var(--fail); }
+.verdict-tag.skip { color: var(--muted); }
 .review .item .q { font-weight: 500; }
 .review .item .a { font-size: 0.9rem; }
 .review .item .why { font-size: 0.88rem; color: var(--muted); }
@@ -285,7 +293,7 @@ function startRun(section, onlyIds)
     document.getElementById("back").onclick = showHome;
     return;
   }
-  run = { section, list, index: 0, correct: 0, streak: 0, bestStreak: 0, wrong: [], answered: false, retry: Boolean(onlyIds) };
+  run = { section, list, index: 0, correct: 0, streak: 0, bestStreak: 0, wrong: [], answers: {}, answered: false, retry: Boolean(onlyIds) };
   showQuestion();
 }
 
@@ -358,7 +366,7 @@ function answerChoice(picked)
       b.classList.add("wrong");
     }
   });
-  record(picked === q.a, escapeHtml(q.choices[q.a]), "");
+  record(picked === q.a, escapeHtml(q.choices[q.a]), "", q.choices[picked]);
 }
 
 function answerBlank(text)
@@ -374,13 +382,14 @@ function answerBlank(text)
   document.getElementById("answer").disabled = true;
   document.getElementById("submit").disabled = true;
   const note = caseOnly ? " C# is case-sensitive: watch the capital letters. Counted as wrong." : "";
-  record(exact, `<code>${escapeHtml(q.a[0])}</code>`, note);
+  record(exact, `<code>${escapeHtml(q.a[0])}</code>`, note, text.trim());
 }
 
-function record(passed, rightAnswer, note)
+function record(passed, rightAnswer, note, given)
 {
   const q = run.list[run.index];
   run.answered = true;
+  run.answers[q.id] = { given, passed };
   if (passed)
   {
     run.correct++;
@@ -426,14 +435,24 @@ function finishRun()
     best[run.section] = Math.max(best[run.section] ?? 0, percent);
     save("bestScores", best);
   }
-  const wrongQuestions = run.wrong.map(id => questions.find(q => q.id === id));
-  const review = wrongQuestions.map(q => `<div class="item">
-      <span class="chips"><span class="chip">${TYPE_LABELS[q.t]}</span><span class="chip plain">Project ${q.p}</span></span>
+  // The answer sheet: every question of the run, in the order asked.
+  const sheet = run.list.map((q, number) =>
+  {
+    const answer = run.answers[q.id];
+    const state = answer === undefined ? "skip" : answer.passed ? "pass" : "fail";
+    const verdict = { pass: "✓ Passed", fail: "✗ Failed", skip: "– Skipped" }[state];
+    const right = q.t === "blank" ? q.a.join("  or  ") : q.choices[q.a];
+    const yours = answer === undefined ? "" : `<span class="a">Your answer: <code>${escapeHtml(answer.given)}</code></span>`;
+    return `<div class="item ${state}">
+      <span class="head"><span class="num">${number + 1}.</span><span class="verdict-tag ${state}">${verdict}</span>
+        <span class="chip">${TYPE_LABELS[q.t]}</span><span class="chip plain">Project ${q.p}</span></span>
       <span class="q">${escapeHtml(q.q)}</span>
       ${q.code ? `<pre class="code">${codeHtml(q.code)}</pre>` : ""}
-      <span class="a">Answer: <code>${escapeHtml(q.t === "blank" ? q.a[0] : q.choices[q.a])}</code></span>
-      <span class="why">${escapeHtml(q.why)} <a href="${REPO}" target="_blank" rel="noopener">Projects on GitHub</a></span>
-    </div>`).join("");
+      ${yours}
+      <span class="a">Correct answer: <code>${escapeHtml(right)}</code></span>
+      <span class="why">${escapeHtml(q.why)}</span>
+    </div>`;
+  }).join("");
   const label = run.section === "all" ? "All sections" : `Section ${run.section}: ${SECTIONS[run.section][0]}`;
   const failedCount = run.wrong.length;
   app.innerHTML = `<div class="wrap">
@@ -450,7 +469,9 @@ function finishRun()
       ${failedCount ? '<button class="btn ghost" id="retry">Retry the ' + failedCount + ' failed</button>' : ""}
       <button class="btn ghost" id="home">All sections</button>
     </div>
-    ${failedCount ? `<h3>Failed questions</h3><div class="review">${review}</div>` : '<p class="note">No failed questions in this run.</p>'}
+    <h3>Answer sheet</h3>
+    <div class="review">${sheet}</div>
+    <p class="note"><a href="${REPO}" target="_blank" rel="noopener">The projects on GitHub</a> have the full code for every answer.</p>
   </div>`;
   const section = run.section;
   const wrongIds = [...run.wrong];

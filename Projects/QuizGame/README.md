@@ -13,7 +13,8 @@ An interactive quiz, by section, over everything this repo teaches: **327 questi
 
 How it plays: pick a section (or all, mixed), 10 / 20 / all questions, Easy / Medium / Hard. Every run goes to the
 last question (no lives); 70% or more passes. **Every question shows code.**
-Each answer reports **Passed** / **Failed** with the explanation; the end screen lists failed questions and can retry just those.
+Each answer reports **Passed** / **Failed** with the explanation. Every run ends with an **answer sheet**: each question
+in order, marked Passed / Failed / Skipped, with its code, your answer, the correct answer and why. You can retry just the failed ones.
 Best score per section is kept in your browser. Keys: 1–4 to answer, Enter to check and continue.
 Fill-in-the-blank answers are case-sensitive, like C#. The newest features (extension blocks, the `field` keyword) are labelled ".NET 10".
 
