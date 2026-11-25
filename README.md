@@ -8,6 +8,9 @@ browser tests**.
 
 Everything lives in [`Projects/`](Projects). Start with [`Projects/README.md`](Projects/README.md), the full index.
 
+**Quiz yourself:** the [Roadmap Test Runner](https://claude.ai/artifact/CBbFEtL3HsKVKTPehWnamV) has 327 questions by section:
+multiple choice, true or false, "what does it print?" and fill in the blank ([source](Projects/QuizGame)).
+
 **Run the projects in your browser:** https://justadevfrom92.github.io/csharp/ — the [Playground](Projects/Playground) is the
 real console projects compiled to WebAssembly: pick one, press Run, see what `dotnet run` prints. Published by
 [`.github/workflows/pages.yml`](https://github.com/justadevfrom92/csharp/blob/main/.github/workflows/pages.yml) on every push to `main`.
@@ -59,6 +62,7 @@ The full list with links is in [`Projects/README.md`](Projects/README.md).
     ├── dotnet-tools.json          ← local tools (dotnet-ef)
     ├── CheatSheets/               ← one snippet page per section + dotnet CLI
     ├── Playground/                ← Blazor WebAssembly app that runs the console projects in the browser
+    ├── QuizGame/                  ← the quiz page + its 327 questions
     ├── WHY_THESE_TYPES.md  FOLDER_STRUCTURE.md  DESIGN_PATTERNS.md  RAZOR_BASICS.md
     └── SectionN_Name/
         └── ProjectN.M_Name/

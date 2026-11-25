@@ -1,0 +1,68 @@
+from q7_10 import Q, mc, tf, out, blank
+
+# Section 1
+out(1, "1.1", 1, "Console.WriteLine(7 / 2);", ["3.5", "3", "4", "Compile error"], 1, "int / int is integer division: the fraction is dropped.")
+out(1, "1.1", 2, "Console.WriteLine(7 / 2.0);", ["3", "3.5", "4", "3.0"], 1, "One double operand makes it double division.")
+out(1, "1.1", 2, "Console.WriteLine(Math.Round(2.5m));", ["2", "3", "2.5", "Compile error"], 0, "Math.Round uses banker's rounding by default: to the nearest EVEN number. Use MidpointRounding.AwayFromZero for 3.")
+blank(1, "1.1", 3, "Round 2.5 to 3, the way people expect.", "Math.Round(2.5m, MidpointRounding.____)", ["AwayFromZero"], "The default (ToEven) gives 2.")
+out(1, "1.1", 2, "string text = \"Hi\";\ntext.ToUpper();\nConsole.WriteLine(text);", ["HI", "Hi", "hi", "Compile error"], 1, "Strings are immutable: ToUpper returns a NEW string that was thrown away.")
+mc(1, "1.1", 2, "Building a string in a loop of 10,000 items is best done with...", ["+= on a string", "StringBuilder", "string.Concat each time", "char[] resizing"], 1, "+= makes a new string every time; StringBuilder appends in place.")
+blank(1, "1.1", 1, "String interpolation.", "Console.WriteLine(____\"Total: {total}\");", ["$"], "A $ before the string enables {expressions}.")
+out(1, "1.2", 2, "object value = 42;\nstring kind = value switch\n{\n    string s => \"text\",\n    int n when n > 40 => \"big number\",\n    int => \"number\",\n    _ => \"other\",\n};\nConsole.WriteLine(kind);", ["text", "big number", "number", "other"], 1, "Type pattern + when guard; arms are checked in order.")
+out(1, "1.2", 2, "int? maybe = null;\nConsole.WriteLine(maybe is null ? \"none\" : \"some\");", ["none", "some", "null", "Compile error"], 0, "is null is the safe null test (== can be overloaded).")
+mc(1, "1.2", 2, "'is not null' vs '!= null':", ["Same always", "'is not null' can't be changed by an overloaded != operator", "!= is faster", "'is not null' only for strings"], 1, "Patterns ignore operator overloads.")
+# Section 2
+out(2, "2.1", 2, "var numbers = new List<int> { 3, 1, 2 };\nvar sorted = numbers.OrderBy(n => n);\nnumbers.Add(0);\nConsole.WriteLine(string.Join(\",\", sorted));", ["1,2,3", "0,1,2,3", "3,1,2,0", "Exception"], 1, "Deferred execution: the query runs when Join reads it, after Add.")
+out(2, "2.1", 2, "var numbers = new List<int> { 3, 1, 2 };\nvar sorted = numbers.OrderBy(n => n).ToList();\nnumbers.Add(0);\nConsole.WriteLine(string.Join(\",\", sorted));", ["1,2,3", "0,1,2,3", "3,1,2,0", "Exception"], 0, "ToList() ran the query before the Add.")
+out(2, "2.1", 1, "int[] values = [5, 8, 2];\nConsole.WriteLine(values.Max() - values.Min());", ["3", "6", "8", "10"], 1, "8 - 2.")
+blank(2, "2.1", 1, "Keep only products that are out of stock.", "var empty = products.____(p => p.Quantity == 0);", ["Where"], "Where filters; Select reshapes.")
+blank(2, "2.1", 1, "Turn each product into its name.", "var names = products.____(p => p.Name);", ["Select"], "Select maps each item to something new.")
+blank(2, "2.1", 2, "Sort by category, then by name.", "products.OrderBy(p => p.Category).____(p => p.Name)", ["ThenBy"], "A second OrderBy would replace the first sort.")
+mc(2, "2.1", 2, "Distinct() vs new HashSet<T>(items):", ["Different results", "Same unique items; HashSet also gives fast Contains afterwards", "Distinct is not lazy", "HashSet keeps duplicates"], 1, "2.1's CollectionType variation compares them.")
+out(2, "2.1", 2, "var words = new[] { \"tea\", \"coffee\", \"tea\" };\nConsole.WriteLine(words.Distinct().Count());", ["1", "2", "3", "0"], 1, "tea and coffee.")
+mc(2, "2.1", 3, "Join(...) in LINQ needs...", ["One key selector", "Two key selectors (outer and inner) and a result selector", "A Where first", "A dictionary"], 1, "outer.Join(inner, o => o.Key, i => i.Key, (o, i) => ...).")
+tf(2, "2.1", 2, "IReadOnlyList<T> stops the CALLER from adding items, but the owner can still change the list.", True, "It's a read-only view, not an immutable copy (use ImmutableList for that).")
+out(2, "2.2", 2, "IEnumerable<int> Three()\n{\n    yield return 1;\n    yield return 2;\n    yield break;\n    yield return 3;\n}\nConsole.WriteLine(Three().Sum());", ["6", "3", "1", "Compile error"], 1, "yield break ends the sequence; 3 is never produced (compiler warns about unreachable code).")
+# Section 3
+tf(3, "3.1", 2, "TempData is removed after it's read once.", True, "Unless you call Keep or Peek.")
+blank(3, "3.1", 2, "Return a 404 from an MVC action.", "return ____();", ["NotFound"], "Also Ok(), BadRequest(), View(), RedirectToAction().")
+mc(3, "3.1", 2, "[HttpPost] public IActionResult Create(ProductForm form) — where do form's values come from?", ["Query string only", "Model binding from the posted form fields", "The database", "Session"], 1, "Field names must match property names.")
+# Section 4
+mc(4, "4.2", 2, "Encapsulation means...", ["Using interfaces", "Keeping data private and changing it only through methods that enforce rules", "Inheriting", "Static classes"], 1, "Balance { get; private set; } + Deposit/Withdraw.")
+mc(4, "4.2", 2, "Interface vs abstract class:", ["Same", "An interface is a contract only; an abstract class can share code and state", "Interfaces can have fields", "Abstract classes can be created"], 1, "A class can implement many interfaces but inherit one class.")
+blank(4, "4.2", 1, "A property anyone can read but only the class can set.", "public decimal Balance { get; ____ set; }", ["private"], "Changes must go through methods.")
+out(4, "4.2", 2, "var a = new Money(10m, \"USD\");\nvar b = new Money(10m, \"USD\");\nConsole.WriteLine(a == b);  // Money is a record", ["True", "False", "Compile error", "Exception"], 0, "Records compare by value.")
+tf(4, "4.2", 2, "Two class instances with the same values are == by default.", False, "Classes compare by reference unless you override Equals/==.")
+mc(4, "4.2", 3, "Why test behaviour through the public API instead of private methods?", ["Private methods can't be called", "Tests then survive refactoring inside the class", "It's faster", "xUnit requires it"], 1, "Private details can change; behaviour shouldn't.")
+# Section 5
+out(5, "5.1", 2, "async Task<int> GetAsync() { await Task.Delay(10); return 5; }\nvar task = GetAsync();\nConsole.WriteLine(task.IsCompleted);", ["True", "False (usually)", "5", "Compile error"], 1, "Calling it starts it; it isn't done until the delay finishes.")
+mc(5, "5.1", 3, ".Result or .Wait() on a task in UI or old ASP.NET code can...", ["Speed it up", "Deadlock: the thread waits for work that needs that same thread", "Cancel it", "Nothing bad"], 1, "Use await all the way.")
+blank(5, "5.1", 2, "Cancel after 3 seconds.", "using var cancel = new CancellationTokenSource(TimeSpan.From____(3));", ["Seconds"], "Pass cancel.Token to the async methods.")
+mc(5, "5.1", 2, "Task.Run is for...", ["All async code", "Moving CPU-heavy work off the current thread", "Database calls", "HTTP calls"], 1, "I/O is already async; wrapping it in Task.Run just wastes a thread.")
+mc(5, "5.2", 2, "ConfigureAwait(false) in library code means...", ["Don't await", "Don't come back to the original context after the await", "Run synchronously", "Ignore exceptions"], 1, "Avoids context switches; not needed in ASP.NET Core apps.")
+tf(5, "5.2", 2, "Span<T> can't be used across an await.", True, "A Span lives on the stack; use Memory<T> across awaits.")
+# Section 6
+mc(6, "6.1", 2, "Lazy loading means...", ["Loading at startup", "Related data loads the first time you touch the property (an extra query)", "No loading", "Loading in parallel"], 1, "Convenient, but a loop over it causes N+1.")
+blank(6, "6.1", 2, "Print EF's SQL to the console.", "options.UseSqlite(connection).____(Console.WriteLine);", ["LogTo"], "Filter with DbLoggerCategory.Database.Command for just the SQL.")
+mc(6, "6.2", 2, "Without a transaction, a crash between two SaveChanges calls leaves...", ["Nothing saved", "The first saved, the second not (half an order)", "Both saved", "An automatic rollback"], 1, "That's why checkout uses one transaction.")
+# Section 7
+mc(7, "7.3", 2, "Which environment name turns on the developer exception page by default?", ["Production", "Development", "Staging", "Test"], 1, "Set by ASPNETCORE_ENVIRONMENT (launchSettings.json does it locally).")
+blank(7, "7.3", 2, "Check the environment in Program.cs.", "if (app.Environment.____())\n{\n    app.UseDeveloperExceptionPage();\n}", ["IsDevelopment"], "Also IsProduction(), IsStaging(), IsEnvironment(\"X\").")
+mc(7, "7.5", 2, "Feature flags let you...", ["Remove code", "Turn a feature on or off without deploying", "Speed up builds", "Encrypt data"], 1, "Microsoft.FeatureManagement reads them from configuration.")
+# Section 8
+mc(8, "8.1", 2, "AddValidation() in .NET 10 minimal APIs...", ["Logs requests", "Checks [Required]/[Range] on parameters automatically before the handler runs", "Adds OpenAPI", "Validates JWTs"], 1, "Invalid input gets a 400 ProblemDetails.")
+blank(8, "8.1", 2, "Group endpoints under one prefix.", "var books = app.____(\"/books\");", ["MapGroup"], "Then books.MapGet(\"/{id}\", ...).")
+mc(8, "8.6", 2, "Razor Pages handler for a POST is named...", ["Post()", "OnPost() / OnPostAsync()", "HandlePost()", "Submit()"], 1, "OnGet for GET; named handlers like OnPostDelete too.")
+# Section 9
+out(9, "9.1", 2, "Func<int, int> twice = x => x * 2;\nFunc<int, int> plusOne = x => x + 1;\nConsole.WriteLine(plusOne(twice(5)));", ["11", "12", "10", "6"], 0, "twice(5) = 10, then + 1.")
+out(9, "9.1", 3, "var actions = new List<Func<int>>();\nfor (int i = 0; i < 3; i++)\n{\n    actions.Add(() => i);\n}\nConsole.WriteLine(string.Join(\",\", actions.Select(a => a())));", ["0,1,2", "3,3,3", "2,2,2", "0,0,0"], 1, "One i shared by the whole for loop; every lambda sees its final value 3.")
+out(9, "9.1", 2, "var actions = new List<Func<int>>();\nforeach (int i in new[] { 0, 1, 2 })\n{\n    actions.Add(() => i);\n}\nConsole.WriteLine(string.Join(\",\", actions.Select(a => a())));", ["0,1,2", "3,3,3", "2,2,2", "Compile error"], 0, "foreach makes a new variable each round (since C# 5).")
+blank(9, "9.1", 1, "A lambda that squares a number.", "Func<int, int> square = x ____ x * x;", ["=>"], "Parameters => body.")
+mc(9, "9.1", 2, "Action<T> vs Func<T, TResult> vs Predicate<T>:", ["All return values", "no return / returns TResult / returns bool", "returns bool / no return / returns T", "Same"], 1, "Predicate<T> is like Func<T, bool>.")
+# Section 10
+mc(10, "10.1", 2, "Where should the tenant come from for an API call with a JWT?", ["The URL", "A 'tenant' claim inside the token", "A random header", "The IP address"], 1, "Signed, so the client can't change it.")
+tf(10, "10.1", 2, "ExecuteDelete is filtered by the global tenant query filter.", True, "Tested in 10.1: acme deleting globex's id removed 0 rows.")
+mc(10, "10.1", 3, "Why does SaveChanges overwrite TenantId on new rows instead of trusting it?", ["Speed", "Code or clients could set the wrong tenant; the server decides", "EF requires it", "To save space"], 1, "Writes are stamped with the current tenant.")
+out(10, "10.1", 2, "// Acme is the current tenant; projects 1,2 are Acme's, 3 is Globex's\nvar ids = await db.Projects.Select(p => p.Id).ToListAsync();\nConsole.WriteLine(string.Join(\",\", ids));", ["1,2,3", "1,2", "3", "nothing"], 1, "The global filter adds WHERE TenantId = 'acme'.")
+blank(10, "10.1", 2, "Register the per-request tenant holder.", "builder.Services.____<TenantContext>();", ["AddScoped"], "One per request.")
+mc(10, "10.1", 2, "A schema per tenant (acme.Projects, globex.Projects) is...", ["The same as a shared table", "In between: stronger separation than a TenantId column, cheaper than a database each", "Impossible in EF", "Always the best"], 1, "Migrations run once per schema.")

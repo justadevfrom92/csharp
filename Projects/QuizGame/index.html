@@ -1,0 +1,523 @@
+<title>Roadmap Test Runner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a test-runner console. Home = a list of "test projects" (one per section); a run = one question at a time,
+   each answer reported as Passed / Failed like `dotnet test`. */
+:root {
+  --bg: #f5f4fa;
+  --surface: #ffffff;
+  --ink: #1c1930;
+  --muted: #5e5a74;
+  --line: #dddaea;
+  --accent: #5a3fd0;
+  --accent-ink: #ffffff;
+  --accent-soft: #ece8fd;
+  --pass: #1d8049;
+  --pass-soft: #e3f4ea;
+  --fail: #bd3129;
+  --fail-soft: #fbe7e5;
+  --code-bg: #f0eef8;
+  --code-ink: #2a2545;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #110f18; --surface: #1a1724; --ink: #ece9f7; --muted: #a49fbb; --line: #2f2a40;
+    --accent: #a58fff; --accent-ink: #15111f; --accent-soft: #2a2343;
+    --pass: #4fc583; --pass-soft: #16301f; --fail: #ff7167; --fail-soft: #3a1a18;
+    --code-bg: #211d2e; --code-ink: #e4dffa; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #110f18; --surface: #1a1724; --ink: #ece9f7; --muted: #a49fbb; --line: #2f2a40;
+  --accent: #a58fff; --accent-ink: #15111f; --accent-soft: #2a2343;
+  --pass: #4fc583; --pass-soft: #16301f; --fail: #ff7167; --fail-soft: #3a1a18;
+  --code-bg: #211d2e; --code-ink: #e4dffa; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+code, pre, .mono { font-family: var(--font-mono); }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.top h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
+.top .cmd { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); }
+.top .cmd b { color: var(--accent); font-weight: 600; }
+
+/* home: run options + test projects */
+.options { display: flex; gap: 16px; flex-wrap: wrap; align-items: end; }
+.field { display: grid; gap: 4px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; color: var(--ink); padding: 6px 12px; font-size: 0.9rem; text-transform: none; letter-spacing: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.suites { display: grid; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.suite {
+  display: grid; grid-template-columns: 3.2rem 1fr auto auto; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left;
+}
+.suite:first-child { border-top: 0; }
+.suite:hover { background: var(--accent-soft); }
+.suite .num { font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+.suite .name { min-width: 0; }
+.suite .name strong { display: block; font-weight: 600; }
+.suite .name span { font-size: 0.82rem; color: var(--muted); }
+.suite .count { font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.badge { font-family: var(--font-mono); font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.badge.none { color: var(--muted); border: 1px dashed var(--line); }
+.badge.pass { background: var(--pass-soft); color: var(--pass); }
+.badge.fail { background: var(--fail-soft); color: var(--fail); }
+.suite.all .num { color: var(--ink); }
+.note { color: var(--muted); font-size: 0.85rem; margin: 0; }
+
+/* run */
+.status { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); }
+.status .stats { display: flex; gap: 16px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.status b { color: var(--ink); font-weight: 600; }
+.lives { letter-spacing: 3px; color: var(--fail); }
+.lives .lost { color: var(--line); }
+.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); transition: width 0.25s; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.chip.plain { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.question { font-size: 1.12rem; font-weight: 500; line-height: 1.45; }
+pre.code { margin: 0; padding: 14px 16px; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55; }
+pre.code .gap { background: var(--accent); color: var(--accent-ink); border-radius: 3px; padding: 0 4px; }
+.choices { display: grid; gap: 8px; }
+.choice {
+  display: grid; grid-template-columns: 1.8rem 1fr; gap: 10px; align-items: start; text-align: left;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink);
+}
+.choice:hover:not(:disabled) { border-color: var(--accent); }
+.choice .key { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; text-align: center; line-height: 1.5; }
+.choice .text { min-width: 0; overflow-wrap: anywhere; }
+.choice.mono-text .text { font-family: var(--font-mono); font-size: 0.9rem; }
+.choice.right { border-color: var(--pass); background: var(--pass-soft); }
+.choice.wrong { border-color: var(--fail); background: var(--fail-soft); }
+.choice:disabled { cursor: default; }
+.blank-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.blank-row input {
+  flex: 1 1 14rem; min-width: 0; padding: 10px 12px; font-family: var(--font-mono); font-size: 0.95rem;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink);
+}
+.btn { padding: 10px 18px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.verdict { display: grid; gap: 6px; padding: 12px 14px; border-radius: 8px; font-size: 0.95rem; }
+.verdict.pass { background: var(--pass-soft); }
+.verdict.fail { background: var(--fail-soft); }
+.verdict .line { font-family: var(--font-mono); font-weight: 600; }
+.verdict.pass .line { color: var(--pass); }
+.verdict.fail .line { color: var(--fail); }
+.verdict code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.hint { font-size: 0.8rem; color: var(--muted); }
+
+/* results */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 10px; }
+.summary div { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--surface); }
+.summary b { display: block; font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.summary span { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.result-line { font-family: var(--font-mono); font-size: 1rem; font-weight: 600; }
+.result-line.pass { color: var(--pass); }
+.result-line.fail { color: var(--fail); }
+.review { display: grid; gap: 10px; }
+.review .item { border: 1px solid var(--line); border-left: 3px solid var(--fail); border-radius: 8px; padding: 12px 14px; background: var(--surface); display: grid; gap: 6px; min-width: 0; }
+.review .item .q { font-weight: 500; }
+.review .item .a { font-size: 0.9rem; }
+.review .item .why { font-size: 0.88rem; color: var(--muted); }
+.error { padding: 16px; border: 1px solid var(--fail); border-radius: 10px; background: var(--fail-soft); }
+
+@media (max-width: 560px) {
+  .suite { grid-template-columns: 2.6rem 1fr auto; }
+  .suite .count { display: none; }
+  .card { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Roadmap Test Runner</h1>
+    <div class="cmd mono" id="cmd">dotnet test <b>CSharpMasteryRoadmap.slnx</b></div>
+  </header>
+  <main id="app"><p class="note">Loading questions...</p></main>
+</div>
+
+<script>
+const SECTIONS = {
+  1: ["Core Fundamentals", "types, money, pattern matching, tuples, records, extensions"],
+  2: ["Collections & LINQ", "lists, dictionaries, LINQ, iterators and yield"],
+  3: ["ASP.NET Core MVC", "controllers, views, binding, view components, uploads"],
+  4: ["OOP, DDD & Testing", "NuGet packages, aggregates, value objects, xUnit, Playwright"],
+  5: ["Concurrency, Async & Memory", "threads, async/await, channels, benchmarks, async streams"],
+  6: ["Database, State & Error Handling", "EF Core, transactions, options, caching, sessions, errors, modelling"],
+  7: ["Security, Background Tasks & Deployment", "auth, XSS/CSRF, background services, caching, CI, migrations, WebSockets, Redis"],
+  8: ["Beyond the Roadmap", "minimal APIs, JWT, resilience, rate limiting, AOT, Razor Pages, Blazor, SignalR, gRPC"],
+  9: ["Design Patterns & Architecture", "operators, lambdas, config, builders, behavioural and pipeline patterns, DI, reflection"],
+  10: ["SaaS", "multi-tenancy, tenant filters, isolation"],
+};
+const TYPE_LABELS = { mc: "Multiple choice", tf: "True or false", out: "What does it print?", blank: "Fill in the blank" };
+const LEVELS = { 1: "Easy", 2: "Medium", 3: "Hard" };
+const PASS_MARK = 0.7;
+const REPO = "https://github.com/justadevfrom92/csharp/tree/main/Projects";
+
+let questions = [];
+let settings = { length: 20, level: 0 };
+let run = null;
+const app = document.getElementById("app");
+const cmd = document.getElementById("cmd");
+
+function load(key, fallback)
+{
+  try
+  {
+    const text = localStorage.getItem(key);
+    return text ? JSON.parse(text) : fallback;
+  }
+  catch
+  {
+    return fallback;
+  }
+}
+
+function save(key, value)
+{
+  try
+  {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+  catch
+  {
+  }
+}
+
+function escapeHtml(text)
+{
+  return String(text).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+function shuffle(list)
+{
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--)
+  {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function codeHtml(code)
+{
+  return escapeHtml(code).replace(/____/g, '<span class="gap">____</span>');
+}
+
+function normalise(text)
+{
+  return text.trim().replace(/\s+/g, " ").replace(/\s*,\s*/g, ", ").replace(/;$/, "");
+}
+
+function pool(section)
+{
+  return questions.filter(q => (section === "all" || q.s === section) && (settings.level === 0 || q.lvl === settings.level));
+}
+
+// ---------- home ----------
+function showHome()
+{
+  run = null;
+  cmd.innerHTML = 'dotnet test <b>CSharpMasteryRoadmap.slnx</b>';
+  const best = load("bestScores", {});
+  const seg = (name, values, current) => `<div class="seg" role="group" aria-label="${name}">${values.map(([value, label]) =>
+    `<button type="button" data-${name}="${value}" aria-pressed="${value === current}">${label}</button>`).join("")}</div>`;
+  const rows = Object.keys(SECTIONS).map(Number).map(section =>
+  {
+    const [name, topics] = SECTIONS[section];
+    const total = pool(section).length;
+    const score = best[section];
+    const badge = score === undefined ? '<span class="badge none">not run</span>'
+      : `<span class="badge ${score >= PASS_MARK * 100 ? "pass" : "fail"}">best ${score}%</span>`;
+    return `<button type="button" class="suite" data-section="${section}">
+      <span class="num">S${section}</span>
+      <span class="name"><strong>${name}</strong><span>${topics}</span></span>
+      <span class="count">${total} q</span>${badge}</button>`;
+  }).join("");
+  app.innerHTML = `<div class="wrap">
+    <div class="options">
+      <label class="field">Questions per run ${seg("length", [[10, "10"], [20, "20"], [0, "All"]], settings.length)}</label>
+      <label class="field">Level ${seg("level", [[0, "All"], [1, "Easy"], [2, "Medium"], [3, "Hard"]], settings.level)}</label>
+    </div>
+    <div class="suites">${rows}
+      <button type="button" class="suite all" data-section="all">
+        <span class="num">ALL</span>
+        <span class="name"><strong>Every section, mixed</strong><span>questions from the whole roadmap</span></span>
+        <span class="count">${pool("all").length} q</span><span class="badge none">random</span></button>
+    </div>
+    <p class="note">${questions.length} questions: multiple choice, true or false, "what does it print?" and fill in the blank.
+      3 lives per run; ${PASS_MARK * 100}% or more passes the section. Keys: 1–4 to answer, Enter to submit and go on.</p>
+  </div>`;
+  app.querySelectorAll("[data-length]").forEach(b => b.onclick = () => { settings.length = Number(b.dataset.length); save("settings", settings); showHome(); });
+  app.querySelectorAll("[data-level]").forEach(b => b.onclick = () => { settings.level = Number(b.dataset.level); save("settings", settings); showHome(); });
+  app.querySelectorAll("[data-section]").forEach(b => b.onclick = () => startRun(b.dataset.section === "all" ? "all" : Number(b.dataset.section)));
+}
+
+// ---------- run ----------
+function startRun(section, onlyIds)
+{
+  let list = shuffle(onlyIds ? questions.filter(q => onlyIds.includes(q.id)) : pool(section));
+  if (!onlyIds && settings.length > 0)
+  {
+    list = list.slice(0, settings.length);
+  }
+  if (list.length === 0)
+  {
+    app.innerHTML = `<div class="error">No questions match this level in this section. <button class="btn ghost" id="back">Back</button></div>`;
+    document.getElementById("back").onclick = showHome;
+    return;
+  }
+  run = { section, list, index: 0, correct: 0, streak: 0, bestStreak: 0, lives: 3, wrong: [], answered: false, retry: Boolean(onlyIds) };
+  showQuestion();
+}
+
+function choiceOrder(q)
+{
+  if (q.t === "tf")
+  {
+    return [0, 1]; // keep True / False in place
+  }
+  return shuffle(q.choices.map((_, i) => i));
+}
+
+function showQuestion()
+{
+  const q = run.list[run.index];
+  run.answered = false;
+  run.order = q.t === "blank" ? null : choiceOrder(q);
+  const label = run.section === "all" ? "all sections" : `section ${run.section}`;
+  cmd.innerHTML = `dotnet test --filter <b>${label}</b>`;
+  const lives = "●".repeat(run.lives) + `<span class="lost">${"●".repeat(3 - run.lives)}</span>`;
+  const isMonoChoice = q.t === "out";
+  const choices = q.t === "blank"
+    ? `<div class="blank-row"><input id="answer" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type the missing code" aria-label="Your answer"><button class="btn" id="submit">Check</button></div>`
+    : `<div class="choices">${run.order.map((original, shown) =>
+        `<button class="choice ${isMonoChoice ? "mono-text" : ""}" data-choice="${original}"><span class="key">${shown + 1}</span><span class="text">${escapeHtml(q.choices[original])}</span></button>`).join("")}</div>`;
+  app.innerHTML = `<div class="wrap">
+    <div class="status">
+      <span>${run.index + 1} / ${run.list.length}</span>
+      <span class="stats"><span>passed <b>${run.correct}</b></span><span>streak <b>${run.streak}</b></span><span class="lives" aria-label="${run.lives} lives left">${lives}</span></span>
+    </div>
+    <div class="bar"><i style="width:${(run.index / run.list.length) * 100}%"></i></div>
+    <section class="card" aria-live="polite">
+      <div class="chips"><span class="chip">${TYPE_LABELS[q.t]}</span><span class="chip plain">${LEVELS[q.lvl]}</span><span class="chip plain">Project ${q.p}</span></div>
+      <div class="question">${escapeHtml(q.q)}</div>
+      ${q.code ? `<pre class="code">${codeHtml(q.code)}</pre>` : ""}
+      ${choices}
+      <div id="verdict"></div>
+      <div class="actions"><button class="btn ghost" id="quit">Stop run</button><span class="hint">${q.t === "blank" ? "Enter checks your answer" : "Press 1–" + q.choices.length}</span></div>
+    </section>
+  </div>`;
+  document.getElementById("quit").onclick = finishRun;
+  if (q.t === "blank")
+  {
+    const input = document.getElementById("answer");
+    input.focus();
+    document.getElementById("submit").onclick = () => answerBlank(input.value);
+  }
+  else
+  {
+    app.querySelectorAll("[data-choice]").forEach(b => b.onclick = () => answerChoice(Number(b.dataset.choice)));
+  }
+}
+
+function answerChoice(picked)
+{
+  if (run.answered)
+  {
+    return;
+  }
+  const q = run.list[run.index];
+  app.querySelectorAll("[data-choice]").forEach(b =>
+  {
+    b.disabled = true;
+    const value = Number(b.dataset.choice);
+    if (value === q.a)
+    {
+      b.classList.add("right");
+    }
+    else if (value === picked)
+    {
+      b.classList.add("wrong");
+    }
+  });
+  record(picked === q.a, escapeHtml(q.choices[q.a]), "");
+}
+
+function answerBlank(text)
+{
+  if (run.answered || text.trim() === "")
+  {
+    return;
+  }
+  const q = run.list[run.index];
+  const given = normalise(text);
+  const exact = q.a.some(answer => normalise(answer) === given);
+  const caseOnly = !exact && q.a.some(answer => normalise(answer).toLowerCase() === given.toLowerCase());
+  document.getElementById("answer").disabled = true;
+  document.getElementById("submit").disabled = true;
+  const note = caseOnly ? " C# is case-sensitive: watch the capital letters. Counted as wrong." : "";
+  record(exact, `<code>${escapeHtml(q.a[0])}</code>`, note);
+}
+
+function record(passed, rightAnswer, note)
+{
+  const q = run.list[run.index];
+  run.answered = true;
+  if (passed)
+  {
+    run.correct++;
+    run.streak++;
+    run.bestStreak = Math.max(run.bestStreak, run.streak);
+  }
+  else
+  {
+    run.streak = 0;
+    run.lives--;
+    run.wrong.push(q.id);
+  }
+  const last = run.lives === 0 || run.index === run.list.length - 1;
+  document.getElementById("verdict").innerHTML = `<div class="verdict ${passed ? "pass" : "fail"}">
+    <span class="line">${passed ? "✓ Passed" : "✗ Failed"}${passed ? "" : ` — expected: ${rightAnswer}`}</span>
+    <span>${escapeHtml(q.why)}${note}</span></div>`;
+  const actions = app.querySelector(".actions");
+  actions.innerHTML = `<button class="btn" id="next">${last ? (run.lives === 0 ? "Out of lives: see results" : "See results") : "Next question"}</button><span class="hint">Enter</span>`;
+  const next = document.getElementById("next");
+  next.onclick = goNext;
+  next.focus();
+}
+
+function goNext()
+{
+  if (run.lives === 0 || run.index === run.list.length - 1)
+  {
+    finishRun();
+    return;
+  }
+  run.index++;
+  showQuestion();
+}
+
+// ---------- results ----------
+function finishRun()
+{
+  const answered = run.index + (run.answered ? 1 : 0);
+  const percent = answered === 0 ? 0 : Math.round((run.correct / run.list.length) * 100);
+  const passed = run.correct / run.list.length >= PASS_MARK && run.lives > 0 && answered === run.list.length;
+  if (run.section !== "all" && !run.retry && answered > 0)
+  {
+    const best = load("bestScores", {});
+    best[run.section] = Math.max(best[run.section] ?? 0, percent);
+    save("bestScores", best);
+  }
+  const wrongQuestions = run.wrong.map(id => questions.find(q => q.id === id));
+  const review = wrongQuestions.map(q => `<div class="item">
+      <span class="chips"><span class="chip">${TYPE_LABELS[q.t]}</span><span class="chip plain">Project ${q.p}</span></span>
+      <span class="q">${escapeHtml(q.q)}</span>
+      ${q.code ? `<pre class="code">${codeHtml(q.code)}</pre>` : ""}
+      <span class="a">Answer: <code>${escapeHtml(q.t === "blank" ? q.a[0] : q.choices[q.a])}</code></span>
+      <span class="why">${escapeHtml(q.why)} <a href="${REPO}" target="_blank" rel="noopener">Projects on GitHub</a></span>
+    </div>`).join("");
+  const label = run.section === "all" ? "All sections" : `Section ${run.section}: ${SECTIONS[run.section][0]}`;
+  const failedCount = run.wrong.length;
+  app.innerHTML = `<div class="wrap">
+    <h2>${label}</h2>
+    <div class="result-line ${passed ? "pass" : "fail"}">${passed ? "Passed!" : "Failed!"}  - Failed: ${failedCount}, Passed: ${run.correct}, Skipped: ${run.list.length - answered}, Total: ${run.list.length}</div>
+    <div class="summary">
+      <div><b>${percent}%</b><span>score</span></div>
+      <div><b>${run.correct}/${run.list.length}</b><span>correct</span></div>
+      <div><b>${run.bestStreak}</b><span>best streak</span></div>
+      <div><b>${run.lives}</b><span>lives left</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="again">Run again</button>
+      ${failedCount ? '<button class="btn ghost" id="retry">Retry the ' + failedCount + ' failed</button>' : ""}
+      <button class="btn ghost" id="home">All sections</button>
+    </div>
+    ${failedCount ? `<h3>Failed questions</h3><div class="review">${review}</div>` : '<p class="note">No failed questions in this run.</p>'}
+  </div>`;
+  const section = run.section;
+  const wrongIds = [...run.wrong];
+  document.getElementById("again").onclick = () => startRun(section);
+  document.getElementById("home").onclick = showHome;
+  if (failedCount)
+  {
+    document.getElementById("retry").onclick = () => startRun(section, wrongIds);
+  }
+  cmd.innerHTML = `dotnet test --filter <b>${run.section === "all" ? "all sections" : "section " + run.section}</b> — done`;
+  run = { ...run, finished: true };
+}
+
+// ---------- keyboard ----------
+document.addEventListener("keydown", event =>
+{
+  if (!run || run.finished)
+  {
+    return;
+  }
+  const q = run.list[run.index];
+  if (event.key === "Enter")
+  {
+    if (run.answered)
+    {
+      event.preventDefault();
+      goNext();
+    }
+    else if (q.t === "blank")
+    {
+      event.preventDefault();
+      answerBlank(document.getElementById("answer").value);
+    }
+    return;
+  }
+  if (!run.answered && q.t !== "blank" && /^[1-4]$/.test(event.key))
+  {
+    const button = app.querySelectorAll("[data-choice]")[Number(event.key) - 1];
+    if (button)
+    {
+      button.click();
+    }
+  }
+});
+
+// ---------- start ----------
+settings = { ...settings, ...load("settings", {}) };
+fetch("questions.json")
+  .then(response =>
+  {
+    if (!response.ok)
+    {
+      throw new Error(response.status);
+    }
+    return response.json();
+  })
+  .then(data =>
+  {
+    questions = data;
+    showHome();
+  })
+  .catch(() =>
+  {
+    app.innerHTML = '<div class="error">The question file (questions.json) could not be loaded. Reload the page to try again.</div>';
+  });
+</script>

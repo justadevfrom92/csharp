@@ -1,5 +1,7 @@
 # C# & .NET Roadmap Projects
 
+**Test yourself:** the [Roadmap Test Runner](https://claude.ai/artifact/CBbFEtL3HsKVKTPehWnamV) quiz has 327 questions by section ([how](QuizGame)).
+
 **Run them in your browser:** [the Playground](https://justadevfrom92.github.io/csharp/) runs the console projects live ([how](Playground)).
 
 Every project has its own `README.md` with how to run it and **why** it was built that way.
