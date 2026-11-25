@@ -31,7 +31,7 @@ real console projects compiled to WebAssembly: pick one, press Run, see what `do
 
 | # | Section | Projects | Covers |
 |---|---|---|---|
-| 1 | Core Fundamentals | 1.1–1.4 | types, `decimal` money math, dates, null handling, parsing, overflow, switch expressions and pattern matching, tuples and deconstruction, records with `with`, sealed hierarchies, C# 14 extension blocks |
+| 1 | Core Fundamentals | 1.1–1.4 | types, `decimal` money math, dates, null handling, parsing, overflow, switch expressions and pattern matching, tuples and deconstruction, records with `with`, sealed hierarchies, .NET 10 extension blocks |
 | 2 | Collections & LINQ | 2.1–2.2 | `List`/`Dictionary`/`HashSet`, LINQ, deferred execution, iterators with `yield`, your own `IEnumerable`/`IEnumerator` |
 | 3 | ASP.NET Core MVC | 3.1–3.3 | controllers, views, routing, model binding, validation, view components, custom model binders, safe file uploads |
 | 4 | OOP, DDD & Testing | 4.1–4.3 | building a NuGet package, domain-driven design (value objects, aggregates, events), xUnit, Playwright browser tests |
@@ -180,7 +180,7 @@ Section 1 Core Fundamentals: 1.1 loan & date calculator (decimal money, dates, n
   returns, nullable tuples, switch on a tuple, swap, discards, Deconstruct on a class, dictionary/LINQ tuples;
   variations: out, Tuple<>, unnamed tuple, record, anonymous type; gotchas: JSON gives {} or Item1, == ignores names); 1.4 records, sealed hierarchies & extensions (p1 with { Name = ... },
   shallow copy of lists, records with lists not equal, abstract record + sealed kinds, switch needs _ (CS8509; future
-  "closed" doesn't compile yet), C# 14 extension(...) blocks with methods/properties/static members vs classic this-methods,
+  "closed" doesn't compile yet), .NET 10 extension(...) blocks with methods/properties/static members vs classic this-methods,
   init checks with the field keyword and where with/constructors skip them).
 Section 2 Collections & LINQ: 2.1 warehouse inventory (collections, LINQ, deferred execution);
   2.2 iterators (yield return/break, lazy file reader, endless sequence, own IEnumerable/IEnumerator).

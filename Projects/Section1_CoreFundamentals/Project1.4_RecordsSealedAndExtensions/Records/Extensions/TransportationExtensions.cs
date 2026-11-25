@@ -2,7 +2,7 @@ using Records.Models;
 
 namespace Records.Extensions;
 
-// C# 14 EXTENSION BLOCK: "extension(TransportationModel transport) { ... }" adds members to a type you can't
+// .NET 10 EXTENSION BLOCK: "extension(TransportationModel transport) { ... }" adds members to a type you can't
 // (or don't want to) change. Inside, "transport" is the object the member is called on: plane.ToLabel().
 // Unlike the old "this" parameter style (Variations/ClassicExtensionsVariation), it can add PROPERTIES and STATIC members.
 public static class TransportationExtensions
@@ -26,7 +26,7 @@ public static class TransportationExtensions
             };
         }
 
-        // An extension PROPERTY (new in C# 14).
+        // An extension PROPERTY (new in .NET 10).
         public TimeOnly ArrivesAt
         {
             get

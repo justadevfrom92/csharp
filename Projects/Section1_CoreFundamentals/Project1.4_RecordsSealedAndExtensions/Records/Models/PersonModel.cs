@@ -1,7 +1,7 @@
 namespace Records.Models;
 
 // For the "with" examples: p2 = p1 with { Name = "..." } makes a COPY with some properties changed.
-// Name is checked in its "init" accessor (C# 14 "field" = the hidden backing field). The constructor assigns
+// Name is checked in its "init" accessor (.NET 10 "field" = the hidden backing field). The constructor assigns
 // THROUGH the property, so the check runs on "new" AND on "with".
 // Found by the tests: writing it as a positional record with "{ init => check } = Name" skipped the check in the
 // constructor (the "= Name" initializer writes the field directly) - see Variations/UncheckedPersonVariation.

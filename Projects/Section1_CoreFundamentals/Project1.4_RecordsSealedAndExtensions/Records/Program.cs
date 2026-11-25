@@ -17,7 +17,7 @@ var copy = buyer with { Name = "Kim" };
 copy.Orders.Add("Coffee");
 Console.WriteLine($"3. buyer's orders after adding to the COPY: {string.Join(", ", buyer.Orders)}");
 
-// 4. The sealed family + C# 14 extension members.
+// 4. The sealed family + .NET 10 extension members.
 List<TransportationModel> trip =
 [
     new PlaneModel("SK1415", new TimeOnly(9, 30)),

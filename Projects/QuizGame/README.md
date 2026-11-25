@@ -15,8 +15,7 @@ How it plays: pick a section (or all, mixed), 10 / 20 / all questions, Easy / Me
 last question (no lives); 70% or more passes. **Every question shows code.**
 Each answer reports **Passed** / **Failed** with the explanation; the end screen lists failed questions and can retry just those.
 Best score per section is kept in your browser. Keys: 1–4 to answer, Enter to check and continue.
-Fill-in-the-blank answers are case-sensitive, like C#. Questions about the newest features say ".NET 10" (they ship with
-.NET 10 as C# 14, the C# version .NET 10 uses).
+Fill-in-the-blank answers are case-sensitive, like C#. The newest features (extension blocks, the `field` keyword) are labelled ".NET 10".
 
 ## Files
 

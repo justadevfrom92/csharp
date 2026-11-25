@@ -2,7 +2,7 @@ using Records.Models;
 
 namespace Records.Variations;
 
-// The SAME ToLabel and DelayArrival, written the pre-C# 14 way: a static method with "this" on the first parameter.
+// The SAME ToLabel and DelayArrival, written the pre-.NET 10 way: a static method with "this" on the first parameter.
 // Called exactly the same way (plane.ToLabelClassic()). It can't add properties or static members.
 // (Named "...Classic" because two extension methods with the same name and target would be ambiguous.)
 public static class ClassicExtensionsVariation

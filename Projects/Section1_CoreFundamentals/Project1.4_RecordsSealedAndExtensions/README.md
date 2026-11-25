@@ -5,7 +5,7 @@ Three things that go together in modern C#:
 - **`with`**: `var p2 = p1 with { Name = "Filip Ekberg" };` copies a record and changes only what you say.
 - **A sealed family of records**: an `abstract record TransportationModel` with `sealed` kinds (`PlaneModel`, `ShipModel`,
   `BusModel`, `TrainModel`, `CarModel`), handled with `switch` patterns.
-- **C# 14 extension blocks**: `extension(TransportationModel transport) { ... }` adds methods, **properties** and
+- **.NET 10 extension blocks**: `extension(TransportationModel transport) { ... }` adds methods, **properties** and
   **static** members to a type without changing it.
 
 ```bash
@@ -36,7 +36,7 @@ Output:
 | What | File |
 |---|---|
 | `abstract record TransportationModel` + five `sealed record` kinds | `Records/Models/` |
-| `PersonModel` with a checked `init` (C# 14 `field`) and an `Orders` list | `Records/Models/PersonModel.cs` |
+| `PersonModel` with a checked `init` (.NET 10 `field`) and an `Orders` list | `Records/Models/PersonModel.cs` |
 | extension block: `ToLabel()`, `ArrivesAt` (property), `DelayArrival()`, `PostponeFlight()`, static `ByCar()` | `Records/Extensions/TransportationExtensions.cs` |
 | `with` examples | `Records/Program.cs`, `Records.Tests/WithExpressionTest.cs` |
 
@@ -95,7 +95,7 @@ public sealed record PlaneModel(string FlightNumber, TimeOnly ArrivalTime) : Tra
 public sealed record CarModel(TimeOnly ExpectedArrivalTime) : TransportationModel;
 ```
 
-**An extension block (C# 14)**
+**An extension block (.NET 10)**
 
 ```csharp
 public static class TransportationExtensions
@@ -156,7 +156,7 @@ In `Records/Variations/`, checked by `Records.Tests/VariationsTest.cs`.
 
 | Way | Call | Can add |
 |---|---|---|
-| `extension(TransportationModel transport) { ... }` (original, C# 14) | `plane.ToLabel()` | methods, **properties**, **static** members |
+| `extension(TransportationModel transport) { ... }` (original, .NET 10) | `plane.ToLabel()` | methods, **properties**, **static** members |
 | `static string ToLabelClassic(this TransportationModel t)` (`ClassicExtensionsVariation`) | `plane.ToLabelClassic()` | methods only |
 | plain static helper `Label(TransportationModel t)` | `ClassicExtensionsVariation.Label(plane)` | — (no dot-syntax) |
 

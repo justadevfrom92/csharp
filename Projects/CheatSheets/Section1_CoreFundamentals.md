@@ -235,7 +235,7 @@ public sealed record PlaneModel(string FlightNumber, TimeOnly ArrivalTime) : Tra
 
 public static class TransportationExtensions
 {
-    extension(TransportationModel transport)       // C# 14: methods AND properties
+    extension(TransportationModel transport)       // .NET 10: methods AND properties
     {
         public string ToLabel()
         {
