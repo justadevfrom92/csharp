@@ -84,8 +84,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .status { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); }
 .status .stats { display: flex; gap: 16px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
 .status b { color: var(--ink); font-weight: 600; }
-.lives { letter-spacing: 3px; color: var(--fail); }
-.lives .lost { color: var(--line); }
 .bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); transition: width 0.25s; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
@@ -266,7 +264,7 @@ function showHome()
         <span class="count">${pool("all").length} q</span><span class="badge none">random</span></button>
     </div>
     <p class="note">${questions.length} questions: multiple choice, true or false, "what does it print?" and fill in the blank.
-      3 lives per run; ${PASS_MARK * 100}% or more passes the section. Keys: 1–4 to answer, Enter to submit and go on.</p>
+      Every run goes to the last question; ${PASS_MARK * 100}% or more passes the section. Keys: 1–4 to answer, Enter to submit and go on.</p>
   </div>`;
   app.querySelectorAll("[data-length]").forEach(b => b.onclick = () => { settings.length = Number(b.dataset.length); save("settings", settings); showHome(); });
   app.querySelectorAll("[data-level]").forEach(b => b.onclick = () => { settings.level = Number(b.dataset.level); save("settings", settings); showHome(); });
@@ -287,7 +285,7 @@ function startRun(section, onlyIds)
     document.getElementById("back").onclick = showHome;
     return;
   }
-  run = { section, list, index: 0, correct: 0, streak: 0, bestStreak: 0, lives: 3, wrong: [], answered: false, retry: Boolean(onlyIds) };
+  run = { section, list, index: 0, correct: 0, streak: 0, bestStreak: 0, wrong: [], answered: false, retry: Boolean(onlyIds) };
   showQuestion();
 }
 
@@ -307,7 +305,6 @@ function showQuestion()
   run.order = q.t === "blank" ? null : choiceOrder(q);
   const label = run.section === "all" ? "all sections" : `section ${run.section}`;
   cmd.innerHTML = `dotnet test --filter <b>${label}</b>`;
-  const lives = "●".repeat(run.lives) + `<span class="lost">${"●".repeat(3 - run.lives)}</span>`;
   const isMonoChoice = q.t === "out";
   const choices = q.t === "blank"
     ? `<div class="blank-row"><input id="answer" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type the missing code" aria-label="Your answer"><button class="btn" id="submit">Check</button></div>`
@@ -316,7 +313,7 @@ function showQuestion()
   app.innerHTML = `<div class="wrap">
     <div class="status">
       <span>${run.index + 1} / ${run.list.length}</span>
-      <span class="stats"><span>passed <b>${run.correct}</b></span><span>streak <b>${run.streak}</b></span><span class="lives" aria-label="${run.lives} lives left">${lives}</span></span>
+      <span class="stats"><span>passed <b>${run.correct}</b></span><span>failed <b>${run.wrong.length}</b></span><span>streak <b>${run.streak}</b></span></span>
     </div>
     <div class="bar"><i style="width:${(run.index / run.list.length) * 100}%"></i></div>
     <section class="card" aria-live="polite">
@@ -393,15 +390,14 @@ function record(passed, rightAnswer, note)
   else
   {
     run.streak = 0;
-    run.lives--;
     run.wrong.push(q.id);
   }
-  const last = run.lives === 0 || run.index === run.list.length - 1;
+  const last = run.index === run.list.length - 1;
   document.getElementById("verdict").innerHTML = `<div class="verdict ${passed ? "pass" : "fail"}">
     <span class="line">${passed ? "✓ Passed" : "✗ Failed"}${passed ? "" : ` — expected: ${rightAnswer}`}</span>
     <span>${escapeHtml(q.why)}${note}</span></div>`;
   const actions = app.querySelector(".actions");
-  actions.innerHTML = `<button class="btn" id="next">${last ? (run.lives === 0 ? "Out of lives: see results" : "See results") : "Next question"}</button><span class="hint">Enter</span>`;
+  actions.innerHTML = `<button class="btn" id="next">${last ? "See results" : "Next question"}</button><span class="hint">Enter</span>`;
   const next = document.getElementById("next");
   next.onclick = goNext;
   next.focus();
@@ -409,7 +405,7 @@ function record(passed, rightAnswer, note)
 
 function goNext()
 {
-  if (run.lives === 0 || run.index === run.list.length - 1)
+  if (run.index === run.list.length - 1)
   {
     finishRun();
     return;
@@ -423,7 +419,7 @@ function finishRun()
 {
   const answered = run.index + (run.answered ? 1 : 0);
   const percent = answered === 0 ? 0 : Math.round((run.correct / run.list.length) * 100);
-  const passed = run.correct / run.list.length >= PASS_MARK && run.lives > 0 && answered === run.list.length;
+  const passed = run.correct / run.list.length >= PASS_MARK && answered === run.list.length;
   if (run.section !== "all" && !run.retry && answered > 0)
   {
     const best = load("bestScores", {});
@@ -447,7 +443,7 @@ function finishRun()
       <div><b>${percent}%</b><span>score</span></div>
       <div><b>${run.correct}/${run.list.length}</b><span>correct</span></div>
       <div><b>${run.bestStreak}</b><span>best streak</span></div>
-      <div><b>${run.lives}</b><span>lives left</span></div>
+      <div><b>${failedCount}</b><span>failed</span></div>
     </div>
     <div class="actions">
       <button class="btn" id="again">Run again</button>

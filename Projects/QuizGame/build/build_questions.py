@@ -20,6 +20,19 @@ for q in Q:
     counter[q["s"]] += 1
     q["id"] = f"s{q['s']}-{counter[q['s']]:03d}"
     if q.get("code") is None: q.pop("code", None)
+# Every question shows code: the snippets for questions without their own code live in code_*.py.
+from code_5_10 import CODE
+unused = set(CODE) - {q["id"] for q in Q}
+if unused:
+    print("snippets for unknown ids:", sorted(unused)); sys.exit(1)
+for q in Q:
+    if not q.get("code"):
+        if q["id"] not in CODE:
+            problems.append(q["id"] + ": no code")
+        else:
+            q["code"] = CODE[q["id"]]
+if problems:
+    print("\n".join(problems)); sys.exit(1)
 out = os.path.join(os.path.dirname(__file__), "..", "questions.json")
 with open(out, "w") as f:
     f.write("[\n" + ",\n".join(json.dumps(q, ensure_ascii=False) for q in Q) + "\n]\n")
