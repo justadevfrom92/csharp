@@ -12,7 +12,7 @@ An interactive quiz, by section, over everything this repo teaches: **327 questi
 | True or false | 31 | "`ExecuteSql("UPDATE ...")` is filtered by the tenant query filter" → false |
 
 How it plays: pick a section (or all, mixed), 10 / 20 / all questions, Easy / Medium / Hard. Every run goes to the
-last question (no lives); 70% or more passes. **Every question shows code.**
+last question (no lives); 70% or more of the questions you **answered** passes - skipped questions don't count. **Every question shows code.**
 Each answer reports **Passed** / **Failed** with the explanation. Every run ends with an **answer sheet**: each question
 in order, marked Passed / Failed / Skipped, with its code, your answer, the correct answer and why. You can retry just the failed ones.
 **Skip** any question (button or S). At the end of the run it asks: answer the skipped ones, or finish (they show as

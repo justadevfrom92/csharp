@@ -272,7 +272,7 @@ function showHome()
         <span class="count">${pool("all").length} q</span><span class="badge none">random</span></button>
     </div>
     <p class="note">${questions.length} questions: multiple choice, true or false, "what does it print?" and fill in the blank.
-      Every run goes to the last question; ${PASS_MARK * 100}% or more passes the section. Keys: 1–4 to answer, Enter to submit and go on.</p>
+      Every run goes to the last question; ${PASS_MARK * 100}% or more of the questions you answer passes the section (skipped ones don't count). Keys: 1–4 to answer, Enter to submit and go on.</p>
   </div>`;
   app.querySelectorAll("[data-length]").forEach(b => b.onclick = () => { settings.length = Number(b.dataset.length); save("settings", settings); showHome(); });
   app.querySelectorAll("[data-level]").forEach(b => b.onclick = () => { settings.level = Number(b.dataset.level); save("settings", settings); showHome(); });
@@ -487,8 +487,9 @@ function finishRun()
 {
   run.prompt = false;
   const answered = Object.keys(run.answers).length;
-  const percent = answered === 0 ? 0 : Math.round((run.correct / run.list.length) * 100);
-  const passed = run.correct / run.list.length >= PASS_MARK && answered === run.list.length;
+  // Skipped questions are left out: the score is right answers out of the questions you answered.
+  const percent = answered === 0 ? 0 : Math.round((run.correct / answered) * 100);
+  const passed = answered > 0 && run.correct / answered >= PASS_MARK;
   if (run.section !== "all" && !run.retry && answered > 0)
   {
     const best = load("bestScores", {});
@@ -520,7 +521,7 @@ function finishRun()
     <div class="result-line ${passed ? "pass" : "fail"}">${passed ? "Passed!" : "Failed!"}  - Failed: ${failedCount}, Passed: ${run.correct}, Skipped: ${run.list.length - answered}, Total: ${run.list.length}</div>
     <div class="summary">
       <div><b>${percent}%</b><span>score</span></div>
-      <div><b>${run.correct}/${run.list.length}</b><span>correct</span></div>
+      <div><b>${run.correct}/${answered}</b><span>correct of answered</span></div>
       <div><b>${run.bestStreak}</b><span>best streak</span></div>
       <div><b>${failedCount}</b><span>failed</span></div>
     </div>
