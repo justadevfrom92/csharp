@@ -38,3 +38,16 @@ with open(out, "w") as f:
     f.write("[\n" + ",\n".join(json.dumps(q, ensure_ascii=False) for q in Q) + "\n]\n")
 types = collections.Counter(q["t"] for q in Q)
 print("total", len(Q), dict(sorted(counter.items())), dict(types), os.path.getsize(out), "bytes")
+
+# Put the same questions INSIDE index.html, so the page never has to download a second file.
+# "</" is escaped so a question containing "</script>" can't end the block early.
+import re
+page = os.path.join(os.path.dirname(__file__), "..", "index.html")
+html = open(page).read()
+data = json.dumps(Q, ensure_ascii=False).replace("</", "<\\/")
+block = '<!-- QUESTIONS:START -->\n<script id="questions" type="application/json">' + data + '</script>\n<!-- QUESTIONS:END -->'
+html, count = re.subn(r"<!-- QUESTIONS:START -->.*?<!-- QUESTIONS:END -->", lambda m: block, html, flags=re.S)
+if count != 1:
+    print("index.html has no QUESTIONS:START/END markers"); sys.exit(1)
+open(page, "w").write(html)
+print("questions written into index.html:", os.path.getsize(page), "bytes")

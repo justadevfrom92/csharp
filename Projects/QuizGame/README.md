@@ -24,11 +24,11 @@ Fill-in-the-blank answers are case-sensitive, like C#. The newest features (exte
 
 | File | What |
 |---|---|
-| `index.html` | the game (one page, no libraries) |
-| `questions.json` | the questions, generated - don't edit by hand |
+| `index.html` | the game (one page, no libraries). **The questions are inside it**, so it works anywhere, even opened straight from disk |
+| `questions.json` | the same questions as a separate file, generated - don't edit by hand |
 | `build/q1_3.py`, `q4_6.py`, `q7_10.py`, `q_extra.py` | the question bank, written per section |
 | `build/code_1_4.py`, `code_5_10.py` | the code shown with questions that don't carry their own, keyed by question id |
-| `build/build_questions.py` | checks every question (answer in range, no duplicate choices, `____` in fill-in code, project inside its section, **code present**) and writes `questions.json` |
+| `build/build_questions.py` | checks every question (answer in range, no duplicate choices, `____` in fill-in code, project inside its section, **code present**), writes `questions.json` and copies the questions into `index.html` |
 
 Add or change questions in `build/`, then:
 
